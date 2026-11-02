@@ -12,7 +12,7 @@ Este é um repositório privado. As credenciais não acompanham o código.
 
 Antes de enviar alterações, execute `pnpm typecheck`, `pnpm test` e `pnpm build`. Os testes locais de banco usam PostgreSQL em memória; os scripts de integração com serviços reais exigem credenciais e criam dados QA temporários, que devem ser limpos.
 
-Crie uma branch por alteração, envie e abra um pull request para main. Inclua o que mudou e como foi verificado. Nunca envie .env.local, tokens, credenciais, dados de usuários ou arquivos .local-tests. Alterações de banco devem ter uma nova migration revisável.
+Crie uma branch por alteração, envie e abra um pull request para main. Inclua o que mudou e como foi verificado. Após o merge, a versão vai para homologação e só chega à produção depois que todos os aprovadores comentarem `aprovado` na issue de deploy; veja docs/DEPLOY.md. Nunca envie .env.local, tokens, credenciais, dados de usuários ou arquivos .local-tests. Alterações de banco devem ter uma nova migration revisável.
 
 O upload para GitHub não copia contas, mensagens ou configurações dos serviços. A publicação atual na Vercel é independente deste clone; não altere as configurações de produção sem coordenar com o responsável.
 
