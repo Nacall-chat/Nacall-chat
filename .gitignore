@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+.vercel/
+coverage/
+.local-tests/
+
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1 @@
+export function Brand({compact=false}:{compact?:boolean}){return <span className={`nacall-brand gamer-brand ${compact?'compact':''}`}><img className="brand-avatar" src="/brand/avatar-gamer.webp" width={44} height={44} alt={compact?'NACALL':''}/>{!compact&&<img className="brand-wordmark" src="/brand/wordmark-gamer.webp" width={145} height={48} alt="NACALL"/>}</span>;}

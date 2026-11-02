@@ -1,0 +1,8 @@
+.env*
+!.env.example
+.local-tests
+node_modules
+.next
+.git
+*.zip
+*.tsbuildinfo
