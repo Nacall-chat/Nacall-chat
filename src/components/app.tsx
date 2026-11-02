@@ -27,7 +27,7 @@ export function App() {
   useEffect(() => {
     if (!db) return;
     void db.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true); });
-    const { data } = db.auth.onAuthStateChange((event, next) => { setSession(next); setReady(true); if (event === 'PASSWORD_RECOVERY') setRecovery(true); });
+    const { data } = db.auth.onAuthStateChange((event, next) => { setSession(next); setReady(true); if (event === 'PASSWORD_RECOVERY') setRecovery(true); if (event === 'SIGNED_OUT') { setPendingInvite(null); window.history.replaceState({}, '', '/'); } });
     return () => data.subscription.unsubscribe();
   }, [db]);
   if (!db) return <main className="setup"><Brand/><h1>O lobby ainda<br/>está aquecendo.</h1><p>Este projeto ainda precisa ser conectado ao Supabase.</p><ol><li>Crie um projeto Supabase e aplique a migration SQL.</li><li>Copie .env.example para .env.local e preencha suas chaves públicas.</li><li>Configure o LiveKit no servidor e reinicie a aplicação.</li></ol><p className="muted">Nenhuma conta, mensagem ou chamada está sendo simulada. Consulte o README para ativar o MVP.</p></main>;
