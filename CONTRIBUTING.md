@@ -2,7 +2,7 @@
 
 Este é um repositório privado. As credenciais não acompanham o código.
 
-1. Clone https://github.com/on3ver/Nacall-chat.git e entre na pasta Nacall-chat.
+1. Clone https://github.com/Nacall-chat/Nacall-chat.git e entre na pasta Nacall-chat.
 2. Instale Node.js 24 e pnpm 11.25.0.
 3. Execute `pnpm install --frozen-lockfile`.
 4. Copie `.env.example` para `.env.local` e preencha as seis variáveis com credenciais de desenvolvimento, compartilhadas por um canal privado.
@@ -17,3 +17,4 @@ Crie uma branch por alteração, envie e abra um pull request para main. Inclua 
 O upload para GitHub não copia contas, mensagens ou configurações dos serviços. A publicação atual na Vercel é independente deste clone; não altere as configurações de produção sem coordenar com o responsável.
 
 A identidade usada no app fica em public/brand. Os arquivos de marca para redes sociais ficam em brand/social.
+

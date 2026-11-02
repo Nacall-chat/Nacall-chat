@@ -100,7 +100,8 @@ A migration `202611020005_profile_covers.sql` adiciona capa de perfil e Storage 
 
 ## Colaborar
 
-Repositório privado: https://github.com/on3ver/Nacall-chat . Consulte CONTRIBUTING.md para configurar um ambiente de desenvolvimento e enviar alterações.
+Repositório privado: https://github.com/Nacall-chat/Nacall-chat . Consulte CONTRIBUTING.md para configurar um ambiente de desenvolvimento e enviar alterações.
 
 O som de entrada usa public/audio/join-call.mp3, em volume moderado, e pode ser desativado nas preferências de áudio.
+
 
