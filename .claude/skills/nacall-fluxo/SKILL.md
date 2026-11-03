@@ -9,7 +9,7 @@ Repositório: `Nacall-chat/Nacall-chat` (privado). Ambientes: **HML** (`release`
 
 ```
 feat/* → PR para release → CI + Preview → merge → Esteira publica em HML → teste
-PR release → main (merge commit) → revisão → merge → a Vercel (projeto nacall-prd) publica em PRD
+PR release → main (merge commit) → revisão → merge (nada é publicado) → Actions > Esteira > Run workflow (main) → PRD
 ```
 
 ## Regras que valem sempre
@@ -77,9 +77,9 @@ Aplique a migration nova no Supabase de **homologação** antes do código chega
 - **Não mescle sem a confirmação explícita da pessoa.**
 
 ### 8. Produção
-- O merge em `main` faz a Vercel construir e publicar o projeto `nacall-prd` em https://nacall.vercel.app. Não há etapa extra de aprovação (`docs/DEPLOY.md`); a revisão é a do PR `release` → `main`.
-- Antes do merge, lembre quem decide: migrations de PRD aplicadas no Supabase `nacall-prd`? variáveis novas cadastradas no `nacall-prd` (somente em Production)?
-- Acompanhe o deploy (`vercel ls nacall-prd --scope nacall`) até **Ready** e confira o site (landing, `/login`, rotas de API respondendo). Em caso de problema: Instant Rollback na Vercel, em Deployments.
+- Mesclar na `main` **não publica**. A produção só muda quando alguém aperta **Run workflow** na Esteira (GitHub → Actions → Esteira → branch `main`) e o job PRD roda (`docs/DEPLOY.md`). Quem aperta o botão é humano: não dispare o PRD por conta própria, só a pedido explícito da pessoa.
+- Antes do botão, lembre quem decide: migrations de PRD aplicadas no Supabase `nacall-prd`? variáveis novas cadastradas no `nacall-prd` (somente em Production)?
+- Acompanhe (`gh run list --workflow Esteira`) e o deploy (`vercel ls nacall-prd --scope nacall`) até **Ready**; confira o site (landing, `/login`, rotas de API). Em caso de problema: Instant Rollback na Vercel, em Deployments.
 - Depois que a produção estiver publicada e conferida, **apague a branch de trabalho** (`git push origin --delete <branch>`, `git branch -D <branch>`, `git fetch --prune`) e confirme com `git branch -a` que só restaram `main`, `release` e o que estiver em andamento.
 
 ## Hotfix urgente

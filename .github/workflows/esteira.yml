@@ -2,6 +2,7 @@ name: Esteira
 on:
   push:
     branches: [release, main]
+  workflow_dispatch:
 concurrency:
   group: esteira-${{ github.ref_name }}
   cancel-in-progress: false
@@ -12,8 +13,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
   homologacao:
     name: HML
-    # A produção é publicada pela Vercel (integração Git do projeto nacall-prd) a cada push na main.
-    if: github.ref == 'refs/heads/release'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
     needs: verificar
     runs-on: ubuntu-latest
     env:
@@ -36,3 +36,27 @@ jobs:
       - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - run: vercel build --prod --token="$VERCEL_TOKEN"
       - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+  producao:
+    name: PRD
+    # Manual: Actions > Esteira > Run workflow, escolhendo a branch main. Nunca roda sozinho.
+    if: github.event_name == 'workflow_dispatch'
+    needs: verificar
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.PRD_VERCEL_TOKEN || secrets.HML_VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.PRD_VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.PRD_VERCEL_PROJECT_ID }}
+    steps:
+      - name: Conferir que é a main e que há credenciais
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then echo "::error::Produção só é publicada a partir da branch main (selecionada: $GITHUB_REF). Nada foi publicado."; exit 1; fi
+          for n in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!n}" ]; then echo "::error::Credencial $n (produção) não cadastrada em Settings > Secrets and variables > Actions. Nada foi publicado."; exit 1; fi
+          done
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --global vercel@64.3.1
+      # O build roda na Vercel, que lê as variáveis de produção (inclusive as sensitive).
+      - run: vercel deploy --prod --token="$VERCEL_TOKEN"
