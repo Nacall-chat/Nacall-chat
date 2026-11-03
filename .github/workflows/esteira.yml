@@ -1,9 +1,9 @@
-name: Solicitar Produção
+name: Esteira
 on:
   push:
-    branches: [main]
+    branches: [release, main]
 concurrency:
-  group: solicitar-producao
+  group: esteira-${{ github.ref_name }}
   cancel-in-progress: false
 permissions:
   contents: read
@@ -11,14 +11,41 @@ permissions:
 jobs:
   verificar:
     uses: ./.github/workflows/ci.yml
-  solicitar:
+  homologacao:
+    name: HML
     needs: verificar
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.HML_VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.HML_VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.HML_VERCEL_PROJECT_ID }}
+    steps:
+      - name: Conferir credenciais da Vercel (HML)
+        run: |
+          for n in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!n}" ]; then echo "::error::Secret HML_$n não cadastrado em Settings > Secrets and variables > Actions."; exit 1; fi
+          done
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --global corepack vercel@64.3.1
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.25.0 --activate
+      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: vercel build --prod --token="$VERCEL_TOKEN"
+      - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+  solicitar-producao:
+    name: Aprovação para PRD
+    if: github.ref == 'refs/heads/main'
+    needs: homologacao
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v8
         env:
           URL_HOMOLOGACAO: ${{ vars.URL_HOMOLOGACAO || 'https://nacall-hml.vercel.app' }}
           APROVADORES: ${{ vars.APROVADORES || 'gustapmartins,on3ver' }}
+          APROVADORES_UNICOS: ${{ vars.APROVADORES_UNICOS || 'gustapmartins' }}
         with:
           script: |
             const label = 'deploy-producao';
@@ -32,18 +59,19 @@ jobs:
             }
             const commit = context.payload.head_commit?.message?.split('\n')[0] ?? sha.slice(0, 7);
             const aprovadores = process.env.APROVADORES.split(',').map(a => `@${a.trim()}`).join(' ');
+            const unicos = process.env.APROVADORES_UNICOS.split(',').map(a => `@${a.trim()}`).join(' e ');
             await github.rest.issues.create({
               ...context.repo,
               title: `Aprovar produção: ${commit}`,
               labels: [label],
               body: [
-                `A versão \`${sha.slice(0, 7)}\` entrou na \`main\` e passou nas verificações.`,
+                `A versão \`${sha.slice(0, 7)}\` passou nas verificações e foi publicada em homologação.`,
                 '',
                 `- Homologação: ${process.env.URL_HOMOLOGACAO}`,
                 `- Commit: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`,
                 '',
                 `${aprovadores}: confirme na homologação e comente **aprovado** para publicar, ou **negado** para cancelar.`,
-                'A produção só é publicada quando todos os aprovadores comentarem **aprovado**.',
+                `A aprovação de ${unicos} libera sozinha. Para os demais, a produção só é publicada quando todos os aprovadores comentarem **aprovado**.`,
                 '',
                 `<!-- sha:${sha} -->`,
               ].join('\n'),

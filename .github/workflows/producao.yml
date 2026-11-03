@@ -10,6 +10,7 @@ permissions:
   issues: write
 env:
   APROVADORES: ${{ vars.APROVADORES || 'gustapmartins,on3ver' }}
+  APROVADORES_UNICOS: ${{ vars.APROVADORES_UNICOS || 'gustapmartins' }}
 jobs:
   decidir:
     if: >-
@@ -25,7 +26,9 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const aprovadores = process.env.APROVADORES.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const lista = v => v.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const unicos = lista(process.env.APROVADORES_UNICOS);
+            const aprovadores = [...new Set([...lista(process.env.APROVADORES), ...unicos])];
             const autor = context.payload.comment.user.login.toLowerCase();
             const numero = context.issue.number;
             if (!aprovadores.includes(autor)) return core.setOutput('publicar', 'false');
@@ -44,15 +47,23 @@ jobs:
             if (palavraAtual === 'aprovado' || palavraAtual === 'negado') {
               await github.rest.reactions.createForIssueComment({ ...context.repo, comment_id: ultimo.id, content: palavraAtual === 'aprovado' ? '+1' : '-1' });
             }
-            const negou = Object.entries(votos).find(([, v]) => v === 'negado');
-            if (negou) {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: numero, body: `Deploy cancelado: @${negou[0]} negou. Esta versão não vai para produção.` });
+            // Quem está em APROVADORES_UNICOS libera sozinho; os demais precisam que todos aprovem.
+            const cancelar = async quem => {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: numero, body: `Deploy cancelado: @${quem} negou. Esta versão não vai para produção.` });
               await github.rest.issues.update({ ...context.repo, issue_number: numero, state: 'closed', state_reason: 'not_planned' });
-              return core.setOutput('publicar', 'false');
+              core.setOutput('publicar', 'false');
+            };
+            const unicoNegou = unicos.find(u => votos[u] === 'negado');
+            if (unicoNegou) return cancelar(unicoNegou);
+            const unicoAprovou = unicos.find(u => votos[u] === 'aprovado');
+            if (!unicoAprovou) {
+              const negou = Object.entries(votos).find(([, v]) => v === 'negado');
+              if (negou) return cancelar(negou[0]);
+              const faltam = aprovadores.filter(a => votos[a] !== 'aprovado');
+              if (faltam.length) return core.setOutput('publicar', 'false');
             }
-            const faltam = aprovadores.filter(a => votos[a] !== 'aprovado');
-            if (faltam.length) return core.setOutput('publicar', 'false');
-            await github.rest.issues.createComment({ ...context.repo, issue_number: numero, body: `Todos aprovaram. Publicando \`${sha.slice(0, 7)}\` em produção: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` });
+            const motivo = unicoAprovou ? `@${unicoAprovou} aprovou` : 'Todos aprovaram';
+            await github.rest.issues.createComment({ ...context.repo, issue_number: numero, body: `${motivo}. Publicando \`${sha.slice(0, 7)}\` em produção: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` });
             core.setOutput('publicar', 'true');
             core.setOutput('sha', sha);
   deploy:
