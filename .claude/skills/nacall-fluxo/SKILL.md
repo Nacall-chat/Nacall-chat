@@ -5,11 +5,11 @@ description: Fluxo de entrega do projeto Nacall-chat. Use quando for criar uma f
 
 # Fluxo de entrega NACALL
 
-Repositório: `Nacall-chat/Nacall-chat` (privado). Ambientes: **HML** (`release`, https://nacall-hml.vercel.app) e **PRD** (`main`). Detalhes da esteira em `docs/DEPLOY.md` e da infraestrutura em `docs/MIGRACAO.md`.
+Repositório: `Nacall-chat/Nacall-chat` (privado). Ambientes: **HML** (`release`, https://nacall-hml.vercel.app) e **PRD** (`main`, https://nacall.vercel.app). Detalhes da esteira em `docs/DEPLOY.md` e da infraestrutura em `docs/MIGRACAO.md`.
 
 ```
 feat/* → PR para release → CI + Preview → merge → Esteira publica em HML → teste
-PR release → main (merge commit) → merge → Esteira: CI → HML → issue de aprovação → PRD
+PR release → main (merge commit) → revisão → merge → a Vercel (projeto nacall-prd) publica em PRD
 ```
 
 ## Regras que valem sempre
@@ -18,7 +18,7 @@ PR release → main (merge commit) → merge → Esteira: CI → HML → issue d
 2. **Nunca faça push direto em `main` nem em `release`.** Todo trabalho entra por PR.
 3. **Nunca faça force push** nem reescreva histórico publicado.
 4. **Não faça merge sem a confirmação da pessoa**, a menos que ela tenha dito explicitamente "pode mesclar" para aquele PR. Isso vale em dobro para `release` → `main`.
-5. **Nunca aprove a issue `deploy-producao` em nome de ninguém.** A produção é aprovada por humanos (ver `APROVADORES` em `docs/DEPLOY.md`).
+5. **A aprovação da produção é humana:** é a revisão e o merge do PR `release` → `main`. Nunca mescle esse PR por conta própria nem finja a aprovação de outra pessoa.
 6. **Nunca use credenciais de produção em HML, Preview ou testes.** Dados de QA só no Supabase de homologação.
 7. **Não apague contas, grupos ou dados que você não criou.** Apague apenas o QA que você mesmo criou.
 8. **Branches:** depois que a alteração chegar em produção, apague a branch de trabalho (remota e local). **Nunca apague `main` nem `release`.** Antes disso, mantenha a branch.
@@ -72,13 +72,14 @@ Aplique a migration nova no Supabase de **homologação** antes do código chega
 
 ### 7. PR `release` → `main`
 - Só depois de HML aprovado. Antes, `git fetch` e confira se `release` e `main` não divergiram (`git merge-base`); se `main` tiver commits que a `release` não tem, traga-os para a `release` primeiro.
-- `gh pr create --base main --head release`, listando: o que entra, o que foi testado em HML, **migrations a aplicar em PRD antes do deploy** e os secrets de produção necessários.
+- `gh pr create --base main --head release`, listando: o que entra, o que foi testado em HML, **migrations a aplicar em PRD antes do deploy** e qualquer variável de ambiente nova que precise ser cadastrada no `nacall-prd`.
 - O PR deve ser mesclado com **"Create a merge commit"**, nunca squash (squash faz `release` e `main` divergirem e gera conflitos).
 - **Não mescle sem a confirmação explícita da pessoa.**
 
 ### 8. Produção
-- O merge em `main` dispara a Esteira: CI → HML → issue `deploy-producao`. Os aprovadores comentam `aprovado` na issue; o deploy de produção roda a partir daí (`docs/DEPLOY.md`).
-- Antes da aprovação, lembre quem decide: migrations de PRD aplicadas? secrets de produção cadastrados?
+- O merge em `main` faz a Vercel construir e publicar o projeto `nacall-prd` em https://nacall.vercel.app. Não há etapa extra de aprovação (`docs/DEPLOY.md`); a revisão é a do PR `release` → `main`.
+- Antes do merge, lembre quem decide: migrations de PRD aplicadas no Supabase `nacall-prd`? variáveis novas cadastradas no `nacall-prd` (somente em Production)?
+- Acompanhe o deploy (`vercel ls nacall-prd --scope nacall`) até **Ready** e confira o site (landing, `/login`, rotas de API respondendo). Em caso de problema: Instant Rollback na Vercel, em Deployments.
 - Depois que a produção estiver publicada e conferida, **apague a branch de trabalho** (`git push origin --delete <branch>`, `git branch -D <branch>`, `git fetch --prune`) e confirme com `git branch -a` que só restaram `main`, `release` e o que estiver em andamento.
 
 ## Hotfix urgente
