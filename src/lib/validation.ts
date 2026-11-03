@@ -1,5 +1,6 @@
 import { z } from 'zod';
 export const usernameSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9_]{3,24}$/, 'Use 3–24 letras minúsculas, números ou _.');
+export const emailSchema = z.string().trim().toLowerCase().max(254, 'Email muito longo.').pipe(z.email('Informe um email válido.'));
 export const nameSchema = z.string().trim().min(2, 'Use pelo menos 2 caracteres.').max(60);
 export const messageSchema = z.string().trim().min(1).max(4000, 'Limite de 4.000 caracteres.');
 export const tokenSchema = z.object({ channelId: z.uuid() }).strict();

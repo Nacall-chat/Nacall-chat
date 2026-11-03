@@ -20,7 +20,7 @@ No Windows, use `Copy-Item .env.example .env.local`. Abra http://localhost:3000.
 
 Preencha as seis variáveis de `.env.example`. Somente `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` são públicas. `SUPABASE_SERVICE_ROLE_KEY` e as credenciais LiveKit ficam no servidor; nunca use prefixo NEXT_PUBLIC nesses segredos.
 
-Em um Supabase novo, aplique os cinco arquivos em `supabase/migrations/`, em ordem. Em uma instalação que já recebeu a primeira migration, aplique apenas as seguintes. A segunda preserva os dados existentes e cria Storage, música e recuperação; a terceira concede a leitura de perfis exclusivamente ao serviço de autenticação no servidor. Não reaplique a primeira migration.
+Em um Supabase novo, aplique os seis arquivos em `supabase/migrations/`, em ordem. Em uma instalação que já recebeu a primeira migration, aplique apenas as seguintes. A segunda preserva os dados existentes e cria Storage, música e recuperação; a terceira concede a leitura de perfis exclusivamente ao serviço de autenticação no servidor. Não reaplique a primeira migration.
 
 Habilite email/senha no Supabase Auth, com confirmação desativada para este fluxo: o servidor cria um endereço interno para novas contas. A interface pede apenas usuário e senha. Contas antigas mantêm suas identidades e podem entrar usando o username do perfil. Configure o domínio publicado em Site URL e Redirect URLs.
 
@@ -28,7 +28,7 @@ No LiveKit, crie credenciais e configure URL WSS, API key e API secret. O endpoi
 
 ## Recursos
 
-- Cadastro e login por username; senha e código de recuperação de uso único, que deve ser salvo pelo usuário. Gerar outro código invalida o anterior. Sem email de recuperação para contas novas.
+- Cadastro e login por username; senha e código de recuperação de uso único, que deve ser salvo pelo usuário. Gerar outro código invalida o anterior. O cadastro pede um email, guardado numa tabela privada (`account_emails`, sem acesso pelo cliente); por enquanto ele não é usado para login nem para recuperar a senha.
 - Amigos, solicitações, DMs, servidores, convites com validade, canais de texto/voz e mensagens persistentes com Realtime.
 - Perfil com nome personalizado, bio e foto; upload convertido para WebP com isolamento por usuário.
 - Temas claro, escuro e sistema; identidade NACALL, fonte Manrope local e controles com ícones.
@@ -71,7 +71,7 @@ O domínio principal é `nacall.vercel.app`; a marca exibida é NACALL. Para usa
 
 Não inclui diretório público, presença social completa, notificações push, moderação avançada, permissões por canal, reações/anexos/busca, chamada direta com toque, gravação, aplicativo nativo, bot de música ou transmissão 4K. A referência GoLive foi analisada pelas páginas públicas acessíveis; este é um produto próprio, sem promessa de reproduzir todos os recursos privados daquele serviço.
 
-Sem email, a perda da senha e do código de recuperação impede recuperar uma conta nova pela interface. Microfone, câmera, compartilhamento de tela e áudio do sistema exigem permissão do navegador e validação manual nos dispositivos reais. Proteção contra abuso, moderação, backups, observabilidade e capacidade devem evoluir antes de abrir uma comunidade grande.
+Como o email ainda não recupera a senha, a perda da senha e do código de recuperação impede recuperar uma conta nova pela interface. Microfone, câmera, compartilhamento de tela e áudio do sistema exigem permissão do navegador e validação manual nos dispositivos reais. Proteção contra abuso, moderação, backups, observabilidade e capacidade devem evoluir antes de abrir uma comunidade grande.
 
 Veja `docs/VERIFICATION.md` e `docs/ACCEPTANCE.md` para evidências e testes pendentes.
 
