@@ -1,0 +1,103 @@
+name: Deploy Produção
+on:
+  issue_comment:
+    types: [created]
+concurrency:
+  group: producao
+  cancel-in-progress: false
+permissions:
+  contents: read
+  issues: write
+env:
+  APROVADORES: ${{ vars.APROVADORES || 'gustapmartins,on3ver' }}
+jobs:
+  decidir:
+    if: >-
+      !github.event.issue.pull_request &&
+      contains(github.event.issue.labels.*.name, 'deploy-producao') &&
+      github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    outputs:
+      publicar: ${{ steps.votos.outputs.publicar }}
+      sha: ${{ steps.votos.outputs.sha }}
+    steps:
+      - id: votos
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const aprovadores = process.env.APROVADORES.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            const autor = context.payload.comment.user.login.toLowerCase();
+            const numero = context.issue.number;
+            if (!aprovadores.includes(autor)) return core.setOutput('publicar', 'false');
+            const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: numero });
+            const sha = issue.body?.match(/<!-- sha:([0-9a-f]{40}) -->/)?.[1];
+            if (issue.state !== 'open' || !sha) return core.setOutput('publicar', 'false');
+            const votos = {};
+            const comentarios = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number: numero });
+            for (const c of comentarios) {
+              const quem = c.user.login.toLowerCase();
+              const palavra = c.body.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-zçã]/g, '');
+              if (aprovadores.includes(quem) && (palavra === 'aprovado' || palavra === 'negado')) votos[quem] = palavra;
+            }
+            const ultimo = context.payload.comment;
+            const palavraAtual = ultimo.body.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-zçã]/g, '');
+            if (palavraAtual === 'aprovado' || palavraAtual === 'negado') {
+              await github.rest.reactions.createForIssueComment({ ...context.repo, comment_id: ultimo.id, content: palavraAtual === 'aprovado' ? '+1' : '-1' });
+            }
+            const negou = Object.entries(votos).find(([, v]) => v === 'negado');
+            if (negou) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: numero, body: `Deploy cancelado: @${negou[0]} negou. Esta versão não vai para produção.` });
+              await github.rest.issues.update({ ...context.repo, issue_number: numero, state: 'closed', state_reason: 'not_planned' });
+              return core.setOutput('publicar', 'false');
+            }
+            const faltam = aprovadores.filter(a => votos[a] !== 'aprovado');
+            if (faltam.length) return core.setOutput('publicar', 'false');
+            await github.rest.issues.createComment({ ...context.repo, issue_number: numero, body: `Todos aprovaram. Publicando \`${sha.slice(0, 7)}\` em produção: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` });
+            core.setOutput('publicar', 'true');
+            core.setOutput('sha', sha);
+  deploy:
+    needs: decidir
+    if: needs.decidir.outputs.publicar == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Conferir credenciais da Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          for n in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!n}" ]; then echo "::error::Secret $n não cadastrado em Settings > Secrets and variables > Actions."; exit 1; fi
+          done
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.decidir.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --global corepack vercel@64.3.1
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.25.0 --activate
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - id: publicar
+        run: echo "url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})" >> "$GITHUB_OUTPUT"
+      - name: Fechar pedido de aprovação
+        if: always()
+        uses: actions/github-script@v8
+        env:
+          RESULTADO: ${{ job.status }}
+          URL_DEPLOY: ${{ steps.publicar.outputs.url }}
+        with:
+          script: |
+            const ok = process.env.RESULTADO === 'success';
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: ok ? `Publicado em produção: ${process.env.URL_DEPLOY}` : `O deploy em produção falhou. Veja o log: ${run}\nComente **aprovado** de novo para tentar outra vez.`,
+            });
+            if (ok) await github.rest.issues.update({ ...context.repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
