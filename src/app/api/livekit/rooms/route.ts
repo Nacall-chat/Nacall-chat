@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {z} from 'zod';
+import {hasVerifiedFactor,jwtClaims} from '@/lib/auth-server';
 import {roomSnapshots} from '@/lib/livekit-rooms';
 export const runtime='nodejs';
 export async function POST(request:Request){
@@ -8,6 +9,7 @@ export async function POST(request:Request){
  const auth=request.headers.get('authorization');if(!auth?.startsWith('Bearer '))return reply({error:'Entre na sua conta'},401);
  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{global:{headers:{Authorization:auth}},auth:{persistSession:false}});
  const user=await db.auth.getUser(auth.slice(7));if(user.error||!user.data.user)return reply({error:'Sessão inválida'},401);
+ if(hasVerifiedFactor(user.data.user)&&jwtClaims(auth.slice(7)).aal!=='aal2')return reply({error:'Confirme o 2FA'},401);
  if(Number(request.headers.get('content-length')||0)>4096)return reply({error:'Pedido muito grande'},413);
  const parsed=z.object({channelIds:z.array(z.uuid()).max(30)}).safeParse(await request.json().catch(()=>null));if(!parsed.success)return reply({error:'Canais inválidos'},400);
  if(!parsed.data.channelIds.length)return reply({rooms:[],serverNow:Date.now()});

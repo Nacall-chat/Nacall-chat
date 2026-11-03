@@ -16,3 +16,16 @@
 @media(max-width:360px){.jacall-hero h1{font-size:42px}.jacall-nav{gap:10px}.jacall-nav .brand-name{font-size:22px}.landing-login{padding:9px 13px}.call-dock .voice-compact .call-controls button,.call-dock .voice-compact .leave-call{width:31px;min-width:31px}.call-dock .voice-compact .call-controls{gap:1px}}
 
 .jacall-character{inset:60px auto 0 50%;width:auto;height:calc(100% - 60px);aspect-ratio:.64;transform:translateX(-50%)}
+/* Autenticação: senha com mostrar/ocultar, código, 2FA e códigos de recuperação */
+.password-field{display:flex;align-items:center;gap:6px}.password-field input{flex:1;min-width:0}
+.field-hint{display:block;margin-top:6px;color:var(--muted);font-size:12px}
+.password-field+.field-hint{color:var(--primary)}
+.code-input{letter-spacing:.5em;text-align:center;font-size:22px;font-variant-numeric:tabular-nums}
+.auth-layout.solo{grid-template-columns:minmax(0,520px);justify-content:center}
+.two-factor-prompt{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 16px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.two-factor-prompt>div:not(.row){flex:1;min-width:200px}.two-factor-prompt p{margin:2px 0 0;color:var(--muted);font-size:13px}.two-factor-prompt svg{color:var(--accent);flex-shrink:0}
+.qr-box{display:inline-block;background:#fff;padding:10px;border-radius:12px;margin:8px 0}.qr-box img{display:block}
+.recovery-grid{list-style:none;margin:12px 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.recovery-grid li{margin:0}.recovery-grid code{display:block;padding:10px;border:1px dashed var(--accent);border-radius:10px;background:var(--bg);color:var(--accent);text-align:center;user-select:all;letter-spacing:1px}
+.recovery-box{margin:8px 0 16px}
+@media(max-width:720px){.auth-layout.solo{padding:30px 22px}.recovery-grid{grid-template-columns:1fr}.code-input{letter-spacing:.35em}}

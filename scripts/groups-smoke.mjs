@@ -2,11 +2,12 @@ import {createClient} from '@supabase/supabase-js';
 import {randomBytes} from 'node:crypto';
 import {mkdir,writeFile,access} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {createQaAccount} from './qa-account.mjs';
 const base=process.env.NACALL_TEST_URL||'http://localhost:3003';const url=process.env.NEXT_PUBLIC_SUPABASE_URL;const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;const admin=createClient(url,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}});const namespace='qa_nacall_'+randomBytes(3).toString('hex');const state={namespace,accounts:[],serverId:null};const clients=[];
 try{await access('.local-tests/state.json');throw new Error('Remova o QA anterior antes de começar.');}catch(e){if(e.code!=='ENOENT')throw e;}
 const ok=r=>{if(r.error)throw r.error;return r.data;};
 try{
- for(const suffix of ['a','b','c']){const username=namespace+'_'+suffix;const password='Qa!'+randomBytes(18).toString('base64url');const response=await fetch(base+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'signup',username,password,displayName:'QA — '+suffix.toUpperCase()})});const data=await response.json();assert.equal(response.status,200,data.error);const client=createClient(url,key,{auth:{persistSession:false}});ok(await client.auth.setSession(data.session));const id=ok(await client.auth.getUser()).user.id;state.accounts.push({id,username,password,email:username+'@accounts.nacall.invalid'});clients.push(client);}
+ for(const suffix of ['a','b','c']){const username=namespace+'_'+suffix;const password='Qa!'+randomBytes(18).toString('base64url');const account=await createQaAccount(admin,url,key,{username,displayName:'QA — '+suffix.toUpperCase(),password});state.accounts.push({id:account.id,username,password,email:account.email});clients.push(account.client);}
  const[a,b,c]=clients;state.serverId=ok(await a.rpc('create_server',{server_name:namespace}));const s=state.serverId;
  ok(await a.rpc('save_server',{s,new_name:namespace,new_description:'QA temporário · cargos, convites e chamadas',new_icon:''}));
  const invite=ok(await a.from('invites').insert({server_id:s,max_uses:1}).select().single());ok(await b.rpc('join_server',{invite_code:invite.code}));ok(await b.rpc('join_server',{invite_code:invite.code}));assert.equal(ok(await a.from('invites').select('uses').eq('code',invite.code).single()).uses,1);assert.ok((await c.rpc('join_server',{invite_code:invite.code})).error);
