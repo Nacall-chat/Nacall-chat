@@ -12,6 +12,8 @@ jobs:
     uses: ./.github/workflows/ci.yml
   homologacao:
     name: HML
+    # A produção é publicada pela Vercel (integração Git do projeto nacall-prd) a cada push na main.
+    if: github.ref == 'refs/heads/release'
     needs: verificar
     runs-on: ubuntu-latest
     env:
@@ -23,32 +25,6 @@ jobs:
         run: |
           for n in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
             if [ -z "${!n}" ]; then echo "::error::Secret HML_$n não cadastrado em Settings > Secrets and variables > Actions."; exit 1; fi
-          done
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: npm install --global corepack vercel@64.3.1
-      - run: corepack enable
-      - run: corepack prepare pnpm@11.25.0 --activate
-      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-      - run: vercel build --prod --token="$VERCEL_TOKEN"
-      - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-  producao:
-    name: PRD
-    # A aprovação é a revisão do PR release -> main: o merge na main publica em produção.
-    if: github.ref == 'refs/heads/main'
-    needs: homologacao
-    runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - name: Conferir credenciais da Vercel (PRD)
-        run: |
-          for n in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
-            if [ -z "${!n}" ]; then echo "::error::Secret $n (produção) não cadastrado em Settings > Secrets and variables > Actions. Nada foi publicado em produção."; exit 1; fi
           done
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
