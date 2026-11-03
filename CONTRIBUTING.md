@@ -6,7 +6,7 @@ Este é um repositório privado. As credenciais não acompanham o código.
 2. Instale Node.js 24 e pnpm 11.25.0.
 3. Execute `pnpm install --frozen-lockfile`.
 4. Copie `.env.example` para `.env.local` e preencha as seis variáveis com credenciais de desenvolvimento, compartilhadas por um canal privado.
-5. Em um Supabase novo, aplique os cinco arquivos de `supabase/migrations` em ordem. Em bancos existentes, aplique somente migrations ainda não executadas. Não use o banco de produção para testes.
+5. Em um Supabase novo, aplique os seis arquivos de `supabase/migrations` em ordem. Em bancos existentes, aplique somente migrations ainda não executadas. Não use o banco de produção para testes.
 6. Configure um projeto LiveKit de desenvolvimento e siga as instruções de Auth no README.
 7. Execute `pnpm dev` e abra http://localhost:3000.
 
