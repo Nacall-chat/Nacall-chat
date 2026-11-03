@@ -31,7 +31,8 @@ export async function POST(request:Request){
   if(error||!data.user)return reply({error:'Não foi possível criar a conta. O nome pode estar reservado; tente outro.'},400);
   userId=data.user.id;email=data.user.email;recoveryCode=randomBytes(24).toString('base64url');
   const saved=await admin.from('account_recovery').insert({user_id:userId,code_hash:hash(recoveryCode)});
-  if(saved.error){await admin.auth.admin.deleteUser(userId);return reply({error:'Não foi possível preparar a recuperação. Tente novamente.'},503);}
+  const savedEmail=saved.error?saved:await admin.from('account_emails').insert({user_id:userId,email:input.email});
+  if(savedEmail.error){await admin.auth.admin.deleteUser(userId);return reply({error:'Não foi possível preparar a recuperação. Tente novamente.'},503);}
  }else{
   if(!userId)return reply({error:'Usuário, senha ou código não conferem.'},401);
   const account=await admin.auth.admin.getUserById(userId);email=account.data.user?.email;
