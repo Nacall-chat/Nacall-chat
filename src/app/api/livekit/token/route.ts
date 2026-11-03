@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { AccessToken, TrackSource } from 'livekit-server-sdk';
 import {roomSnapshots} from '@/lib/livekit-rooms';
 import { tokenSchema } from '@/lib/validation';
+import { hasVerifiedFactor, jwtClaims } from '@/lib/auth-server';
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,6 +17,8 @@ export async function POST(request: Request) {
   const db = createClient(url, anon, { global: { headers: { Authorization: auth } }, auth: { persistSession: false, autoRefreshToken: false } });
   const { data: { user }, error } = await db.auth.getUser(auth.slice(7));
   if (error || !user) return fail('Sessão inválida.', 401);
+  // Conta com 2FA só entra em call com a sessão que confirmou o código do app autenticador.
+  if (hasVerifiedFactor(user) && jwtClaims(auth.slice(7)).aal !== 'aal2') return fail('Confirme o 2FA para entrar nas calls.', 401);
   const parsed = tokenSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return fail('Canal inválido.', 400);
   // SELECT runs with the caller JWT and RLS: membership is checked by PostgreSQL.

@@ -20,15 +20,15 @@ No Windows, use `Copy-Item .env.example .env.local`. Abra http://localhost:3000.
 
 Preencha as seis variáveis de `.env.example`. Somente `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` são públicas. `SUPABASE_SERVICE_ROLE_KEY` e as credenciais LiveKit ficam no servidor; nunca use prefixo NEXT_PUBLIC nesses segredos.
 
-Em um Supabase novo, aplique os seis arquivos em `supabase/migrations/`, em ordem. Em uma instalação que já recebeu a primeira migration, aplique apenas as seguintes. A segunda preserva os dados existentes e cria Storage, música e recuperação; a terceira concede a leitura de perfis exclusivamente ao serviço de autenticação no servidor. Não reaplique a primeira migration.
+Em um Supabase novo, aplique os sete arquivos em `supabase/migrations/`, em ordem. Em uma instalação que já recebeu a primeira migration, aplique apenas as seguintes. A segunda preserva os dados existentes e cria Storage, música e recuperação; a terceira concede a leitura de perfis exclusivamente ao serviço de autenticação no servidor. Não reaplique a primeira migration.
 
-Habilite email/senha no Supabase Auth, com confirmação desativada para este fluxo: o servidor cria um endereço interno para novas contas. A interface pede apenas usuário e senha. Contas antigas mantêm suas identidades e podem entrar usando o username do perfil. Configure o domínio publicado em Site URL e Redirect URLs.
+Authentication: Email ligado, **Confirm email ligado**, código OTP de 6 dígitos com validade de 10 minutos, senha mínima de 12 caracteres e **SMTP próprio** (o envio padrão do Supabase só entrega para membros do time). Cadastro, verificação por código, login por email ou usuário, recuperação, 2FA e sessões estão descritos em [docs/AUTH.md](docs/AUTH.md), junto com os templates de email em `supabase/templates/`. Configure o domínio publicado em Site URL.
 
 No LiveKit, crie credenciais e configure URL WSS, API key e API secret. O endpoint assina tokens somente para membros do servidor/canal autorizado.
 
 ## Recursos
 
-- Cadastro e login por username; senha e código de recuperação de uso único, que deve ser salvo pelo usuário. Gerar outro código invalida o anterior. O cadastro pede um email, guardado numa tabela privada (`account_emails`, sem acesso pelo cliente); por enquanto ele não é usado para login nem para recuperar a senha.
+- Cadastro com usuário, email e senha (12+ caracteres, confirmada) e verificação do email por código; login por **email ou usuário**; recuperação de senha por código; **2FA por app autenticador** (TOTP) com códigos de recuperação; sair dos outros dispositivos ou de todos. Detalhes e a arquitetura planejada do login por QR Code em [docs/AUTH.md](docs/AUTH.md).
 - Amigos, solicitações, DMs, servidores, convites com validade, canais de texto/voz e mensagens persistentes com Realtime.
 - Perfil com nome personalizado, bio e foto; upload convertido para WebP com isolamento por usuário.
 - Temas claro, escuro e sistema; identidade NACALL, fonte Manrope local e controles com ícones.
@@ -39,9 +39,9 @@ No LiveKit, crie credenciais e configure URL WSS, API key e API secret. O endpoi
 
 ## Estrutura
 
-`src/app/api/auth` resolve login privado e recuperação. `src/app/api/account/recovery` renova códigos. `src/app/api/livekit/token` autoriza chamadas. `src/components` contém workspace, perfil, preferências, voz e música. `supabase/migrations` define tabelas, RLS, RPCs e Storage. `public/brand` inclui a identidade usada pelo app. `tests` cobre validação e permissões reais em PostgreSQL local.
+`src/app/api/auth` cuida de cadastro, código, login e recuperação; `src/app/api/auth/mfa` e `src/app/api/auth/password` cuidam do 2FA e da troca de senha. `src/app/api/livekit/token` autoriza chamadas. `src/components` contém workspace, perfil, preferências, voz e música. `supabase/migrations` define tabelas, RLS, RPCs e Storage. `public/brand` inclui a identidade usada pelo app. `tests` cobre validação e permissões reais em PostgreSQL local.
 
-O navegador usa Supabase Auth/Postgres/Realtime. As rotas do servidor guardam os segredos e emitem sessões/tokens; LiveKit transporta mídia. Recuperação e tentativas de login não têm acesso direto pelo cliente. As mensagens são renderizadas como texto.
+O navegador usa Supabase Auth/Postgres/Realtime. As rotas do servidor guardam os segredos e emitem sessões/tokens; LiveKit transporta mídia. Limites de tentativas e códigos de recuperação do 2FA não têm acesso direto pelo cliente. As mensagens são renderizadas como texto.
 
 ## Verificar
 
@@ -71,7 +71,7 @@ O domínio principal é `nacall.vercel.app`; a marca exibida é NACALL. Para usa
 
 Não inclui diretório público, presença social completa, notificações push, moderação avançada, permissões por canal, reações/anexos/busca, chamada direta com toque, gravação, aplicativo nativo, bot de música ou transmissão 4K. A referência GoLive foi analisada pelas páginas públicas acessíveis; este é um produto próprio, sem promessa de reproduzir todos os recursos privados daquele serviço.
 
-Como o email ainda não recupera a senha, a perda da senha e do código de recuperação impede recuperar uma conta nova pela interface. Microfone, câmera, compartilhamento de tela e áudio do sistema exigem permissão do navegador e validação manual nos dispositivos reais. Proteção contra abuso, moderação, backups, observabilidade e capacidade devem evoluir antes de abrir uma comunidade grande.
+A senha é recuperada por código enviado ao email da conta, que depende do SMTP configurado no Supabase. Microfone, câmera, compartilhamento de tela e áudio do sistema exigem permissão do navegador e validação manual nos dispositivos reais. Proteção contra abuso, moderação, backups, observabilidade e capacidade devem evoluir antes de abrir uma comunidade grande.
 
 Veja `docs/VERIFICATION.md` e `docs/ACCEPTANCE.md` para evidências e testes pendentes.
 
