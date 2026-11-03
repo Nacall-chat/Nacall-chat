@@ -45,6 +45,7 @@ jobs:
         env:
           URL_HOMOLOGACAO: ${{ vars.URL_HOMOLOGACAO || 'https://nacall-hml.vercel.app' }}
           APROVADORES: ${{ vars.APROVADORES || 'gustapmartins,on3ver' }}
+          APROVADORES_UNICOS: ${{ vars.APROVADORES_UNICOS || 'gustapmartins' }}
         with:
           script: |
             const label = 'deploy-producao';
@@ -58,6 +59,7 @@ jobs:
             }
             const commit = context.payload.head_commit?.message?.split('\n')[0] ?? sha.slice(0, 7);
             const aprovadores = process.env.APROVADORES.split(',').map(a => `@${a.trim()}`).join(' ');
+            const unicos = process.env.APROVADORES_UNICOS.split(',').map(a => `@${a.trim()}`).join(' e ');
             await github.rest.issues.create({
               ...context.repo,
               title: `Aprovar produção: ${commit}`,
@@ -69,7 +71,7 @@ jobs:
                 `- Commit: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`,
                 '',
                 `${aprovadores}: confirme na homologação e comente **aprovado** para publicar, ou **negado** para cancelar.`,
-                'A produção só é publicada quando todos os aprovadores comentarem **aprovado**.',
+                `A aprovação de ${unicos} libera sozinha. Para os demais, a produção só é publicada quando todos os aprovadores comentarem **aprovado**.`,
                 '',
                 `<!-- sha:${sha} -->`,
               ].join('\n'),

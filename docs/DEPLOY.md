@@ -39,7 +39,7 @@ O PR para `main` apenas verifica (typecheck, testes e build). Publicar ao abrir 
 3. Abram PR `release` → `main`. A CI verifica. Nada é publicado.
 4. Após o merge em `main`, a Esteira verifica, publica em HML e abre a issue `deploy-producao` com o commit e o link da homologação. Pedidos anteriores abertos são fechados como substituídos.
 5. Cada aprovador comenta `aprovado` ou `negado` na issue. A primeira palavra do comentário é o voto, e o último voto de cada pessoa vale.
-6. Um `negado` cancela e fecha a issue. Quando todos tiverem `aprovado`, `producao.yml` publica exatamente o commit da issue com `--prod`, comenta o resultado e fecha a issue. Se o deploy falhar, a issue fica aberta e um novo `aprovado` tenta outra vez.
+6. A aprovação de quem está em `APROVADORES_UNICOS` (hoje `gustapmartins`) libera sozinha; a regra dos dois aprovadores vale para os demais. Um `negado` de quem é único cancela; um `negado` de outro aprovador cancela só se nenhum único tiver aprovado. Fora esse caso, quando todos tiverem `aprovado`, `producao.yml` publica exatamente o commit da issue com `--prod`, comenta o resultado e fecha a issue. Se o deploy falhar, a issue fica aberta e um novo `aprovado` tenta outra vez.
 7. Hotfix urgente: mesmo caminho, com branch `hotfix/...` direto para `release`, sem pular a homologação.
 
 A espera pela aprovação não consome minutos do GitHub Actions.
@@ -56,7 +56,8 @@ Em Settings → Secrets and variables → Actions do repositório:
 | Secret | `VERCEL_TOKEN` | Token da conta dona do projeto de produção |
 | Secret | `VERCEL_ORG_ID` | `orgId` de `.vercel/project.json` do projeto de produção (após `vercel link`) |
 | Secret | `VERCEL_PROJECT_ID` | `projectId` do mesmo arquivo |
-| Variable (opcional) | `APROVADORES` | Logins separados por vírgula. Padrão: `gustapmartins,on3ver` |
+| Variable (opcional) | `APROVADORES` | Logins que podem votar, separados por vírgula. Padrão: `gustapmartins,on3ver` |
+| Variable (opcional) | `APROVADORES_UNICOS` | Logins cuja aprovação libera a produção sozinha. Padrão: `gustapmartins`. Para quem não está nessa lista, é preciso que todos os aprovadores aprovem |
 | Variable (opcional) | `URL_HOMOLOGACAO` | Padrão: `https://nacall-hml.vercel.app` |
 
 Os deploys usam as variáveis de ambiente Production do próprio projeto na Vercel; não há segredos no repositório. Sem os secrets de uma etapa, ela falha com uma mensagem clara e nada é publicado.
