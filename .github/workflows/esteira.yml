@@ -7,12 +7,13 @@ concurrency:
   cancel-in-progress: false
 permissions:
   contents: read
-  issues: write
 jobs:
   verificar:
     uses: ./.github/workflows/ci.yml
   homologacao:
     name: HML
+    # A produção é publicada pela Vercel (integração Git do projeto nacall-prd) a cada push na main.
+    if: github.ref == 'refs/heads/release'
     needs: verificar
     runs-on: ubuntu-latest
     env:
@@ -35,44 +36,3 @@ jobs:
       - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - run: vercel build --prod --token="$VERCEL_TOKEN"
       - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-  solicitar-producao:
-    name: Aprovação para PRD
-    if: github.ref == 'refs/heads/main'
-    needs: homologacao
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@v8
-        env:
-          URL_HOMOLOGACAO: ${{ vars.URL_HOMOLOGACAO || 'https://nacall-hml.vercel.app' }}
-          APROVADORES: ${{ vars.APROVADORES || 'gustapmartins,on3ver' }}
-          APROVADORES_UNICOS: ${{ vars.APROVADORES_UNICOS || 'gustapmartins' }}
-        with:
-          script: |
-            const label = 'deploy-producao';
-            const sha = context.sha;
-            await github.rest.issues.getLabel({ ...context.repo, name: label }).catch(() =>
-              github.rest.issues.createLabel({ ...context.repo, name: label, color: 'b60205', description: 'Aguardando aprovação para produção' }));
-            const abertas = await github.paginate(github.rest.issues.listForRepo, { ...context.repo, labels: label, state: 'open' });
-            for (const issue of abertas) {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: `Substituído pela versão \`${sha.slice(0, 7)}\`.` });
-              await github.rest.issues.update({ ...context.repo, issue_number: issue.number, state: 'closed', state_reason: 'not_planned' });
-            }
-            const commit = context.payload.head_commit?.message?.split('\n')[0] ?? sha.slice(0, 7);
-            const aprovadores = process.env.APROVADORES.split(',').map(a => `@${a.trim()}`).join(' ');
-            const unicos = process.env.APROVADORES_UNICOS.split(',').map(a => `@${a.trim()}`).join(' e ');
-            await github.rest.issues.create({
-              ...context.repo,
-              title: `Aprovar produção: ${commit}`,
-              labels: [label],
-              body: [
-                `A versão \`${sha.slice(0, 7)}\` passou nas verificações e foi publicada em homologação.`,
-                '',
-                `- Homologação: ${process.env.URL_HOMOLOGACAO}`,
-                `- Commit: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`,
-                '',
-                `${aprovadores}: confirme na homologação e comente **aprovado** para publicar, ou **negado** para cancelar.`,
-                `A aprovação de ${unicos} libera sozinha. Para os demais, a produção só é publicada quando todos os aprovadores comentarem **aprovado**.`,
-                '',
-                `<!-- sha:${sha} -->`,
-              ].join('\n'),
-            });
