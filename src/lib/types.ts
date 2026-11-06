@@ -1,5 +1,5 @@
-export type Profile = { id: string; username: string; display_name: string; bio: string; avatar_path?: string; cover_path?: string };
-export type Server = { id: string; name: string; owner_id: string; description?: string; icon_path?: string };
+export type Profile = { id: string; username: string; display_name: string; bio: string; user_number?: number; avatar_path?: string; cover_path?: string };
+export type Server = { id: string; name: string; owner_id: string | null; is_official?: boolean; description?: string; icon_path?: string };
 export type Channel = { id: string; name: string; kind: 'text' | 'voice'; server_id: string };
 export type Message = { id: string; author_id: string; body: string; created_at: string; channel_id: string | null; dm_id: string | null };
 export type Friendship = { id: string; sender_id: string; receiver_id: string; status: 'pending' | 'accepted' };
