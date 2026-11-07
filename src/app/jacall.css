@@ -38,3 +38,21 @@
 .hidden-streams button:hover{border-color:var(--accent)}
 @media(max-width:720px){.participant .camera-expand{opacity:1;transform:none;font-size:0;padding:7px}.participant .camera-expand svg{width:16px;height:16px}.screen-stream video{max-height:48dvh;object-fit:contain}.participant:fullscreen>.camera-view video{max-height:calc(100dvh - 85px)}}
 @media(prefers-reduced-motion:reduce){.participant .camera-expand{transition:none}}
+
+
+/* Desktop navigation: NACALL identity with familiar server/channel structure. */
+@media(min-width:1001px){
+.shell:not(.call-focus):not(.call-chat){grid-template-columns:72px 266px minmax(0,1fr) 224px}
+.shell .rail{gap:11px;padding:17px 8px;background:color-mix(in srgb,var(--bg),#05070d 12%)}
+.shell .rail button:not(.logo-button){border-radius:16px;transition:border-radius 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
+.shell .rail button:not(.logo-button):hover,.shell .rail button.selected{border-radius:11px}
+.shell .sidebar{background:var(--surface)}
+.shell .side-content .section-label{font-size:10px;font-weight:800;letter-spacing:.06em}
+.shell .sidebar .nav-item{min-height:39px;border-radius:9px;gap:11px;font-size:12px;transition:background-color 110ms ease}
+.shell .sidebar .nav-item:hover{background:var(--panel);color:var(--text)}
+.shell .sidebar .nav-item.active{background:var(--soft);font-weight:700}
+.shell .account{background:var(--panel);border-top:1px solid var(--line)}
+.shell .members{background:color-mix(in srgb,var(--surface),var(--bg) 18%)}
+.shell .topbar{min-height:64px;padding:12px 23px}
+}
+@media(prefers-reduced-motion:reduce){.shell .rail button,.shell .sidebar .nav-item{transition:none}}
