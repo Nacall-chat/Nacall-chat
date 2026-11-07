@@ -1,0 +1,60 @@
+{
+  "name": "nacall-desktop",
+  "productName": "NACALL",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplicativo NACALL para Windows",
+  "main": "main.cjs",
+  "author": "NACALL",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.cjs && node --test tests/*.test.cjs",
+    "dist:win": "electron-builder --win nsis portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "app.nacall.desktop",
+    "productName": "NACALL",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "security.cjs",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "NACALL-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "NACALL-Portable-${version}-${arch}.${ext}"
+    },
+    "publish": null
+  }
+}
