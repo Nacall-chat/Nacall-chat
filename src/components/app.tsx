@@ -110,8 +110,10 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   useEffect(() => { void load().catch(e => setNotice(errorText(e))); }, [load]);
   useEffect(() => {
     const sub = db.channel(`social-${me}`).on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, () => void load().catch(e => setNotice(errorText(e)))).on('postgres_changes', { event: '*', schema: 'public', table: 'dms' }, () => void load().catch(e => setNotice(errorText(e)))).subscribe();
-    const timer=window.setInterval(()=>void load().catch(()=>{}),30000);
-    return () => { window.clearInterval(timer);void db.removeChannel(sub); };
+    const refreshIfVisible=()=>{if(document.visibilityState==='visible')void load().catch(()=>{});};
+    const timer=window.setInterval(refreshIfVisible,120000);
+    document.addEventListener('visibilitychange',refreshIfVisible);
+    return () => { window.clearInterval(timer);document.removeEventListener('visibilitychange',refreshIfVisible);void db.removeChannel(sub); };
   }, [db, me, load]);
   useEffect(() => {
     setMembers([]);

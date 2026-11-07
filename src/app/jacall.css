@@ -16,3 +16,43 @@
 @media(max-width:360px){.jacall-hero h1{font-size:42px}.jacall-nav{gap:10px}.jacall-nav .brand-name{font-size:22px}.landing-login{padding:9px 13px}.call-dock .voice-compact .call-controls button,.call-dock .voice-compact .leave-call{width:31px;min-width:31px}.call-dock .voice-compact .call-controls{gap:1px}}
 
 .jacall-character{inset:60px auto 0 50%;width:auto;height:calc(100% - 60px);aspect-ratio:.64;transform:translateX(-50%)}
+
+
+/* Video experience: preserve the full camera image and let viewers choose what to watch. */
+.participant>.camera-view{display:block;width:100%;min-height:0;padding:0;border:0;border-radius:0;background:#0b0e13;color:#fff;overflow:hidden;position:relative;cursor:zoom-in}
+.participant>.camera-view video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#0b0e13}
+.participant .camera-expand{position:absolute;right:10px;top:10px;display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:8px;background:#0a1016c9;color:#fff;font-size:11px;font-weight:700;opacity:0;transform:translateY(-2px);transition:opacity 120ms ease,transform 120ms ease;pointer-events:none}
+.participant>.camera-view:hover .camera-expand,.participant>.camera-view:focus-visible .camera-expand{opacity:1;transform:none}
+.participant>.camera-view:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.participant:fullscreen{display:flex;flex-direction:column;width:100vw;height:100dvh;border:0;border-radius:0;background:#090c12;overflow:hidden}
+.participant:fullscreen>.camera-view{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0;cursor:zoom-out}
+.participant:fullscreen>.camera-view video{width:100%;height:100%;max-height:calc(100dvh - 90px);aspect-ratio:auto;object-fit:contain}
+.participant:fullscreen>.camera-view .camera-expand{opacity:1;transform:none}
+.participant:fullscreen .participant-label{width:100%;flex-shrink:0;padding:14px 22px}
+.participant:fullscreen .participant-volume{flex-shrink:0;max-width:320px}
+.screen-stream video{width:100%;height:auto;max-height:min(55dvh,720px);aspect-ratio:16/9;object-fit:contain;background:#080a0e}
+.screen-stream:fullscreen{width:100vw;height:100dvh;border:0;border-radius:0;background:#080a0e}
+.screen-stream:fullscreen video{width:100%;height:calc(100dvh - 50px);max-height:none;aspect-ratio:auto;object-fit:contain}
+.hidden-streams{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
+.hidden-streams button{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;font-size:11px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px}
+.hidden-streams button:hover{border-color:var(--accent)}
+@media(max-width:720px){.participant .camera-expand{opacity:1;transform:none;font-size:0;padding:7px}.participant .camera-expand svg{width:16px;height:16px}.screen-stream video{max-height:48dvh;object-fit:contain}.participant:fullscreen>.camera-view video{max-height:calc(100dvh - 85px)}}
+@media(prefers-reduced-motion:reduce){.participant .camera-expand{transition:none}}
+
+
+/* Desktop navigation: NACALL identity with familiar server/channel structure. */
+@media(min-width:1001px){
+.shell:not(.call-focus):not(.call-chat){grid-template-columns:72px 266px minmax(0,1fr) 224px}
+.shell .rail{gap:11px;padding:17px 8px;background:color-mix(in srgb,var(--bg),#05070d 12%)}
+.shell .rail button:not(.logo-button){border-radius:16px;transition:border-radius 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
+.shell .rail button:not(.logo-button):hover,.shell .rail button.selected{border-radius:11px}
+.shell .sidebar{background:var(--surface)}
+.shell .side-content .section-label{font-size:10px;font-weight:800;letter-spacing:.06em}
+.shell .sidebar .nav-item{min-height:39px;border-radius:9px;gap:11px;font-size:12px;transition:background-color 110ms ease}
+.shell .sidebar .nav-item:hover{background:var(--panel);color:var(--text)}
+.shell .sidebar .nav-item.active{background:var(--soft);font-weight:700}
+.shell .account{background:var(--panel);border-top:1px solid var(--line)}
+.shell .members{background:color-mix(in srgb,var(--surface),var(--bg) 18%)}
+.shell .topbar{min-height:64px;padding:12px 23px}
+}
+@media(prefers-reduced-motion:reduce){.shell .rail button,.shell .sidebar .nav-item{transition:none}}
