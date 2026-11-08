@@ -27,6 +27,13 @@ jobs:
       - name: Validar segurança e sintaxe
         working-directory: desktop
         run: npm run check
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preparar ícone Jacall para Windows
+        run: |
+          python -m pip install "Pillow==11.3.0"
+          python desktop/scripts/make_icon.py
       - name: Compilar instalador e portable
         working-directory: desktop
         run: npm run dist:win
