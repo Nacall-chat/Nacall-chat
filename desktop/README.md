@@ -3,7 +3,7 @@
 Primeiro aplicativo nativo para Windows, desenvolvido com **Electron 45**, mantendo o NACALL web como interface e backend. **É online**: usa `https://nacall.vercel.app` com a mesma conta e comunidades.
 
 ## O que esta versão entrega
-- Janela independente, ícone na barra de tarefas (genérico na v0.1), inicialização de instância única, atualizar com Ctrl+R e tela cheia com F11.
+- Janela independente, ícone oficial Jacall na barra de tarefas e instalador, inicialização de instância única, atualizar com Ctrl+R e tela cheia com F11.
 - Isolamento de contexto, sandbox, integração Node desabilitada, navegação restrita ao domínio oficial, links externos HTTPS no navegador padrão.
 - Permissões de câmera/microfone e **seleção explícita** de tela ou janela ao transmitir no Windows (sem compartilhar a tela automaticamente).
 - Reaproveita login, chats, servidores e chamadas já presentes na versão web, sem duplicar a lógica LiveKit/Supabase.
@@ -19,6 +19,8 @@ Localmente no Windows com Node 22 ou mais recente:
 cd desktop
 npm install
 npm run check
+python -m pip install Pillow==11.3.0
+python scripts/make_icon.py
 npm run dist:win
 ```
 
