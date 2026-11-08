@@ -56,3 +56,86 @@
 .shell .topbar{min-height:64px;padding:12px 23px}
 }
 @media(prefers-reduced-motion:reduce){.shell .rail button,.shell .sidebar .nav-item{transition:none}}
+
+
+/* NACALL official mascot branding: primary identity, minimal N only for tiny icons. */
+.gamer-brand{display:inline-flex;align-items:center;gap:9px;min-width:0}
+.gamer-brand .brand-avatar{display:block;object-fit:cover;border-radius:50%;width:42px;height:42px;box-shadow:0 0 0 2px #53efaa80,0 0 17px #8c45ed38;flex-shrink:0}
+.gamer-brand .brand-name{white-space:nowrap;letter-spacing:-1.3px;font-size:clamp(19px,2vw,27px);font-weight:950;line-height:1.05}
+.gamer-brand .brand-na{color:var(--text)}
+.gamer-brand .brand-call{color:#4ee8a0}
+.gamer-brand .brand-period{color:#31dded}
+.gamer-brand.compact .brand-avatar{width:42px;height:42px}
+.welcome-mark{opacity:.8;right:2%;top:10px;transform:none}
+.welcome-mark img{width:clamp(105px,13vw,180px);height:auto;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 14px 18px #5236be44)}
+.mobile-bottom-nav{display:none}
+
+@media(max-width:720px){
+/* One usable column + persistent bottom navigation; no permanent 56px rail. */
+.shell,.shell.call-focus,.shell.call-chat{display:grid;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) auto;min-width:0;width:100%;height:100dvh!important;min-height:0!important;overflow:hidden!important;position:relative}
+.shell>.rail{display:none!important}
+.shell>.main,.shell:not(.has-call)>.main{grid-column:1!important;grid-row:1!important;width:100%;height:100%;min-height:0!important;min-width:0;overflow:hidden}
+.shell.call-focus>.main{display:none!important}
+.shell.call-focus>.call-dock,.shell.call-chat>.call-dock{grid-column:1!important;grid-row:1!important;width:100%;height:100%;min-height:0;border:0}
+.shell.call-chat{grid-template-rows:minmax(0,1fr) minmax(170px,31dvh) auto}
+.shell.call-chat>.main{display:flex!important;grid-column:1!important;grid-row:1!important;min-height:0}
+.shell.call-chat>.call-dock{grid-column:1!important;grid-row:2!important;border-top:1px solid var(--line);min-height:0;overflow:auto}
+.shell.call-focus>.call-dock{grid-row:1!important;min-height:0}
+.mobile-bottom-nav{grid-column:1;grid-row:-2/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:2px;background:#101725;border-top:1px solid #3d4c62;z-index:55;min-height:64px;padding:5px 6px calc(5px + env(safe-area-inset-bottom));box-shadow:0 -10px 24px #05071444}
+.mobile-bottom-nav button{position:relative;min-width:0;min-height:52px;padding:6px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid transparent;background:transparent;color:#aab8cd;border-radius:12px;font-size:10px;font-weight:750}
+.mobile-bottom-nav button.active{color:#65f4b0;background:#213e36;border-color:#426d5e}
+.mobile-bottom-nav button:focus-visible{outline:2px solid #47e7db;outline-offset:-2px}
+.mobile-bottom-nav svg{width:21px;height:21px;flex-shrink:0}
+.mobile-nav-dot,.mobile-call-dot{position:absolute;top:4px;right:calc(50% - 21px);width:7px;height:7px;border-radius:50%;background:#fb7185;border:1px solid #101725}
+.mobile-call-dot{background:#4bf3a8}
+.shell>.sidebar,.shell:not(.has-call)>.sidebar,.call-focus>.sidebar{display:none;position:absolute!important;grid-column:auto!important;grid-row:auto!important;inset:0 auto 64px 0!important;width:min(88vw,350px)!important;max-width:350px;height:calc(100% - 64px)!important;max-height:none!important;min-height:0;z-index:74;background:#172031;box-shadow:12px 0 35px #05081670;overflow:hidden}
+.shell.nav-open>.sidebar{display:flex!important}
+.shell>.sidebar>header{padding:12px 60px 12px 18px;min-height:66px}
+.shell>.sidebar .brand-avatar{width:38px;height:38px}
+.shell>.sidebar .brand-name{font-size:23px}
+.shell>.sidebar .side-content{padding:12px 14px 20px;overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:0}
+.shell>.sidebar .side-content .nav-item{min-height:46px;font-size:13px;line-height:1.25;padding:10px 12px}
+.shell>.sidebar .side-content h2{margin:9px 0 14px;font-size:20px}
+.shell>.sidebar .account{min-height:72px;padding:10px 12px;flex-shrink:0}
+.shell>.sidebar .account strong{font-size:12px}
+.shell>.sidebar .account button{min-height:44px;min-width:40px;padding:8px}
+.mobile-nav-toggle{position:absolute;display:flex;align-items:center;justify-content:center;z-index:82;left:10px;top:10px;width:42px;height:42px;min-height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.nav-open .mobile-nav-toggle{left:auto;right:11px;top:11px}
+.mobile-nav-shade{position:absolute!important;z-index:72;inset:0 0 64px 0!important;width:100%!important;height:calc(100% - 64px)!important;border-radius:0;background:#050814aa}
+.main>.topbar{padding:10px 12px 10px 62px;min-height:61px;gap:6px}
+.main>.topbar strong{font-size:14px;max-width:min(49vw,230px)}
+.main>.topbar>button{min-height:40px;font-size:11px;padding:8px}
+.main .dashboard{padding:17px 15px 25px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.main .welcome{padding-bottom:18px;margin-bottom:19px}
+.main .welcome h1{font-size:clamp(29px,8vw,40px);line-height:1.13;margin:14px 0}
+.main .welcome-mark{display:block;position:absolute;right:0;top:0;opacity:.24;max-width:100px}
+.main .welcome-mark img{max-width:100px;width:100%;height:auto}
+.main .card{padding:17px;border-radius:13px}
+.main .card h2{font-size:17px}
+.main .card p,.main .welcome p{font-size:13px;line-height:1.5}
+.main .friend-row{gap:9px;padding:12px 0}
+.main .friend-row button{min-height:42px;font-size:11px}
+.main .message-list{flex:1;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;padding:12px 13px;scrollbar-gutter:auto}
+.main .message{gap:10px;padding:11px 0}
+.main .message strong{font-size:13px}
+.main .message p{font-size:14px;line-height:1.45}
+.main .message time{font-size:10px}
+.main .composer{flex-shrink:0;gap:8px;padding:9px 10px calc(10px + env(safe-area-inset-bottom));min-width:0}
+.main .composer input{min-width:0;flex:1;font-size:16px;min-height:46px;border-radius:12px}
+.main .composer button{min-width:67px;min-height:46px;font-size:12px}
+.call-dock .voice-panel{max-height:none!important;min-height:0;overflow:auto}
+.call-dock .call-stage{min-height:0;overflow:auto;padding:10px}
+.call-dock .voice-heading{padding:10px 9px 10px 61px;min-height:58px}
+.call-dock .voice-heading strong{max-width:clamp(75px,32vw,190px)}
+.call-dock .call-toolbar{min-width:0}
+.call-dock .voice-compact .call-toolbar{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;gap:5px;flex-shrink:0}
+.call-dock .voice-compact .call-controls{flex:0 0 auto!important;gap:5px!important}
+.call-dock .voice-compact .call-controls button,.call-dock .voice-compact .leave-call{min-width:44px!important;width:44px!important;min-height:44px!important;height:44px!important}
+.call-dock .voice-compact .screen-stream video{max-height:25dvh}
+.call-dock .voice-compact .participants{display:flex;flex-direction:row;overflow-x:auto;overscroll-behavior-x:contain}
+.call-dock .call-controls button:focus-visible,.call-dock .leave-call:focus-visible{outline:2px solid #4beec1;outline-offset:1px}
+.settings-panel,.group-settings{max-width:calc(100vw - 12px);max-height:calc(100dvh - 14px)}
+.settings-body,.settings-content{min-width:0;max-height:calc(100dvh - 150px);overflow-y:auto}
+}
+@media(max-width:380px){.mobile-bottom-nav button{font-size:9px}.main .dashboard{padding:13px 10px}.main .welcome h1{font-size:29px}.shell>.sidebar{width:min(91vw,330px)!important}}
+@media(prefers-reduced-motion:reduce){.mobile-bottom-nav button{transition:none}.main .message-list{scroll-behavior:auto}}
