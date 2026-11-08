@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import dynamic from 'next/dynamic';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
-import { Hash, Headphones, Plus, Users, Radio, LogOut, Settings, ArrowRight, MessageCircle, SunMoon, Gamepad2, ShieldCheck, Menu, X } from 'lucide-react';
+import { Hash, Headphones, Plus, Users, Radio, LogOut, Settings, ArrowRight, MessageCircle, SunMoon, Gamepad2, ShieldCheck, Menu, X, House, Compass } from 'lucide-react';
 import {Landing} from './landing';
 import {CommunityCount} from './community-count';
 import { getSupabase } from '@/lib/supabase';
@@ -207,6 +207,12 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
       {servers.map(s => <button key={s.id} className={serverId === s.id ? 'selected' : ''} title={s.name} onClick={() => { setServerId(s.id); setTarget(null); setMobileNavOpen(true); }}><GroupIcon server={s}/></button>)}
       <button title="Criar ou entrar em servidor" onClick={() => { setServerId(null); setTarget(null); document.getElementById('new-server')?.focus(); }}><Plus size={23} /></button>
       <button className="rail-theme" title="Escolher tema" aria-label="Escolher tema" onClick={() => {setSettingsTab('appearance');setSettings(true);}}><SunMoon size={21}/></button><span className="rail-bottom">NACALL</span></nav>
+    <nav className="mobile-bottom-nav" aria-label="Navegação mobile">
+      <button type="button" className={!serverId&&!target&&!voice?'active':''} aria-label="Ir para o início" onClick={()=>{setServerId(null);setTarget(null);setMobileNavOpen(false);}}><House size={21}/><span>Início</span></button>
+      <button type="button" className={serverId&&!target?'active':''} aria-label="Ver comunidades e canais" onClick={()=>{const official=servers.find(s=>s.is_official);if(!serverId&&official)setServerId(official.id);setMobileNavOpen(true);}}><Compass size={21}/><span>Servidores</span></button>
+      <button type="button" className={target?.type==='dm'?'active':''} aria-label="Ver mensagens privadas" onClick={()=>{setServerId(null);setTarget(null);setMobileNavOpen(true);}}><MessageCircle size={21}/><span>Mensagens</span>{friends.some(f=>f.receiver_id===me&&f.status==='pending')&&<i className="mobile-nav-dot" aria-label="Solicitações pendentes"/>}</button>
+      <button type="button" className={voice?'active':''} aria-label={voice?'Abrir chamada atual':'Escolher sala de voz'} onClick={()=>{if(voice){const c=channels.find(c=>c.id===voice.channelId);if(c)setServerId(c.server_id);setTarget(null);setMobileNavOpen(false);}else{const official=servers.find(s=>s.is_official);if(!serverId&&official)setServerId(official.id);setMobileNavOpen(true);}}}><Headphones size={21}/><span>Call</span>{voice&&<i className="mobile-call-dot"/>}</button>
+    </nav>
     <aside className="sidebar" id="workspace-sidebar"><header><Brand/></header>
       <div className="side-content"><div className="section-label">{server ? 'COMUNIDADE' : 'CONEXÕES'}</div><h2>{server?.name || 'Seu ponto de encontro'}</h2>
         {server ? <><div className="group-sidebar-profile"><GroupIcon server={server}/><p className="muted small">{server.description||"O lobby dessa galera."}</p></div><div className="section-label">CANAIS DE TEXTO</div>{channels.filter(c => c.server_id === serverId && c.kind === 'text').map(c => <button className={`nav-item ${target?.id === c.id ? 'active' : ''}`} key={c.id} onClick={() => {setTarget({ id: c.id, type: 'channel', name: c.name });setMobileNavOpen(false);}}><Hash size={18} />{c.name}</button>)}
