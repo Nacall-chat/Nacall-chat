@@ -43,6 +43,18 @@ export async function sessionUser(request: Request, env: ServerEnv): Promise<Ses
 }
 /** Conta com 2FA ativo só passa com sessão aal2. */
 export const needsSecondFactor = (s: Pick<SessionInfo, 'mfa' | 'aal'>) => s.mfa && s.aal !== 'aal2';
+export type MailError = 'rate' | 'delivery' | 'other';
+/** O que fazer com o erro de um pedido que dispara email: esperar (limite de envio), avisar que o email não saiu (SMTP recusado, provedor fora, rede) ou tratar como erro de quem digitou. */
+export function classifyMailError(error: { status?: number; code?: string }): MailError {
+  const status = error.status ?? 0;
+  if (status === 429 || error.code === 'over_email_send_rate_limit') return 'rate';
+  if (status === 0 || status >= 500 || error.code === 'unexpected_failure' || error.code === 'email_address_not_authorized') return 'delivery';
+  return 'other';
+}
+/** Com a confirmação de email ligada, cadastrar um email que já tem conta "funciona", mas o Supabase devolve um usuário sem identidades. */
+export const emailAlreadyRegistered = (user: Pick<User, 'identities'> | null | undefined) => !!user && Array.isArray(user.identities) && user.identities.length === 0;
+/** Log do servidor (Vercel) só com o essencial: nunca email, IP, senha ou o texto do erro. */
+export function logAuthFailure(action: string, error: { status?: number; code?: string }) { console.error(`[auth] ${action} falhou: status=${error.status ?? '?'} code=${error.code ?? '?'}`); }
 /** Email do login: o próprio email, ou o do dono do username. Nunca expõe tabelas administrativas ao navegador. */
 export async function resolveEmail(admin: SupabaseClient, identifier: string): Promise<string | null> {
   if (identifier.includes('@')) return identifier;

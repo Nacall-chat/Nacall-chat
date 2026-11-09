@@ -23,27 +23,27 @@ export function Auth({db}:{db:SupabaseClient}){
  const[mode,setMode]=useState<Mode>('login');
  const[identifier,setIdentifier]=useState('');const[username,setUsername]=useState('');const[name,setName]=useState('');const[email,setEmail]=useState('');
  const[password,setPassword]=useState('');const[confirm,setConfirm]=useState('');const[code,setCode]=useState('');
- const[busy,setBusy]=useState(false);const[feedback,setFeedback]=useState('');const[themeOpen,setThemeOpen]=useState(false);const[cooldown,setCooldown]=useState(0);
+ const[busy,setBusy]=useState(false);const[feedback,setFeedback]=useState('');const[themeOpen,setThemeOpen]=useState(false);const[cooldown,setCooldown]=useState(0);const[existing,setExisting]=useState(false);
  useEffect(()=>{if(cooldown<=0)return;const timer=setTimeout(()=>setCooldown(cooldown-1),1000);return()=>clearTimeout(timer);},[cooldown]);
  const newPassword=mode==='signup'||mode==='recover-confirm';
  const passwordHint=newPassword&&password?passwordIssue(password)??undefined:undefined;
  const mismatch=newPassword&&confirm&&confirm!==password?'As senhas não conferem.':undefined;
- function go(next:Mode,message=''){setMode(next);setFeedback(message);setPassword('');setConfirm('');setCode('');}
+ function go(next:Mode,message=''){setMode(next);setFeedback(message);setExisting(false);setPassword('');setConfirm('');setCode('');}
  async function enter(session:Credentials){const{error}=await db.auth.setSession(session);if(error)throw error;router.replace('/');}
  // A mesma validação do servidor roda aqui antes de enviar, para o erro aparecer sem esperar a rede.
  function validated<T extends {action:string}>(body:T):T{const result=authSchema.safeParse(body);if(!result.success)throw new Error(result.error.issues[0]?.message??'Confira os campos.');return body;}
  async function submit(e:FormEvent){
-  e.preventDefault();setBusy(true);setFeedback('');
+  e.preventDefault();setBusy(true);setFeedback('');setExisting(false);
   try{
    if(mode==='login'){const result=await postJson<{session:Credentials}>('/api/auth',validated({action:'login',identifier,password}));await enter(result.session);return;}
    if(mode==='signup'){await postJson('/api/auth',validated({action:'signup',username,displayName:name,email,password,confirmPassword:confirm}));go('verify',`Enviamos um código para ${email}. Confira também o spam.`);setCooldown(60);return;}
    if(mode==='verify'){await postJson('/api/auth',validated({action:'verify',email,code}));window.dispatchEvent(new Event('nacall-signup'));go('login','Email confirmado! Agora é só entrar.');setIdentifier(username||email);return;}
-   if(mode==='recover'){await postJson('/api/auth',validated({action:'recover',email}));go('recover-confirm','Se o email tiver conta, o código já está a caminho.');return;}
+   if(mode==='recover'){await postJson('/api/auth',validated({action:'recover',email}));go('recover-confirm','Se o email tiver conta, o código já está a caminho. Confira também o spam.');return;}
    await postJson('/api/auth',validated({action:'recover-confirm',email,code,password,confirmPassword:confirm}));go('login','Senha atualizada. Entre com a nova senha.');setIdentifier(email);
   }catch(error){
    const failure=error as ApiError;
    if(failure.data?.needsVerification){setEmail(String(failure.data.email??''));go('verify',failure.message);}
-   else setFeedback(errorText(error));
+   else{setFeedback(errorText(error));setExisting(failure.data?.code==='email_exists');}
   }finally{setBusy(false);}
  }
  async function resend(){if(cooldown>0||busy)return;setBusy(true);setFeedback('');try{await postJson('/api/auth',validated({action:'resend',email}));setFeedback('Código reenviado. Pode levar um minutinho.');setCooldown(60);}catch(error){setFeedback(errorText(error));}finally{setBusy(false);}}
@@ -65,5 +65,6 @@ export function Auth({db}:{db:SupabaseClient}){
  </form>
  {mode==='verify'&&<div className="auth-links"><button className="link" disabled={cooldown>0||busy} onClick={()=>void resend()}>{cooldown>0?`Reenviar código em ${cooldown}s`:'Reenviar código'}</button><button className="link" onClick={()=>go('signup')}>Corrigir meus dados</button></div>}
  {mode!=='verify'&&<div className="auth-links"><button className="link" onClick={()=>go(mode==='signup'?'login':'signup')}>{mode==='signup'?'Já sou da casa. Entrar':'Primeira call? Crie sua conta'}</button><button className="link" onClick={()=>go(mode==='recover'||mode==='recover-confirm'?'login':'recover')}>{mode==='recover'||mode==='recover-confirm'?'Voltar ao login':'Esqueci a senha'}</button></div>}
- {feedback&&<p className="form-feedback" role="status">{feedback}</p>}<small className="auth-smallprint">Microfone e tela só são acessados quando você decide ativá-los.</small></section></div></main>;
+ {feedback&&<p className="form-feedback" role="status">{feedback}</p>}
+ {existing&&mode==='signup'&&<div className="auth-links"><button type="button" className="link" onClick={()=>{setIdentifier(email);go('login');}}>Entrar com esse email</button><button type="button" className="link" onClick={()=>go('recover')}>Esqueci a senha</button></div>}<small className="auth-smallprint">Microfone e tela só são acessados quando você decide ativá-los.</small></section></div></main>;
 }

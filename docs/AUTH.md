@@ -13,7 +13,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 
 | Fluxo | Passos |
 | --- | --- |
-| Cadastro | `signup` valida usuário, email e senha (12+ caracteres, confirmada) → Supabase cria a conta e envia o código → tela de código → `verify` confirma → volta ao login |
+| Cadastro | `signup` valida usuário, email e senha (12+ caracteres, confirmada) → Supabase cria a conta e envia o código → tela de código → `verify` confirma → volta ao login. Se o **email já tem conta** ou o **usuário já está em uso**, a tela avisa (409) e, no caso do email, oferece "Entrar" e "Esqueci a senha". Cadastro que ficou sem confirmar (mesmo email e usuário) refaz o envio do código em vez de travar |
 | Código | 6 dígitos, uso único, validade configurada no Supabase (10 min), reenvio com intervalo de 60 s |
 | Login | Usuário **ou** email + senha. Resposta única para usuário inexistente e senha errada |
 | Recuperação | `recover` (resposta igual exista ou não a conta) → código por email → `recover-confirm` com nova senha 12+ confirmada → sessões antigas são encerradas |
@@ -35,7 +35,8 @@ As mesmas regras (`src/lib/auth-schema.ts`) rodam no navegador (feedback imediat
 ## Proteções
 
 - **Limites de tentativas** (`consume_rate_limit`, só `service_role`): por IP, por email, por usuário e por ação. O banco guarda somente o HMAC (SHA-256 com a chave de serviço), nunca IP ou email puros. Além disso valem os limites nativos do Supabase para envio de email e verificação de código.
-- **Enumeração:** `login` devolve a mesma mensagem para usuário inexistente e senha errada; `recover` e `resend` respondem igual exista ou não a conta; o cadastro com email já usado responde como se tivesse funcionado (comportamento do Supabase com confirmação ligada). Exceção deliberada: o cadastro informa que o **username** já está em uso, necessário para a experiência.
+- **Enumeração:** `login` devolve a mesma mensagem para usuário inexistente e senha errada, e `recover` responde igual exista ou não a conta. Exceção deliberada (decisão do produto, 2026-11-08): o **cadastro** informa quando o **username** ou o **email** já têm conta, porque deixar a pessoa sem aviso (o Supabase, sozinho, responde "ok" e não envia nada) era pior do que expor isso. O custo é que dá para descobrir se um email tem conta; a mitigação é o limite por IP (5 cadastros/10 min) e o limite global de 60 pedidos/5 min.
+- **Falha de envio nunca vira "enviado":** se o Supabase não consegue mandar o email (SMTP recusado, provedor fora do ar, limite de envio), `signup`, `resend` e `recover` respondem 503 ("Não conseguimos enviar o email agora") ou 429 ("Aguarde um minuto"), e o motivo (status e código, nunca email nem IP) vai para o log do servidor na Vercel com o prefixo `[auth]`.
 - **Código inválido e expirado** compartilham uma mensagem: o Supabase não distingue os dois casos.
 - **Cadastros abandonados:** o perfil nasce no cadastro, então `purge_unconfirmed_accounts()` libera nicks de contas não confirmadas há mais de 1 dia (executa a cada cadastro).
 - **Códigos de recuperação do 2FA:** 10 códigos de 12 caracteres (~59 bits), só o hash SHA-256 fica em `mfa_recovery_codes` (RLS ligado, sem acesso de clientes). Usar um código desfaz o 2FA (o Supabase não tem "aal2 por código de backup") e a pessoa configura de novo. Gerar novos invalida os anteriores.
@@ -56,6 +57,14 @@ Sem isto o cadastro por código não funciona. Feito no painel, em cada projeto.
 6. **Authentication → URL Configuration:** Site URL do ambiente (`https://nacall-hml.vercel.app` em HML, `https://nacall.vercel.app` em PRD).
 
 Na Vercel não há variável nova: continuam as seis de `.env.example`.
+
+### O email não chega: como diagnosticar
+
+1. **Supabase → Logs → Auth**: procure a linha `ERROR` do pedido (`/recover`, `/signup` ou `/resend`) e abra os detalhes. O campo `error` diz o motivo.
+2. **`535 5.7.8 Username and Password not accepted`**: o Gmail recusou o login do SMTP. A senha salva no Supabase não é uma **senha de app** válida para o usuário configurado (é a senha normal da conta, foi digitada errada, foi revogada ou pertence a outra conta Google). Gere uma senha de app nova na conta que é o *Sender/Username* e cole em **Authentication → Emails → SMTP Settings → Password**. O painel nunca mostra a senha salva; só dá para substituí-la.
+3. **`auth.users.recovery_sent_at` / `confirmation_sent_at` não mudam** depois do pedido: o envio falhou e o Supabase desfez a operação. O contrário (campo atualizado e nada na caixa) aponta para spam ou bloqueio do destinatário.
+4. **Cadastro "sem email nenhum"**: confira se aquele email já tem conta (Authentication → Users). Com a conta já confirmada o Supabase não envia nada; o app agora avisa isso na tela.
+5. Limites: o SMTP padrão do Supabase só entrega para membros do time (2 emails/hora); com SMTP próprio vale "emails sent per hour" em Authentication → Rate Limits, além do intervalo de 60 s por endereço.
 
 ## Banco
 

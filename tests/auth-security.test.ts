@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 import {authSchema,mfaSchema,passwordChangeSchema,passwordIssue} from '../src/lib/auth-schema';
-import {bucketKey,generateRecoveryCodes,hasVerifiedFactor,hashRecoveryCode,jwtClaims,needsSecondFactor,normalizeRecoveryCode} from '../src/lib/auth-server';
+import {bucketKey,classifyMailError,emailAlreadyRegistered,generateRecoveryCodes,hasVerifiedFactor,hashRecoveryCode,jwtClaims,needsSecondFactor,normalizeRecoveryCode} from '../src/lib/auth-server';
 const base={action:'signup',username:'nick_01',displayName:'Nick',email:'nick@exemplo.com',password:'Tr0ca-Esta-Senha!',confirmPassword:'Tr0ca-Esta-Senha!'};
 test('senha exige 12+ caracteres, mistura e rejeita as óbvias; aceita frases longas',()=>{
  assert.match(passwordIssue('curta1!')!,/12/);
@@ -61,6 +61,22 @@ test('nível da sessão vem do JWT e conta com 2FA só passa em aal2; limites gu
  assert.equal(needsSecondFactor({mfa:true,aal:'aal1'}),true);assert.equal(needsSecondFactor({mfa:true,aal:'aal2'}),false);assert.equal(needsSecondFactor({mfa:false,aal:'aal1'}),false);
  const key=bucketKey('segredo','login','Maria@Exemplo.com');
  assert.match(key,/^[0-9a-f]{64}$/);assert.equal(key,bucketKey('segredo','login','maria@exemplo.com'));assert.notEqual(key,bucketKey('outro','login','maria@exemplo.com'));assert.ok(!key.includes('maria'));
+});
+test('falha de email: separa limite de envio, entrega quebrada (SMTP, rede) e erro de quem digitou; reconhece email já cadastrado',()=>{
+ assert.equal(classifyMailError({status:429,code:'over_email_send_rate_limit'}),'rate');
+ assert.equal(classifyMailError({status:429}),'rate');
+ assert.equal(classifyMailError({code:'over_email_send_rate_limit'}),'rate');
+ assert.equal(classifyMailError({status:500,code:'unexpected_failure'}),'delivery');// Gmail recusou a senha do SMTP
+ assert.equal(classifyMailError({status:502}),'delivery');
+ assert.equal(classifyMailError({status:0}),'delivery');
+ assert.equal(classifyMailError({}),'delivery');// sem status: a rede falhou
+ assert.equal(classifyMailError({status:400,code:'email_address_not_authorized'}),'delivery');
+ assert.equal(classifyMailError({status:400,code:'validation_failed'}),'other');
+ assert.equal(classifyMailError({status:422,code:'weak_password'}),'other');
+ assert.equal(emailAlreadyRegistered({identities:[]}),true);
+ assert.equal(emailAlreadyRegistered({identities:[{id:'1'} as never]}),false);
+ assert.equal(emailAlreadyRegistered({identities:undefined}),false);
+ assert.equal(emailAlreadyRegistered(null),false);assert.equal(emailAlreadyRegistered(undefined),false);
 });
 test('migration de segurança: apaga contas antigas, protege códigos 2FA, limita tentativas e libera nicks abandonados',async()=>{
  const db=new PGlite();const u=(n:number)=>`${n}${n}${n}${n}${n}${n}${n}${n}-1111-4111-8111-111111111111`;

@@ -1,8 +1,18 @@
 import { authSchema } from '@/lib/auth-schema';
-import { adminClient, allow, anonClient, clientIp, reply, resolveEmail, serverEnv } from '@/lib/auth-server';
+import { adminClient, allow, anonClient, classifyMailError, clientIp, emailAlreadyRegistered, logAuthFailure, reply, resolveEmail, serverEnv } from '@/lib/auth-server';
 export const runtime = 'nodejs';
 const wrong = 'Usuário/email ou senha não conferem.';
 const tooMany = 'Muitas tentativas. Dá uma pausa de alguns minutos e tenta de novo.';
+const emailExists = 'Esse email já tem uma conta. Entre com ela ou recupere a senha.';
+const mailDown = 'Não conseguimos enviar o email agora. Tente de novo em alguns minutos; se continuar, avise a equipe.';
+/** Falha do Supabase ao disparar um email. O motivo vai para o log do servidor; a pessoa nunca fica com um "enviado" falso. */
+function mailFailure(action: string, error: { status?: number; code?: string }, other: string) {
+  logAuthFailure(action, error);
+  const kind = classifyMailError(error);
+  if (kind === 'rate') return reply({ error: 'Aguarde um minuto antes de pedir outro código.', code: 'rate_limited' }, 429);
+  if (kind === 'delivery') return reply({ error: mailDown, code: 'mail_failed' }, 503);
+  return reply({ error: other }, 400);
+}
 export async function POST(request: Request) {
   const env = serverEnv();
   if (!env) return reply({ error: 'O login ainda não está configurado no servidor.' }, 503);
@@ -21,14 +31,20 @@ export async function POST(request: Request) {
         await admin.rpc('purge_unconfirmed_accounts'); // libera nicks de cadastros abandonados há mais de um dia
         const taken = await admin.from('profiles').select('id').eq('username', input.username).maybeSingle();
         if (taken.error) return reply({ error: 'Não foi possível consultar o nome de usuário.' }, 503);
-        if (taken.data) return reply({ error: 'Esse usuário já está na party. Escolha outro nome.' }, 409);
-        // O Supabase cria a conta, envia o código e, se o email já tiver conta, responde igual (não revela quem existe).
-        const { error } = await anonClient(env).auth.signUp({ email: input.email, password: input.password, options: { data: { username: input.username, display_name: input.displayName } } });
+        if (taken.data) {
+          // O nick pode ser do próprio dono deste email: conta já criada ou cadastro que ficou sem confirmar.
+          const owner = (await admin.auth.admin.getUserById(taken.data.id)).data.user;
+          if (!owner || owner.email?.toLowerCase() !== input.email) return reply({ error: 'Esse usuário já está na party. Escolha outro nome.', code: 'username_taken' }, 409);
+          if (owner.email_confirmed_at) return reply({ error: emailExists, code: 'email_exists' }, 409);
+          // Cadastro pendente do mesmo email e usuário: refazer o cadastro reenvia o código em vez de travar a pessoa.
+        }
+        // O Supabase cria a conta e envia o código. Com a confirmação ligada, um email que já tem conta volta como usuário sem identidades.
+        const { data, error } = await anonClient(env).auth.signUp({ email: input.email, password: input.password, options: { data: { username: input.username, display_name: input.displayName } } });
         if (error) {
           if (error.code === 'weak_password') return reply({ error: 'Essa senha é fraca demais. Escolha outra.' }, 400);
-          if (error.status === 429 || error.code === 'over_email_send_rate_limit') return reply({ error: 'Muitos emails enviados. Aguarde alguns minutos e tente de novo.' }, 429);
-          return reply({ error: 'Não foi possível criar a conta agora. Tente novamente em instantes.' }, 400);
+          return mailFailure('signup', error, 'Não foi possível criar a conta agora. Tente novamente em instantes.');
         }
+        if (emailAlreadyRegistered(data.user)) return reply({ error: emailExists, code: 'email_exists' }, 409);
         return reply({ ok: true, email: input.email });
       }
       case 'verify': {
@@ -40,7 +56,7 @@ export async function POST(request: Request) {
       case 'resend': {
         if (!(await allow(admin, env.secret, 'resend', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
         const { error } = await anonClient(env).auth.resend({ type: 'signup', email: input.email });
-        if (error && (error.status === 429 || error.code === 'over_email_send_rate_limit')) return reply({ error: 'Aguarde um minuto antes de pedir outro código.' }, 429);
+        if (error) return mailFailure('resend', error, 'Não foi possível reenviar o código agora. Tente novamente em instantes.');
         return reply({ ok: true });
       }
       case 'login': {
@@ -55,7 +71,9 @@ export async function POST(request: Request) {
       }
       case 'recover': {
         if (!(await allow(admin, env.secret, 'recover', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
-        await anonClient(env).auth.resetPasswordForEmail(input.email); // resposta única: não revela se o email tem conta
+        // Email sem conta responde "ok" igual a um com conta. Já uma falha de envio (SMTP recusado, limite) não pode virar "enviado".
+        const { error } = await anonClient(env).auth.resetPasswordForEmail(input.email);
+        if (error) return mailFailure('recover', error, 'Não foi possível enviar o código agora. Tente novamente em instantes.');
         return reply({ ok: true });
       }
       case 'recover-confirm': {
@@ -69,7 +87,8 @@ export async function POST(request: Request) {
         return reply({ ok: true });
       }
     }
-  } catch {
+  } catch (error) {
+    console.error(`[auth] erro inesperado: ${(error as { message?: string } | null)?.message ?? 'desconhecido'}`);
     return reply({ error: 'O banco precisa da atualização de segurança do NACALL. Avise a equipe.' }, 503);
   }
 }
