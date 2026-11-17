@@ -29,3 +29,131 @@
 .recovery-grid li{margin:0}.recovery-grid code{display:block;padding:10px;border:1px dashed var(--accent);border-radius:10px;background:var(--bg);color:var(--accent);text-align:center;user-select:all;letter-spacing:1px}
 .recovery-box{margin:8px 0 16px}
 @media(max-width:720px){.auth-layout.solo{padding:30px 22px}.recovery-grid{grid-template-columns:1fr}.code-input{letter-spacing:.35em}}
+
+
+/* Video experience: preserve the full camera image and let viewers choose what to watch. */
+.participant>.camera-view{display:block;width:100%;min-height:0;padding:0;border:0;border-radius:0;background:#0b0e13;color:#fff;overflow:hidden;position:relative;cursor:zoom-in}
+.participant>.camera-view video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#0b0e13}
+.participant .camera-expand{position:absolute;right:10px;top:10px;display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:8px;background:#0a1016c9;color:#fff;font-size:11px;font-weight:700;opacity:0;transform:translateY(-2px);transition:opacity 120ms ease,transform 120ms ease;pointer-events:none}
+.participant>.camera-view:hover .camera-expand,.participant>.camera-view:focus-visible .camera-expand{opacity:1;transform:none}
+.participant>.camera-view:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.participant:fullscreen{display:flex;flex-direction:column;width:100vw;height:100dvh;border:0;border-radius:0;background:#090c12;overflow:hidden}
+.participant:fullscreen>.camera-view{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0;cursor:zoom-out}
+.participant:fullscreen>.camera-view video{width:100%;height:100%;max-height:calc(100dvh - 90px);aspect-ratio:auto;object-fit:contain}
+.participant:fullscreen>.camera-view .camera-expand{opacity:1;transform:none}
+.participant:fullscreen .participant-label{width:100%;flex-shrink:0;padding:14px 22px}
+.participant:fullscreen .participant-volume{flex-shrink:0;max-width:320px}
+.screen-stream video{width:100%;height:auto;max-height:min(55dvh,720px);aspect-ratio:16/9;object-fit:contain;background:#080a0e}
+.screen-stream:fullscreen{width:100vw;height:100dvh;border:0;border-radius:0;background:#080a0e}
+.screen-stream:fullscreen video{width:100%;height:calc(100dvh - 50px);max-height:none;aspect-ratio:auto;object-fit:contain}
+.hidden-streams{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
+.hidden-streams button{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;font-size:11px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px}
+.hidden-streams button:hover{border-color:var(--accent)}
+@media(max-width:720px){.participant .camera-expand{opacity:1;transform:none;font-size:0;padding:7px}.participant .camera-expand svg{width:16px;height:16px}.screen-stream video{max-height:48dvh;object-fit:contain}.participant:fullscreen>.camera-view video{max-height:calc(100dvh - 85px)}}
+@media(prefers-reduced-motion:reduce){.participant .camera-expand{transition:none}}
+
+
+/* Desktop navigation: NACALL identity with familiar server/channel structure. */
+@media(min-width:1001px){
+.shell:not(.call-focus):not(.call-chat){grid-template-columns:72px 266px minmax(0,1fr) 224px}
+.shell .rail{gap:11px;padding:17px 8px;background:color-mix(in srgb,var(--bg),#05070d 12%)}
+.shell .rail button:not(.logo-button){border-radius:16px;transition:border-radius 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
+.shell .rail button:not(.logo-button):hover,.shell .rail button.selected{border-radius:11px}
+.shell .sidebar{background:var(--surface)}
+.shell .side-content .section-label{font-size:10px;font-weight:800;letter-spacing:.06em}
+.shell .sidebar .nav-item{min-height:39px;border-radius:9px;gap:11px;font-size:12px;transition:background-color 110ms ease}
+.shell .sidebar .nav-item:hover{background:var(--panel);color:var(--text)}
+.shell .sidebar .nav-item.active{background:var(--soft);font-weight:700}
+.shell .account{background:var(--panel);border-top:1px solid var(--line)}
+.shell .members{background:color-mix(in srgb,var(--surface),var(--bg) 18%)}
+.shell .topbar{min-height:64px;padding:12px 23px}
+}
+@media(prefers-reduced-motion:reduce){.shell .rail button,.shell .sidebar .nav-item{transition:none}}
+
+
+/* NACALL official mascot branding: primary identity, minimal N only for tiny icons. */
+.gamer-brand{display:inline-flex;align-items:center;gap:9px;min-width:0}
+.gamer-brand .brand-avatar{display:block;object-fit:cover;border-radius:50%;width:42px;height:42px;box-shadow:0 0 0 2px #53efaa80,0 0 17px #8c45ed38;flex-shrink:0}
+.gamer-brand .brand-name{white-space:nowrap;letter-spacing:-1.3px;font-size:clamp(19px,2vw,27px);font-weight:950;line-height:1.05}
+.gamer-brand .brand-na{color:var(--text)}
+.gamer-brand .brand-call{color:#4ee8a0}
+.gamer-brand .brand-period{color:#31dded}
+.gamer-brand.compact .brand-avatar{width:42px;height:42px}
+.welcome-mark{opacity:.8;right:2%;top:10px;transform:none}
+.welcome-mark img{width:clamp(105px,13vw,180px);height:auto;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 14px 18px #5236be44)}
+.mobile-bottom-nav{display:none}
+
+@media(max-width:720px){
+/* One usable column + persistent bottom navigation; no permanent 56px rail. */
+.shell,.shell.call-focus,.shell.call-chat{display:grid;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) auto;min-width:0;width:100%;height:100dvh!important;min-height:0!important;overflow:hidden!important;position:relative}
+.shell>.rail{display:none!important}
+.shell>.main,.shell:not(.has-call)>.main{grid-column:1!important;grid-row:1!important;width:100%;height:100%;min-height:0!important;min-width:0;overflow:hidden}
+.shell.call-focus>.main{display:none!important}
+.shell.call-focus>.call-dock,.shell.call-chat>.call-dock{grid-column:1!important;grid-row:1!important;width:100%;height:100%;min-height:0;border:0}
+.shell.call-chat{grid-template-rows:minmax(0,1fr) minmax(170px,31dvh) auto}
+.shell.call-chat>.main{display:flex!important;grid-column:1!important;grid-row:1!important;min-height:0}
+.shell.call-chat>.call-dock{grid-column:1!important;grid-row:2!important;border-top:1px solid var(--line);min-height:0;overflow:auto}
+.shell.call-focus>.call-dock{grid-row:1!important;min-height:0}
+.mobile-bottom-nav{grid-column:1;grid-row:-2/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:2px;background:#101725;border-top:1px solid #3d4c62;z-index:55;min-height:64px;padding:5px 6px calc(5px + env(safe-area-inset-bottom));box-shadow:0 -10px 24px #05071444}
+.mobile-bottom-nav button{position:relative;min-width:0;min-height:52px;padding:6px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid transparent;background:transparent;color:#aab8cd;border-radius:12px;font-size:10px;font-weight:750}
+.mobile-bottom-nav button.active{color:#65f4b0;background:#213e36;border-color:#426d5e}
+.mobile-bottom-nav button:focus-visible{outline:2px solid #47e7db;outline-offset:-2px}
+.mobile-bottom-nav svg{width:21px;height:21px;flex-shrink:0}
+.mobile-nav-dot,.mobile-call-dot{position:absolute;top:4px;right:calc(50% - 21px);width:7px;height:7px;border-radius:50%;background:#fb7185;border:1px solid #101725}
+.mobile-call-dot{background:#4bf3a8}
+.shell>.sidebar,.shell:not(.has-call)>.sidebar,.call-focus>.sidebar{display:none;position:absolute!important;grid-column:auto!important;grid-row:auto!important;inset:0 auto 64px 0!important;width:min(88vw,350px)!important;max-width:350px;height:calc(100% - 64px)!important;max-height:none!important;min-height:0;z-index:74;background:#172031;box-shadow:12px 0 35px #05081670;overflow:hidden}
+.shell.nav-open>.sidebar{display:flex!important}
+.shell>.sidebar>header{padding:12px 60px 12px 18px;min-height:66px}
+.shell>.sidebar .brand-avatar{width:38px;height:38px}
+.shell>.sidebar .brand-name{font-size:23px}
+.shell>.sidebar .side-content{padding:12px 14px 20px;overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:0}
+.shell>.sidebar .side-content .nav-item{min-height:46px;font-size:13px;line-height:1.25;padding:10px 12px}
+.shell>.sidebar .side-content h2{margin:9px 0 14px;font-size:20px}
+.shell>.sidebar .account{min-height:72px;padding:10px 12px;flex-shrink:0}
+.shell>.sidebar .account strong{font-size:12px}
+.shell>.sidebar .account button{min-height:44px;min-width:40px;padding:8px}
+.mobile-nav-toggle{position:absolute;display:flex;align-items:center;justify-content:center;z-index:82;left:10px;top:10px;width:42px;height:42px;min-height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.nav-open .mobile-nav-toggle{left:auto;right:11px;top:11px}
+.mobile-nav-shade{position:absolute!important;z-index:72;inset:0 0 64px 0!important;width:100%!important;height:calc(100% - 64px)!important;border-radius:0;background:#050814aa}
+.main>.topbar{padding:10px 12px 10px 62px;min-height:61px;gap:6px}
+.main>.topbar strong{font-size:14px;max-width:min(49vw,230px)}
+.main>.topbar>button{min-height:40px;font-size:11px;padding:8px}
+.main .dashboard{padding:17px 15px 25px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.main .welcome{padding-bottom:18px;margin-bottom:19px}
+.main .welcome h1{font-size:clamp(29px,8vw,40px);line-height:1.13;margin:14px 0}
+.main .welcome-mark{display:block;position:absolute;right:0;top:0;opacity:.24;max-width:100px}
+.main .welcome-mark img{max-width:100px;width:100%;height:auto}
+.main .card{padding:17px;border-radius:13px}
+.main .card h2{font-size:17px}
+.main .card p,.main .welcome p{font-size:13px;line-height:1.5}
+.main .friend-row{gap:9px;padding:12px 0}
+.main .friend-row button{min-height:42px;font-size:11px}
+.main .message-list{flex:1;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;padding:12px 13px;scrollbar-gutter:auto}
+.main .message{gap:10px;padding:11px 0}
+.main .message strong{font-size:13px}
+.main .message p{font-size:14px;line-height:1.45}
+.main .message time{font-size:10px}
+.main .composer{flex-shrink:0;gap:8px;padding:9px 10px calc(10px + env(safe-area-inset-bottom));min-width:0}
+.main .composer input{min-width:0;flex:1;font-size:16px;min-height:46px;border-radius:12px}
+.main .composer button{min-width:67px;min-height:46px;font-size:12px}
+.call-dock .voice-panel{max-height:none!important;min-height:0;overflow:auto}
+.call-dock .call-stage{min-height:0;overflow:auto;padding:10px}
+.call-dock .voice-heading{padding:10px 9px 10px 61px;min-height:58px}
+.call-dock .voice-heading strong{max-width:clamp(75px,32vw,190px)}
+.call-dock .call-toolbar{min-width:0}
+.call-dock .voice-compact .call-toolbar{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;gap:5px;flex-shrink:0}
+.call-dock .voice-compact .call-controls{flex:0 0 auto!important;gap:5px!important}
+.call-dock .voice-compact .call-controls button,.call-dock .voice-compact .leave-call{min-width:44px!important;width:44px!important;min-height:44px!important;height:44px!important}
+.call-dock .voice-compact .screen-stream video{max-height:25dvh}
+.call-dock .voice-compact .participants{display:flex;flex-direction:row;overflow-x:auto;overscroll-behavior-x:contain}
+.call-dock .call-controls button:focus-visible,.call-dock .leave-call:focus-visible{outline:2px solid #4beec1;outline-offset:1px}
+.settings-panel,.group-settings{max-width:calc(100vw - 12px);max-height:calc(100dvh - 14px)}
+.settings-body,.settings-content{min-width:0;max-height:calc(100dvh - 150px);overflow-y:auto}
+}
+@media(max-width:380px){.mobile-bottom-nav button{font-size:9px}.main .dashboard{padding:13px 10px}.main .welcome h1{font-size:29px}.shell>.sidebar{width:min(91vw,330px)!important}}
+@media(prefers-reduced-motion:reduce){.mobile-bottom-nav button{transition:none}.main .message-list{scroll-behavior:auto}}
+
+/* Social hub and store — shared desktop / mobile layout. */
+.social-page,.store-page{flex:1;min-height:0;min-width:0;overflow:auto;padding:24px;overscroll-behavior:contain}
+.social-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.social-heading>svg{color:var(--accent)}.social-heading h2{margin:0;font-size:20px}.social-tabs{display:flex;gap:6px;flex-wrap:wrap}.social-tabs button{border:1px solid transparent;background:transparent;padding:9px 12px;border-radius:9px;font-size:13px;white-space:nowrap}.social-tabs button.active{background:var(--soft);color:var(--accent);border-color:var(--line)}.social-tabs button:last-child{background:var(--accent);color:#101722;font-weight:800}.social-search{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);padding:5px 10px;border-radius:10px;color:var(--muted)}.social-search input{width:100%;min-width:0;background:transparent;border:0;outline:0}.social-search:focus-within{border-color:var(--accent)}.social-count{font-size:13px;font-weight:800;margin:24px 0 10px;color:var(--muted)}.social-row{display:flex;align-items:center;gap:8px;min-width:0;padding:10px 4px;border-top:1px solid var(--line)}.social-row:hover{background:var(--surface)}.social-row>button:not(.social-person){display:inline-flex;justify-content:center;align-items:center;gap:5px;min-height:42px;min-width:42px;border-radius:10px}.social-person{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:transparent!important;border:0!important;text-align:left;padding:4px}.social-person>span:last-child{display:grid;gap:3px;min-width:0}.social-person strong,.social-person small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.social-person small{color:var(--muted);font-size:12px}.social-empty{padding:55px 15px;display:grid;justify-items:center;gap:12px;text-align:center;color:var(--muted)}.social-empty svg{color:var(--accent)}.profile-social-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.profile-social-actions button{display:flex;align-items:center;gap:7px;min-height:44px}.sidebar .nav-item .avatar{width:28px;height:28px;flex-shrink:0}.shell .rail button:has(.server-voice-badge){position:relative;overflow:visible!important}.server-voice-badge{position:absolute;right:-5px;bottom:-5px;z-index:2;display:flex;align-items:center;gap:2px;border:2px solid var(--bg);border-radius:12px;background:#52e49b;color:#10241b;font-size:10px;font-weight:950;padding:2px 4px;line-height:1}.voice-roster-person{display:flex;gap:8px;align-items:center;width:100%;min-width:0;text-align:left;border:0;background:transparent;padding:4px}.voice-roster-person span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.store-intro h2{font-size:32px;margin:12px 0}.store-intro p{color:var(--muted);max-width:620px;line-height:1.6}.store-products{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:16px;margin:24px 0}.store-product{display:flex;flex-direction:column;gap:12px;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:18px}.store-icon{width:62px;height:62px;display:grid;place-items:center;border-radius:16px;background:var(--soft);color:var(--accent)}.store-product:nth-child(2) .store-icon{color:#b89aff}.store-product h3{margin:0;font-size:21px}.store-price{font-size:30px;font-weight:900;margin:0;color:var(--accent)}.store-price small{font-size:12px;color:var(--muted)}.store-duration,.store-note{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}.store-product ul{padding-left:19px;line-height:1.8;font-size:14px;flex:1}.store-product>button{min-height:44px}.store-note{align-items:flex-start;line-height:1.5}.store-note svg{flex-shrink:0}
+@media(max-width:720px){.social-page,.store-page{padding:16px 12px}.social-heading{gap:8px}.social-tabs{width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px}.social-tabs button{min-height:44px;font-size:12px;padding:9px 10px}.social-search input{font-size:16px;min-height:44px}.social-search button{min-height:44px}.social-row{gap:5px}.social-person{gap:8px}.social-person strong{font-size:13px}.social-row>button:not(.social-person){min-height:44px;min-width:44px;padding:8px}.store-product{padding:18px}.store-intro h2{font-size:26px}}
