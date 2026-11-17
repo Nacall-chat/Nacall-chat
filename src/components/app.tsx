@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { Hash, Headphones, Plus, Users, Radio, LogOut, Settings, ArrowRight, MessageCircle, SunMoon, Gamepad2, ShieldCheck, Menu, X, House, Compass, ShoppingBag, UserPlus } from 'lucide-react';
 import {Landing} from './landing';
+import {MfaChallenge,TwoFactorPrompt} from './mfa';
 import {CommunityCount} from './community-count';
 import { getSupabase } from '@/lib/supabase';
 import { errorText, messageSchema, nameSchema, usernameSchema } from '@/lib/validation';
@@ -31,6 +32,14 @@ export function App({initialScreen='landing'}:{initialScreen?:'landing'|'login'}
   const [pendingInvite,setPendingInvite]=useState<string|null>(null);
   useEffect(()=>{setPendingInvite(inviteCode(new URLSearchParams(window.location.search).get('invite')||''));},[]);
   const [recovery, setRecovery] = useState(false);
+  const [mfaGate, setMfaGate] = useState<'checking'|'challenge'|'ok'>('checking');
+  useEffect(() => {
+    if (!db || !session) { setMfaGate('checking'); return; }
+    let live = true;
+    // Conta com 2FA ativo só entra no app depois de confirmar o código (sessão aal2).
+    void db.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => { if (live) setMfaGate(data && data.nextLevel === 'aal2' && data.currentLevel !== 'aal2' ? 'challenge' : 'ok'); });
+    return () => { live = false; };
+  }, [db, session?.access_token]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!db) return;
     void db.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true); });
@@ -40,6 +49,8 @@ export function App({initialScreen='landing'}:{initialScreen?:'landing'|'login'}
   if (!db) return initialScreen==='landing'?<Landing/>:<main className="setup"><Brand/><h1>O lobby está<br/>aquecendo.</h1><p>O login está temporariamente indisponível. Tente de novo em instantes.</p><a href="/">Voltar para o início</a></main>;
   if (!ready) return initialScreen==='landing'?<Landing/>:<main className="setup" role="status">Abrindo seu espaço…</main>;
   if (!session) return initialScreen==='landing'&&!pendingInvite?<Landing/>:<>{pendingInvite&&<div className="invite-auth"><InviteCard db={db} code={pendingInvite} loggedIn={false}/></div>}<Auth db={db} /></>;
+  if (mfaGate === 'checking') return <main className="setup" role="status">Conferindo sua segurança…</main>;
+  if (mfaGate === 'challenge') return <MfaChallenge db={db} signOut={() => void db.auth.signOut()} />;
   return <Workspace key={session.user.id} db={db} session={session} recovery={recovery} recovered={() => setRecovery(false)} />;
 }
 
@@ -62,7 +73,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const [notice, setNotice] = useState('');
   const [settings, setSettings] = useState(false);
   const [mobileNavOpen,setMobileNavOpen]=useState(false);
-  const [settingsTab, setSettingsTab] = useState<'profile'|'appearance'>('profile');
+  const [settingsTab, setSettingsTab] = useState<'profile'|'appearance'|'security'>('profile');
   const[inspectedProfile,setInspectedProfile]=useState<Profile|null>(null);const[roomStates,setRoomStates]=useState<Record<string,RoomSnapshot>>({});const[clockNow,setClockNow]=useState(Date.now());
   const [voice, setVoice] = useState<VoiceSession | null>(null);
   const [groupSettings,setGroupSettings]=useState(false);const[groupTab,setGroupTab]=useState("profile");
@@ -233,6 +244,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
       {notice && <div className="notice" role="status"><span>{notice}</span><button aria-label="Fechar aviso" onClick={() => setNotice('')}>×</button></div>}
       {inspectedProfile&&<ProfileCard profile={inspectedProfile} close={()=>setInspectedProfile(null)} own={inspectedProfile.id===me} friendship={friends.find(f=>f.sender_id===inspectedProfile.id||f.receiver_id===inspectedProfile.id)} me={me} busy={busy} request={()=>requestFriend(inspectedProfile.id)} accept={acceptFriend} remove={removeFriend} message={()=>{void openDM(inspectedProfile.id);setInspectedProfile(null);}}/>}
       {groupSettings&&server&&<GroupSettings key={server.id+groupTab} initialTab={groupTab} db={db} server={server} me={me} profiles={profiles} members={members} channels={channels.filter(c=>c.server_id===serverId)} close={()=>setGroupSettings(false)} reload={load}/>}
+      <TwoFactorPrompt db={db} userId={me} open={() => {setSettingsTab('security');setSettings(true);}} />
       {pendingInvite&&<InviteCard db={db} code={pendingInvite} loggedIn joined={joined} dismiss={()=>{setPendingInvite(null);window.history.replaceState({},'', '/');}}/>}
       {(settings || recovery) && <ProfileSettings key={settingsTab} db={db} profile={profile} close={() => {setSettings(false); recovered();}} reload={load} report={setNotice} recovery={recovery} recovered={recovered} initialTab={settingsTab} />}
       {!target&&!server&&homeView==='friends'?<FriendsPanel db={db} me={me} profiles={profiles} friends={friends} activeIds={activeIds} tab={friendTab} setTab={setFriendTab} inspect={setInspectedProfile} request={requestFriend} accept={acceptFriend} remove={removeFriend} openDM={id=>void openDM(id)} busy={busy}/>:!target&&!server&&homeView==='store'?<StorePanel/>:!target ? <div className="dashboard"><CommunityCount compact/><section className="welcome"><span className="eyebrow"><Gamepad2 size={15}/> O LOBBY É NOSSO.</span><h1>Salve,<br /><em>{getName(me)}.</em></h1><p className="muted">O plano é ganhar. Se não rolar, a resenha tá garantida.<br />Chama sua galera e puxa uma cadeira no lobby.</p><div className="welcome-mark" aria-hidden="true"><img src="/brand/jacall-avatar.webp" width="180" height="180" alt=""/></div></section>

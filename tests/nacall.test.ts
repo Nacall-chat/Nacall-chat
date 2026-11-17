@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 import {youtubeId,musicPosition} from '../src/lib/youtube';
-import {authSchema,usernameAlias} from '../src/lib/auth-schema';
+import {authSchema} from '../src/lib/auth-schema';
 test('YouTube aceita apenas hosts e IDs conhecidos, nunca URLs arbitrárias',()=>{
  for(const link of ['https://youtu.be/dQw4w9WgXcQ','https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=4','https://music.youtube.com/watch?v=dQw4w9WgXcQ'])assert.equal(youtubeId(link),'dQw4w9WgXcQ');
  for(const link of ['javascript:alert(1)','https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ','https://example.com/video','https://youtu.be/curto'])assert.equal(youtubeId(link),null);
@@ -13,10 +13,10 @@ test('posição compartilhada avança ao tocar e fica estável ao pausar',()=>{
  assert.equal(musicPosition(state,Date.parse('2026-11-02T12:00:05Z')),17);
  assert.equal(musicPosition({...state,playing:false},Date.parse('2026-11-02T12:00:05Z')),12);
 });
-test('login por username valida identidade e preserva senha sem normalizar',()=>{
- const result=authSchema.parse({action:'login',username:' Nick_01 ',password:' senha com espaço '});
- assert.equal(result.username,'nick_01');assert.equal(result.password,' senha com espaço ');
- assert.equal(usernameAlias(result.username),'nick_01@accounts.nacall.invalid');
+test('login por usuário ou email normaliza o identificador e preserva a senha como digitada',()=>{
+ const result=authSchema.parse({action:'login',identifier:' Nick_01 ',password:' senha com espaço '});
+ assert.ok(result.action==='login');assert.equal(result.identifier,'nick_01');assert.equal(result.password,' senha com espaço ');
+ assert.equal(authSchema.parse({action:'login',identifier:'Nick@Exemplo.COM',password:'x'}).action,'login');
  assert.equal(authSchema.safeParse({action:'signup',username:'abc',displayName:'Teste',password:'123'}).success,false);
 });
 test('migração NACALL preserva dados, protege recuperação e isola música e avatar',async()=>{
