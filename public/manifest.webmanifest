@@ -1,0 +1,23 @@
+{
+  "name": "NACALL — A call é sua",
+  "short_name": "NACALL",
+  "description": "Comunidades, chamadas de voz e vídeo, mensagens privadas e compartilhamento de tela.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "background_color": "#11151c",
+  "theme_color": "#11151c",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/brand/jacall-avatar.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ]
+}

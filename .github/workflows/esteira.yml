@@ -38,12 +38,12 @@ jobs:
       - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
   producao:
     name: PRD
-    # Manual: Actions > Esteira > Run workflow, escolhendo a branch main. Nunca roda sozinho.
-    if: github.event_name == 'workflow_dispatch'
+    # Publicação automática após a verificação da main; execução manual permanece disponível.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: verificar
     runs-on: ubuntu-latest
     env:
-      VERCEL_TOKEN: ${{ secrets.PRD_VERCEL_TOKEN || secrets.HML_VERCEL_TOKEN }}
+      VERCEL_TOKEN: ${{ secrets.PRD_VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.PRD_VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.PRD_VERCEL_PROJECT_ID }}
     steps:
@@ -53,6 +53,8 @@ jobs:
           for n in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
             if [ -z "${!n}" ]; then echo "::error::Credencial $n (produção) não cadastrada em Settings > Secrets and variables > Actions. Nada foi publicado."; exit 1; fi
           done
+          if [ "$VERCEL_PROJECT_ID" != "prj_kJhez0IKGKvTGrsrwxH6rL2ZIQMT" ]; then echo "::error::Projeto PRD_VERCEL_PROJECT_ID não corresponde ao NACALL PRD. Publicação cancelada."; exit 1; fi
+          if [ "$VERCEL_ORG_ID" != "team_0m3biijv5SSsYVljvDPNFAfM" ]; then echo "::error::PRD_VERCEL_ORG_ID não corresponde à equipe NACALL. Publicação cancelada."; exit 1; fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
