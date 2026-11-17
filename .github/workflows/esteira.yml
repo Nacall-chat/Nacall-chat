@@ -38,8 +38,8 @@ jobs:
       - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
   producao:
     name: PRD
-    # Publicação automática após a verificação da main; execução manual permanece disponível.
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # Manual: Actions > Esteira > Run workflow, escolhendo a branch main. Nunca roda sozinho (aprovação da produção é humana).
+    if: github.event_name == 'workflow_dispatch'
     needs: verificar
     runs-on: ubuntu-latest
     env:
