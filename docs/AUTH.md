@@ -7,7 +7,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 - **Identidade:** o email real, confirmado por código de 6 dígitos. Fica em `auth.users`; nada de email duplicado em tabelas nossas.
 - **Username:** só em `profiles.username` (único, `^[a-z0-9_]{3,24}$`, sempre minúsculo, sem espaços). O trigger `handle_new_user` cria o perfil a partir dos metadados do cadastro.
 - **Login por username:** o servidor (`/api/auth`) resolve username → email com a chave de serviço e chama o Supabase. A chave de serviço nunca vai ao navegador, e nenhuma tabela administrativa é lida pelo frontend.
-- Contas do modelo antigo (email fictício `@accounts.nacall.invalid`) e o sistema próprio de recuperação (`account_recovery`, `account_emails`) foram removidos pela migration `202611030002_auth_seguranca.sql`.
+- Contas do modelo antigo (email fictício `@accounts.nacall.invalid`): onde só havia dados de teste (HML), foram apagadas pela migration `202611030002_auth_seguranca.sql`. Onde já havia pessoas usando (produção), **são preservadas** pela migration `202611170001_preservar_contas_antigas.sql`, que troca o email fictício pelo email real salvo no cadastro (`account_emails`) e mantém id, usuário, senha, grupos, amizades e DMs. O sistema próprio de recuperação (`account_recovery`, `account_emails`) é removido por `202611030002`.
 
 ## Fluxos
 
@@ -68,7 +68,9 @@ Na Vercel não há variável nova: continuam as seis de `.env.example`.
 
 ## Banco
 
-Migration `202611030002_auth_seguranca.sql`: remove contas e tabelas do modelo antigo; cria `mfa_recovery_codes`, `consume_rate_limit` e `purge_unconfirmed_accounts`. Em HML e PRD ela apaga contas com email `@accounts.nacall.invalid` (dados de teste, decisão registrada).
+Migration `202611030002_auth_seguranca.sql`: remove contas e tabelas do modelo antigo; cria `mfa_recovery_codes`, `consume_rate_limit` e `purge_unconfirmed_accounts`. Ela apaga qualquer conta com email `@accounts.nacall.invalid`, o que só é aceitável onde são dados de teste (HML, decisão registrada em 2026-11-03).
+
+Migration `202611170001_preservar_contas_antigas.sql`: **em bases com pessoas reais (produção), aplique-a ANTES de `202611030002`.** Converte cada conta antiga para o email real de `account_emails` (minúsculo, marcado como confirmado, para ninguém perder o acesso enquanto o SMTP não está no ar) e **aborta sem alterar nada** se alguma conta antiga não puder ser convertida (sem email salvo, email repetido ou já usado por outra conta), para que a migration seguinte não a apague. Em bases sem contas antigas ou sem a tabela `account_emails` (HML, bases novas) não faz nada, e reaplicar é seguro. Limite conhecido: o email vale como confirmado sem a pessoa tê-lo confirmado por código; se estiver errado, a recuperação de senha só funcionará depois que um administrador corrigir o email em Authentication > Users.
 
 ## Login por QR Code (arquitetura planejada, não implementada)
 
