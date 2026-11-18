@@ -41,6 +41,7 @@ Supabase, projeto atual:
 - [ ] Storage: buckets `avatars`, `group-icons`, `profile-covers`, `chat-audio` e `stickers` (privados; criados pela migration `202611190001`) presentes.
 - [ ] Database → Publications → `supabase_realtime`: `messages`, `friendships`, `room_media`, `dms` e `dm_reads`.
 - [ ] Tabela `dm_reads` e funções `mark_dm_read` e `unread_dms` presentes (migration `202611190002`).
+- [ ] Tabela `presence` (RLS ligada, sem política) e funções `touch_presence`, `set_presence`, `leave_presence`, `my_presence` e `friends_presence` presentes (migration `202611190003`).
 
 ## Fase 3 — Homologação
 

@@ -102,6 +102,8 @@ A migration `202611190001_audio_e_figurinhas.sql` adiciona mensagens de áudio e
 
 A migration `202611190002_leitura_de_dms.sql` guarda até quando cada pessoa leu cada DM (tabela `dm_reads`, `mark_dm_read` e `unread_dms`). Com ela, as mensagens do outro lado aparecem em balões à esquerda e as suas à direita, as DMs não lidas ganham bolinha vermelha, o sino mostra mensagens e novidades do NACALL (inclusive nova versão no ar) e toca um som quando chega mensagem. Detalhes em [docs/NOTIFICACOES.md](docs/NOTIFICACOES.md).
 
+A migration `202611190003_presenca.sql` adiciona o status de presença entre amigos (online, ausente, invisível/offline) e o "visto pela última vez", com cartão ao passar o mouse no amigo. Detalhes em [docs/PRESENCA.md](docs/PRESENCA.md).
+
 ## Colaborar
 
 Repositório privado: https://github.com/Nacall-chat/Nacall-chat . Consulte CONTRIBUTING.md para configurar um ambiente de desenvolvimento e enviar alterações.

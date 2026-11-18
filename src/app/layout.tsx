@@ -10,6 +10,7 @@ import './voice-bar.css';
 import './chat-bubbles.css';
 import './notifications.css';
 import './call-stage.css';
+import './presence.css';
 import './social.css';
 import { PreferencesProvider } from '@/components/preferences';
 import { MicGateProvider } from '@/components/mic-gate';
