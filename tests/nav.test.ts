@@ -28,22 +28,24 @@ test('menu de baixo: Call só é a aba ativa quando a call está em primeiro pla
  assert.equal(tab({inCallView:true,navOpen:true,serverId:'s'}),'servers','barra lateral aberta por cima da call: vale a barra');
 });
 
-const call=(patch:Partial<{voice:boolean;isMobile:boolean;callView:boolean;target:boolean}>)=>shellCallClass({voice:true,isMobile:false,callView:false,target:false,...patch});
+const call=(patch:Partial<{voice:boolean;callView:boolean;target:boolean}>)=>shellCallClass({voice:true,callView:false,target:false,...patch});
 
 test('call: sem call não muda o layout',()=>{
- assert.equal(shellCallClass({voice:false,isMobile:true,callView:true,target:false}),'');
- assert.equal(shellCallClass({voice:false,isMobile:false,callView:false,target:true}),'');
+ assert.equal(shellCallClass({voice:false,callView:true,target:false}),'');
+ assert.equal(shellCallClass({voice:false,callView:false,target:true}),'');
 });
 
-test('call no celular: tela cheia só quando aberta; senão janela flutuante, inclusive com um chat aberto',()=>{
- assert.equal(call({isMobile:true,callView:true}),'has-call call-focus');
- assert.equal(call({isMobile:true,callView:false}),'call-float','outra tela: janela flutuante');
- assert.equal(call({isMobile:true,callView:false,target:true}),'call-float','chat em tela cheia, call flutuando (antes a tela era dividida)');
- assert.equal(call({isMobile:true,callView:true,target:true}),'call-float','abrir um chat tira a call da tela cheia');
+test('call: a barra de voz aparece em toda tela enquanto há call (has-voice)',()=>{
+ for(const callView of [true,false]) for(const target of [true,false]) assert.ok(call({callView,target}).split(' ').includes('has-voice'),'callView='+callView+' target='+target);
 });
 
-test('call no desktop: continua ao lado do chat, em foco ou escondida',()=>{
- assert.equal(call({target:true}),'has-call call-chat');
- assert.equal(call({callView:true}),'has-call call-focus');
- assert.equal(call({callView:false}),'call-away');
+test('call: o painel só ocupa a tela quando a pessoa o abre e não há conversa aberta',()=>{
+ assert.equal(call({callView:true}),'has-voice has-call call-focus');
+ assert.equal(call({callView:false}),'has-voice call-away','outra tela: painel escondido, call conectada');
+});
+
+test('call: abrir uma conversa tira o painel da tela e não divide mais o espaço (acabou o modo ao lado do chat)',()=>{
+ assert.equal(call({callView:false,target:true}),'has-voice call-away');
+ assert.equal(call({callView:true,target:true}),'has-voice call-away','chat aberto vence');
+ for(const callView of [true,false]) assert.doesNotMatch(call({callView,target:true}),/call-chat|call-float/);
 });
