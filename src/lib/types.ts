@@ -1,7 +1,9 @@
 export type Profile = { id: string; username: string; display_name: string; bio: string; user_number?: number; avatar_path?: string; cover_path?: string };
 export type Server = { id: string; name: string; owner_id: string | null; is_official?: boolean; description?: string; icon_path?: string };
 export type Channel = { id: string; name: string; kind: 'text' | 'voice'; server_id: string };
-export type Message = { id: string; author_id: string; body: string; created_at: string; channel_id: string | null; dm_id: string | null };
+export type MessageKind = 'text' | 'audio' | 'sticker';
+export type Message = { id: string; author_id: string; body: string; created_at: string; channel_id: string | null; dm_id: string | null; kind?: MessageKind; media_path?: string; media_duration_ms?: number | null };
+export type Sticker = { id: string; owner_id: string; ext: 'webp' | 'png' | 'jpg' | 'gif'; favorite: boolean; position: number; path: string; created_at: string };
 export type Friendship = { id: string; sender_id: string; receiver_id: string; status: 'pending' | 'accepted' };
 export type DM = { id: string; user_a: string; user_b: string };
 

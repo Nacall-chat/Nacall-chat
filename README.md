@@ -98,6 +98,8 @@ O endpoint autenticado `/api/livekit/rooms` valida o acesso aos canais pelo RLS 
 
 A migration `202611020005_profile_covers.sql` adiciona capa de perfil e Storage próprio. JPG/PNG/WebP são convertidos para WebP 1200×400; GIF até 5 MB é preservado para manter animação. Apenas o dono grava/remove objetos na própria pasta. A capa aparece nas configurações e no cartão aberto pelos avatares das mensagens/lista de membros. As capas são públicas por URL, assim como fotos de perfil; não envie informação privada na imagem.
 
+A migration `202611190001_audio_e_figurinhas.sql` adiciona mensagens de áudio e figurinhas ao chat (buckets privados `chat-audio` e `stickers`, tabela `stickers`, colunas de mídia em `messages`) e o app ganhou seletor de emojis e uma janela de novidades. Detalhes, limites e segurança em [docs/CHAT-MIDIA.md](docs/CHAT-MIDIA.md).
+
 ## Colaborar
 
 Repositório privado: https://github.com/Nacall-chat/Nacall-chat . Consulte CONTRIBUTING.md para configurar um ambiente de desenvolvimento e enviar alterações.
