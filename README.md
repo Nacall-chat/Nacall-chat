@@ -88,11 +88,11 @@ O transmissor escolhe 720p ou 1080p antes de compartilhar, com 15/30 fps. A esco
 
 O DJ começa em modo leve: busca apenas informações da música, sem iframe do YouTube. “Não quero ouvir” afeta apenas o dispositivo local, descarrega o player e não pausa a música dos outros. Ativar escuta carrega o player oficial visível. Fechar o painel também descarrega o vídeo e interrompe a escuta local; ao reabrir, o player sincroniza novamente. Não há extração de áudio, reprodução invisível nem garantia de áudio sem tráfego de vídeo pelo YouTube.
 
-## Identidade gamer, call lateral e capa de perfil
+## Identidade gamer, barra de voz e capa de perfil
 
 A marca usa o jacaré gamer com duas chuquinhas e headset. Artes separadas para redes sociais acompanham a entrega; no site são usadas versões WebP mais leves, com favicon PNG.
 
-Ao entrar numa sala de voz, a área de chamada ocupa o centro. Abrir um canal de texto ou DM mantém a mesma conexão e leva a call para uma coluna lateral com participantes compactos. “Abrir call” retorna à área maior. Em telas pequenas, a call usa um painel inferior compacto.
+Ao entrar numa sala de voz, a área de chamada ocupa o centro. Os controles da call ficam numa **barra de voz** que acompanha a pessoa em qualquer tela, como no Discord: no desktop é um cartão acima do perfil, na barra lateral (estado da conexão, sala, tempo, microfone e fone com a seta para escolher o aparelho, câmera, tela, DJ, ajustes e sair); no celular é uma barra compacta acima do menu de baixo (estado, microfone, fone e sair). Abrir um canal de texto, DM ou outra tela usa a área toda e mantém a mesma conexão; tocar na barra volta ao painel da call (participantes e telas). O painel tem o botão de minimizar, que volta para a conversa de onde a pessoa veio.
 
 O endpoint autenticado `/api/livekit/rooms` valida o acesso aos canais pelo RLS e consulta participantes reais no LiveKit. O início da sessão é mantido nos metadados da sala somente pelo servidor, compartilhado entre observadores; sair de um usuário não reinicia enquanto outro permanece. A sala vazia tem início nulo e o contador some. O próximo acesso pelo app verifica a ocupação antes de emitir o token e inicia uma nova sessão ao entrar. Consulta a cada 5 segundos; o relógio visual avança a cada segundo. Não é presença social inventada. Queda de rede pode adiar a detecção até o LiveKit confirmar a desconexão.
 

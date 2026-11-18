@@ -1,4 +1,4 @@
-/* Navegação: X da barra lateral dentro dela e faixa "Voltar para a call". */
+/* Navegação: X da barra lateral dentro dela. */
 
 /* Com a barra lateral aberta, o X fica dentro do cabeçalho dela (antes ficava na borda da tela e passava por cima da barra). */
 @media(max-width:720px){
@@ -8,10 +8,5 @@
  .shell.nav-open .mobile-nav-toggle{left:calc(56px + min(310px,calc(100% - 56px)) - 53px);right:auto}
 }
 
-/* Call ativa, mas a tela é outra: a call segue conectada (o painel só fica escondido). */
+/* Call ativa, mas a tela é outra: a call segue conectada (o painel só fica escondido) e os controles ficam na barra de voz. */
 .shell.call-away>.call-dock{display:none}
-.call-return{display:flex;align-items:center;gap:10px;width:calc(100% - 24px);margin:10px 12px 0;min-height:46px;padding:8px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--accent);color:var(--text);font-size:13px;text-align:left;flex-shrink:0}
-.call-return:hover{background:var(--soft);border-color:var(--accent)}
-.call-return svg{color:var(--accent)}
-.call-return span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.call-return em{font-style:normal;font-weight:800;color:var(--accent);font-size:12px;white-space:nowrap}

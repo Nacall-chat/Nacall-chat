@@ -1,0 +1,72 @@
+/* Barra de voz: os controles da call num lugar só, como no Discord.
+   Desktop e tablet: cartão na barra lateral, acima do perfil. Celular (até 720 px): barra compacta acima do menu de baixo.
+   O painel da call (participantes e telas) só aparece quando a pessoa o abre; a barra fica em toda tela enquanto há call. */
+.voice-bar-slot:empty,.voice-dock-bar:empty{display:none}
+.voice-dock-bar{display:none}
+.voice-bar-slot{flex-shrink:0;position:relative;padding:8px 8px 0;border-top:1px solid var(--line)}
+
+.voice-bar{position:relative;display:flex;color:var(--text)}
+.voice-bar button{margin:0;min-width:0;min-height:0;padding:0;gap:0;border-radius:9px;font:inherit}
+.voice-bar.side{flex-direction:column;gap:6px;padding:8px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.vb-top{display:flex;align-items:center;gap:6px}
+.vb-row{display:flex;gap:6px}
+
+/* estado da conexão + nome da sala; toca para abrir a call */
+.voice-bar .vb-info{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:3px 6px 3px 3px;text-align:left;background:transparent;border-color:transparent}
+.voice-bar .vb-info:hover{background:var(--raised);border-color:transparent}
+.vb-signal{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.vb-signal.ok{color:var(--success);background:color-mix(in srgb,var(--success),transparent 86%)}
+.vb-signal.wait{color:#e0a93a;background:color-mix(in srgb,#e0a93a,transparent 86%)}
+.vb-signal.bad{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
+.vb-text{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.vb-text strong{font-size:12px;font-weight:800;white-space:nowrap}
+.vb-text strong.ok{color:var(--success)}
+.vb-text strong.wait{color:#e0a93a}
+.vb-text strong.bad{color:var(--error)}
+.vb-text small{font-size:10.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* botões */
+.voice-bar .vb-btn{display:grid;place-items:center;flex:1;height:34px;background:var(--surface);border-color:transparent;color:var(--text)}
+.voice-bar .vb-btn:hover:not(:disabled){background:var(--raised);border-color:transparent}
+.voice-bar .vb-btn.off{color:var(--error)}
+.voice-bar .vb-btn.active{background:var(--soft);color:var(--accent)}
+.voice-bar .vb-btn:disabled{opacity:.5;cursor:not-allowed}
+.voice-bar .vb-btn:focus-visible,.voice-bar .vb-chev:focus-visible,.voice-bar .vb-info:focus-visible,.vb-menu button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.voice-bar .vb-leave{flex:0 0 32px;width:32px;height:32px;background:transparent;color:var(--error)}
+.voice-bar .vb-leave:hover:not(:disabled){background:#bf0413;color:#fff}
+
+/* microfone e fone com a seta de aparelhos */
+.vb-split{flex:1;display:flex;min-width:0;border-radius:9px;overflow:hidden;background:var(--surface)}
+.vb-split .vb-btn{border-radius:0;flex:1;min-width:0}
+.voice-bar .vb-chev{display:grid;place-items:center;flex:0 0 24px;height:34px;border-radius:0;background:transparent;border:0;border-left:1px solid var(--line);color:var(--muted)}
+.voice-bar .vb-chev:hover{background:var(--raised);color:var(--text)}
+.vb-chev svg{transition:transform 140ms}
+.vb-chev[aria-expanded="true"] svg{transform:rotate(180deg)}
+.vb-tools .vb-btn{height:32px}
+
+/* lista de aparelhos, abre para cima */
+.vb-menu{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:40;display:flex;flex-direction:column;gap:2px;padding:6px;max-height:min(280px,50dvh);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.vb-menu strong{padding:4px 8px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vb-menu p{margin:0;padding:6px 8px 8px;font-size:11px;line-height:1.4;color:var(--muted)}
+.vb-menu button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:36px;margin:0;padding:6px 8px;text-align:left;font-size:12px;border-color:transparent;background:transparent;border-radius:8px}
+.vb-menu button span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vb-menu button:hover{background:var(--raised);border-color:transparent}
+.vb-menu button[aria-checked="true"]{background:var(--soft);color:var(--accent);font-weight:700}
+
+/* barra compacta (celular): estado, microfone, fone e sair */
+.voice-bar.dock{flex-direction:row;align-items:center;gap:6px;height:57px;box-sizing:border-box;padding:7px 10px;background:var(--panel);border-top:1px solid var(--line)}
+.voice-bar.dock .vb-btn{flex:0 0 42px;width:42px;height:42px;border-radius:12px}
+.voice-bar.dock .vb-leave{background:color-mix(in srgb,#bf0413,var(--surface) 80%);color:var(--error)}
+.voice-bar.dock .vb-leave:hover:not(:disabled){background:#bf0413;color:#fff}
+
+/* celular: a barra fica logo acima do menu de baixo; a barra lateral aberta termina acima dela */
+@media(max-width:720px){
+ .shell.has-voice{--vb:57px;grid-template-rows:minmax(0,1fr) auto auto}
+ .shell.has-voice.call-focus{--vb:0px}
+ .shell.has-voice>.voice-dock-bar{display:block;grid-column:1;grid-row:2;z-index:56}
+ .shell.has-voice.call-focus>.voice-dock-bar{display:none}
+ .shell.has-voice>.sidebar{inset:0 auto calc(64px + var(--vb)) 0!important;height:calc(100% - 64px - var(--vb))!important}
+ .shell.has-voice>.mobile-nav-shade{inset:0 0 calc(64px + var(--vb)) 0!important;height:calc(100% - 64px - var(--vb))!important}
+ .shell.has-voice>.mobile-bottom-nav{grid-row:3}
+}
+@media(prefers-reduced-motion:reduce){.vb-chev svg{transition:none}}
