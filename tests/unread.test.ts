@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {ago,arrivedDms,badgeText,previewOf,sameUnread,unreadTotal,withoutOpen,type UnreadDm} from '../src/lib/unread';
-import {avisos,parseAvisosRead,parseSound,unreadAvisos,updateAvailable,withRead} from '../src/lib/avisos';
+import {avisos,parseAvisosRead,parseSound,trackVersion,unreadAvisos,withRead} from '../src/lib/avisos';
 import {UPDATE_ID} from '../src/lib/novidades';
 
 const item=(dm_id:string,unread:number,last_kind='text',last_body='oi',last_at='2026-11-19T12:00:00Z'):UnreadDm=>({dm_id,unread,last_at,last_kind,last_body});
@@ -71,10 +71,22 @@ test('avisos: leitura salva é lida com segurança',()=>{
  assert.deepEqual(parseAvisosRead('["a",2,null,"b"]'),['a','b']);
 });
 
-test('versão: só avisa quando as duas são conhecidas e diferentes; som vem ligado',()=>{
- assert.ok(updateAvailable('abc','def'));
- assert.ok(!updateAvailable('abc','abc'));
- assert.ok(!updateAvailable('','def'),'em desenvolvimento não avisa');
- assert.ok(!updateAvailable('abc',''),'servidor sem versão não avisa');
+test('versão: a primeira resposta vira a versão da aba e só uma resposta diferente avisa',()=>{
+ let state={baseline:'',update:false};
+ state=trackVersion(state.baseline,'abc');
+ assert.deepEqual(state,{baseline:'abc',update:false},'a primeira resposta é a versão desta aba, sem aviso');
+ state=trackVersion(state.baseline,'abc');
+ assert.equal(state.update,false,'mesma versão: sem aviso');
+ state=trackVersion(state.baseline,'def');
+ assert.deepEqual(state,{baseline:'abc',update:true},'versão nova no ar: avisa e a versão da aba não muda');
+ state=trackVersion(state.baseline,'ghi');
+ assert.equal(state.update,true,'continua avisando enquanto a aba não recarrega');
+ state=trackVersion(state.baseline,'abc');
+ assert.equal(state.update,false,'voltou à versão da aba (rollback): o aviso some');
+});
+
+test('versão: resposta vazia (desenvolvimento) nunca avisa; som vem ligado',()=>{
+ assert.deepEqual(trackVersion('','' ),{baseline:'',update:false});
+ assert.deepEqual(trackVersion('abc',''),{baseline:'abc',update:false},'falha ou servidor sem versão não vira aviso');
  assert.ok(parseSound(null));assert.ok(parseSound('1'));assert.ok(!parseSound('0'));
 });

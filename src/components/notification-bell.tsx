@@ -3,25 +3,22 @@ import { useEffect, useRef, useState } from 'react';
 import { Bell, RefreshCw, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import type { DM, Profile } from '@/lib/types';
 import { ago, badgeText, previewOf, unreadTotal, type UnreadDm } from '@/lib/unread';
-import { avisos, avisosKey, parseAvisosRead, unreadAvisos, updateAvailable, withRead } from '@/lib/avisos';
+import { avisos, avisosKey, parseAvisosRead, trackVersion, unreadAvisos, withRead } from '@/lib/avisos';
 import { UPDATE_ID, whatsNewKey } from '@/lib/novidades';
 import { playChime, primeSound, setSoundEnabled, soundEnabled } from '@/lib/notify-sound';
 import { Avatar } from './avatar';
 
-const BUILD = process.env.NEXT_PUBLIC_BUILD_ID ?? '';
-
-/** Há uma versão nova no ar? Confere ao abrir, a cada 5 minutos e quando a aba volta ao foco. Em desenvolvimento (sem versão) nunca avisa. */
+/** Há uma versão nova no ar? A primeira consulta a /api/version é a versão desta aba; confere de novo a cada 5 minutos e quando a aba volta ao foco. Em desenvolvimento (sem versão) nunca avisa. */
 function useNewVersion() {
-  const [latest, setLatest] = useState('');
+  const [version, setVersion] = useState({ baseline: '', update: false });
   useEffect(() => {
-    if (!BUILD) return;
     let live = true;
     const check = async () => {
       try {
         const response = await fetch('/api/version', { cache: 'no-store' });
         if (!response.ok) return;
         const data = (await response.json()) as { id?: unknown };
-        if (live && typeof data.id === 'string') setLatest(data.id);
+        if (live && typeof data.id === 'string') setVersion(state => trackVersion(state.baseline, data.id as string));
       } catch { /* sem rede: tenta de novo depois */ }
     };
     const visible = () => { if (document.visibilityState === 'visible') void check(); };
@@ -30,7 +27,7 @@ function useNewVersion() {
     document.addEventListener('visibilitychange', visible);
     return () => { live = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
   }, []);
-  return updateAvailable(BUILD, latest);
+  return version.update;
 }
 
 function readAvisos(userId: string): string[] {
