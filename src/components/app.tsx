@@ -14,7 +14,8 @@ import { prepareAudio, uploadAudio } from '@/lib/chat-media';
 import { clearSignedUrls } from '@/lib/signed-urls';
 import { Composer } from './composer';
 import { useMicGate } from './mic-gate';
-import { mobileTabFor } from '@/lib/nav';
+import { useMediaQuery } from './use-media-query';
+import { mobileTabFor, shellCallClass } from '@/lib/nav';
 import { MessageContent } from './message-content';
 import type { Recording } from './use-audio-recorder';
 import { WhatsNew } from './whats-new';
@@ -86,6 +87,14 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const [mobileNavOpen,setMobileNavOpen]=useState(false);
   // Com uma call ativa, a tela em primeiro plano só é a call quando a pessoa a abre (entrar na call, botão Call, "Voltar para a call"). Início, Amigos, servidores etc. mostram a própria tela e a call segue conectada.
   const [callView,setCallView]=useState(false);
+  // No celular a call vira uma janela flutuante sobre a tela atual (como no Discord); tocar nela abre a call em tela cheia. No desktop segue ao lado do chat.
+  const isMobile = useMediaQuery('(max-width:720px)');
+  const returnTo = useRef<{ id: string; type: 'channel' | 'dm'; name: string } | null>(null);
+  const floatDrag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const floatDragged = useRef(false);
+  const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => { try { const raw = JSON.parse(localStorage.getItem('nacall-float') ?? 'null'); if (raw && Number.isFinite(raw.x) && Number.isFinite(raw.y)) setFloatPos({ x: raw.x, y: raw.y }); } catch { /* sem posição salva */ } }, []);
+  useEffect(() => { const reset = () => setFloatPos(null); window.addEventListener('resize', reset); return () => window.removeEventListener('resize', reset); }, []);
   const [settingsTab, setSettingsTab] = useState<'profile'|'appearance'|'security'>('profile');
   const[inspectedProfile,setInspectedProfile]=useState<Profile|null>(null);const[roomStates,setRoomStates]=useState<Record<string,RoomSnapshot>>({});const[clockNow,setClockNow]=useState(Date.now());
   const [voice, setVoice] = useState<VoiceSession | null>(null);
@@ -257,8 +266,20 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   }
   const inCallView = Boolean(voice) && callView && !target;
   const mobileTab = mobileTabFor({ navOpen: mobileNavOpen, serverId, target, inCallView });
-  function openCallView() { setTarget(null); const c = channels.find(c => c.id === voice?.channelId); if (c) setServerId(c.server_id); setCallView(true); setMobileNavOpen(false); }
-  return <div className={`shell ${mobileNavOpen?'nav-open':''} ${voice?target?"has-call call-chat":callView?"has-call call-focus":"call-away":""}`}>
+  const floating = Boolean(voice) && isMobile && !inCallView;
+  function openCallView() { if (floatDragged.current) { floatDragged.current = false; return; } if (target) returnTo.current = target; setTarget(null); const c = channels.find(c => c.id === voice?.channelId); if (c) setServerId(c.server_id); setCallView(true); setMobileNavOpen(false); }
+  function minimizeCall() { setCallView(false); if (returnTo.current) { setTarget(returnTo.current); returnTo.current = null; } }
+  const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), Math.max(min, max));
+  function floatDown(e: React.PointerEvent<HTMLElement>) { if (!floating) return; const r = e.currentTarget.getBoundingClientRect(); floatDrag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: r.left, oy: r.top, moved: false }; floatDragged.current = false; }
+  function floatMove(e: React.PointerEvent<HTMLElement>) {
+    const d = floatDrag.current; if (!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved) { if (Math.hypot(dx, dy) < 8) return; d.moved = true; floatDragged.current = true; e.currentTarget.setPointerCapture(e.pointerId); }
+    const host = e.currentTarget.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+    setFloatPos({ x: clamp(d.ox + dx - host.left, 6, host.width - e.currentTarget.offsetWidth - 6), y: clamp(d.oy + dy - host.top, 64, host.height - e.currentTarget.offsetHeight - 72) });
+  }
+  function floatUp(e: React.PointerEvent<HTMLElement>) { const d = floatDrag.current; if (!d || d.id !== e.pointerId) return; floatDrag.current = null; if (d.moved) { try { if (floatPos) localStorage.setItem('nacall-float', JSON.stringify(floatPos)); } catch { /* sem armazenamento */ } setTimeout(() => { floatDragged.current = false; }, 0); } }
+  return <div className={`shell ${mobileNavOpen?'nav-open':''} ${shellCallClass({ voice: Boolean(voice), isMobile, callView, target: Boolean(target) })}`}>
     <button className="mobile-nav-toggle" aria-label={mobileNavOpen?'Fechar canais':'Abrir canais e conversas'} aria-expanded={mobileNavOpen} aria-controls="workspace-sidebar" onClick={()=>setMobileNavOpen(v=>!v)}>{mobileNavOpen?<X size={21}/>:<Menu size={21}/>}</button>
     {mobileNavOpen&&<button className="mobile-nav-shade" aria-label="Fechar navegação" onClick={()=>setMobileNavOpen(false)}/>}
     <nav className="rail" aria-label="Navegação principal"><button className="logo-button" title="Início" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(false); }}><Brand compact/></button><div className="rail-line" />
@@ -295,7 +316,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
           <section className="card"><h2>Recebeu a convocação?</h2><form className="row" onSubmit={joinServer}><input name="code" aria-label="Código ou link do convite" placeholder="Cole o link do grupo e veja o convite" required defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('invite') || '' : ''} /><button disabled={busy}>Entrar</button></form></section></>}
       </div> : <><div className="message-list" aria-live="polite">{older && <button disabled={busy} onClick={() => void loadOlder()}>Carregar anteriores</button>}{loading && <p className="muted">Carregando mensagens…</p>}{!loading && !messages.length && <div className="empty-chat"><MessageCircle size={40} /><h2>Aqui ainda tá quietinho. Suspeito.</h2><p className="muted">Mande a primeira mensagem em {target.name}.</p></div>}{messages.map(m => <article className="message" key={m.id}><button className="profile-avatar-button" aria-label={`Ver perfil de ${getName(m.author_id)}`} onClick={()=>setInspectedProfile(profiles[m.author_id])}><Avatar profile={profiles[m.author_id]}/></button><div className="grow"><div className="row"><strong>{getName(m.author_id)}</strong><time className="muted small" dateTime={m.created_at}>{new Date(m.created_at).toLocaleString('pt-BR')}</time>{m.author_id === me && <button className="link small" disabled={busy} onClick={() => void act(async () => { const { error } = await db.from('messages').delete().eq('id', m.id); if (error) throw error; if (m.kind === 'audio' && m.media_path) void db.storage.from('chat-audio').remove([m.media_path]); setMessages(prev => prev.filter(x => x.id !== m.id)); })}>Excluir</button>}</div><MessageContent db={db} message={m} /></div></article>)}<div ref={bottom} /></div><Composer key={target.id} db={db} placeholder={`Conversar em ${target.name}…`} value={body} setValue={setBody} busy={busy} onSubmit={send} sendAudio={sendAudio} sendSticker={sendSticker} report={setNotice} /></>}
       
-    </main>{voice&&<aside className={`call-dock ${target?"docked":"focused"}`} aria-label="Chamada atual"><Voice session={voice} compact={Boolean(target)} snapshot={roomStates[voice.channelId]} openCall={openCallView} leave={()=>{setVoice(null);setCallView(false);window.dispatchEvent(new Event("nacall-room-refresh"));}} report={setNotice} db={db} profile={profile}/></aside>}<aside className="members"><div className="section-label">{server ? `MEMBROS · ${members.length}` : 'ATIVO AGORA'}</div>{(server ? members : friends.filter(f=>f.status==='accepted').map(f=>f.sender_id===me?f.receiver_id:f.sender_id).filter(id=>activeIds.has(id))).map(id => <div className="member" key={id}><button className="profile-avatar-button" aria-label={`Ver perfil de ${getName(id)}`} onClick={()=>setInspectedProfile(profiles[id])}><Avatar profile={profiles[id]}/></button><div><strong>{getName(id)}</strong><small>{id === server?.owner_id ? 'Proprietário' : id === me ? 'Você' : !server?'Em call':roles.filter(r=>r.server_id===serverId&&assignments.some(a=>a.user_id===id&&a.role_id===r.id)).sort((a,b)=>b.position-a.position)[0]?.name||'Membro'}</small></div></div>)}<div className="member-note"><Headphones size={24} /><h3>Só mais uma call.</h3><p>Crie seu canto, convide a galera e descubra quem esqueceu o mic aberto.</p></div></aside>
+    </main>{voice&&<aside className={`call-dock ${floating?"floating":target?"docked":"focused"}`} aria-label="Chamada atual" style={floating&&floatPos?{left:floatPos.x,top:floatPos.y,right:"auto",bottom:"auto"}:undefined} onPointerDown={floatDown} onPointerMove={floatMove} onPointerUp={floatUp} onPointerCancel={floatUp}><Voice session={voice} compact={Boolean(target)&&!isMobile} float={floating} minimize={inCallView?minimizeCall:undefined} snapshot={roomStates[voice.channelId]} openCall={openCallView} leave={()=>{setVoice(null);setCallView(false);returnTo.current=null;window.dispatchEvent(new Event("nacall-room-refresh"));}} report={setNotice} db={db} profile={profile}/></aside>}<aside className="members"><div className="section-label">{server ? `MEMBROS · ${members.length}` : 'ATIVO AGORA'}</div>{(server ? members : friends.filter(f=>f.status==='accepted').map(f=>f.sender_id===me?f.receiver_id:f.sender_id).filter(id=>activeIds.has(id))).map(id => <div className="member" key={id}><button className="profile-avatar-button" aria-label={`Ver perfil de ${getName(id)}`} onClick={()=>setInspectedProfile(profiles[id])}><Avatar profile={profiles[id]}/></button><div><strong>{getName(id)}</strong><small>{id === server?.owner_id ? 'Proprietário' : id === me ? 'Você' : !server?'Em call':roles.filter(r=>r.server_id===serverId&&assignments.some(a=>a.user_id===id&&a.role_id===r.id)).sort((a,b)=>b.position-a.position)[0]?.name||'Membro'}</small></div></div>)}<div className="member-note"><Headphones size={24} /><h3>Só mais uma call.</h3><p>Crie seu canto, convide a galera e descubra quem esqueceu o mic aberto.</p></div></aside>
   </div>;
 }
 

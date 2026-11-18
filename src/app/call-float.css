@@ -1,0 +1,22 @@
+/* Call no celular: janela flutuante (arrastável) sobre a tela atual; tocar nela abre a call em tela cheia. */
+.voice-float-card{display:none}
+.voice-panel.is-float{display:none!important}
+.shell.call-float>.call-dock{position:absolute;z-index:60;top:72px;right:10px;left:auto;bottom:auto;grid-column:auto!important;grid-row:auto!important;width:auto;height:auto;min-width:0;min-height:0;overflow:visible;border:0;background:transparent;display:block;touch-action:none}
+.shell.call-float .voice-float-card{display:flex;position:relative;flex-direction:column;align-items:center;gap:5px;width:96px;min-height:0;padding:9px 8px 8px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--text);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+.shell.call-float .voice-float-card:hover{background:var(--surface);border-color:var(--accent)}
+.shell.call-float .voice-float-card:active{cursor:grabbing;transform:none}
+.vf-avatars{display:grid;gap:4px;justify-items:center;align-items:center}
+.vf-avatars.n1{grid-template-columns:1fr}
+.vf-avatars.n2,.vf-avatars.n3,.vf-avatars.n4{grid-template-columns:repeat(2,1fr)}
+.vf-person{display:inline-flex}
+.vf-person .avatar{width:52px;height:52px;border-radius:16px;font-size:15px}
+.n2 .vf-person .avatar,.n3 .vf-person .avatar,.n4 .vf-person .avatar{width:35px;height:35px;border-radius:11px;font-size:11px}
+.vf-person.speaking .avatar{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent)}
+.vf-label{display:flex;align-items:center;gap:4px;max-width:100%;font-size:10px;font-weight:800;color:var(--muted)}
+.vf-label svg{color:var(--accent)}
+.vf-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:68px}
+.vf-mic{position:absolute;top:-7px;right:-7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+@media(max-width:720px){
+ /* a janela flutuante já avisa que há uma call; a faixa "Voltar para a call" fica só no desktop */
+ .call-return{display:none}
+}
