@@ -20,8 +20,14 @@ export const authSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('signup'), username: usernameSchema, displayName: nameSchema, email: emailSchema, password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch),
   z.object({ action: z.literal('verify'), email: emailSchema, code: codeSchema }),
   z.object({ action: z.literal('resend'), email: emailSchema }),
+  z.object({ action: z.literal('check'), username: usernameSchema.optional(), email: emailSchema.optional() }).refine(d => d.username !== undefined || d.email !== undefined, { message: 'Informe o usuário ou o email.' }),
   z.object({ action: z.literal('recover'), email: emailSchema }),
   z.object({ action: z.literal('recover-confirm'), email: emailSchema, code: codeSchema, password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch),
+]);
+/** Contas do modelo antigo confirmam (ou trocam) o email por um código enviado ao endereço informado. */
+export const emailChangeSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('request'), email: emailSchema }),
+  z.object({ action: z.literal('confirm'), email: emailSchema, code: codeSchema }),
 ]);
 export const passwordChangeSchema = z.object({ current: z.string().min(1, 'Informe a senha atual.').max(128), password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch);
 export const mfaSchema = z.discriminatedUnion('action', [
@@ -30,5 +36,5 @@ export const mfaSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('use-code'), code: z.string().trim().min(8).max(40) }),
   z.object({ action: z.literal('disable'), password: z.string().min(1, 'Informe a senha.').max(128) }),
 ]);
-/** Email (contém @) ou username. O username segue a política do projeto: minúsculas, números e _. */
+/** Email (contém @) ou username. O nick nunca contém @ (ver usernamePattern em validation.ts). */
 export function isEmailIdentifier(identifier: string) { return identifier.includes('@'); }

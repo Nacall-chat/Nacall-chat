@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { createHash, createHmac, randomInt } from 'node:crypto';
+import { usernameKey, usernamePattern } from './validation';
 export const reply = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 export type ServerEnv = { url: string; pub: string; secret: string };
 export function serverEnv(): ServerEnv | null {
@@ -55,11 +56,31 @@ export function classifyMailError(error: { status?: number; code?: string }): Ma
 export const emailAlreadyRegistered = (user: Pick<User, 'identities'> | null | undefined) => !!user && Array.isArray(user.identities) && user.identities.length === 0;
 /** Log do servidor (Vercel) só com o essencial: nunca email, IP, senha ou o texto do erro. */
 export function logAuthFailure(action: string, error: { status?: number; code?: string }) { console.error(`[auth] ${action} falhou: status=${error.status ?? '?'} code=${error.code ?? '?'}`); }
+export type EmailStatus = 'confirmed' | 'unconfirmed' | 'none';
+/** Se o email já tem conta (função email_status, só service_role). Lança se a migration ainda não foi aplicada. */
+export async function emailStatus(admin: SupabaseClient, email: string): Promise<EmailStatus> {
+  const { data, error } = await admin.rpc('email_status', { p_email: email });
+  if (error) throw error;
+  return data === 'confirmed' || data === 'unconfirmed' ? data : 'none';
+}
+/** O nick está em uso por outra pessoa? Com o email informado, o nick do próprio dono (cadastro pendente ou conta dele) não conta como ocupado. */
+export async function usernameTakenByOther(admin: SupabaseClient, username: string, email?: string): Promise<boolean> {
+  const found = await admin.from('profiles').select('id').eq('username_key', usernameKey(username)).maybeSingle();
+  if (found.error) throw found.error;
+  if (!found.data) return false;
+  if (!email) return true;
+  const owner = (await admin.auth.admin.getUserById(found.data.id)).data.user;
+  return !owner || owner.email?.toLowerCase() !== email.toLowerCase();
+}
+/** Conta do modelo antigo: o app só libera o uso depois que ela confirma um email válido (marca em app_metadata, que a pessoa não consegue editar). */
+export const emailPending = (user: Pick<User, 'app_metadata'>) => user.app_metadata?.email_pending === true;
+/** Email fictício das contas do modelo antigo. */
+export const isPlaceholderEmail = (email: string | undefined | null) => !!email && email.toLowerCase().endsWith('@accounts.nacall.invalid');
 /** Email do login: o próprio email, ou o do dono do username. Nunca expõe tabelas administrativas ao navegador. */
 export async function resolveEmail(admin: SupabaseClient, identifier: string): Promise<string | null> {
   if (identifier.includes('@')) return identifier;
-  if (!/^[a-z0-9_]{3,24}$/.test(identifier)) return null;
-  const profile = await admin.from('profiles').select('id').eq('username', identifier).maybeSingle();
+  if (!usernamePattern.test(identifier)) return null;
+  const profile = await admin.from('profiles').select('id').eq('username_key', usernameKey(identifier)).maybeSingle();
   if (profile.error || !profile.data) return null;
   const account = await admin.auth.admin.getUserById(profile.data.id);
   return account.data.user?.email ?? null;
