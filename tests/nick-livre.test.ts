@@ -56,3 +56,20 @@ test('marca das contas antigas: só quem veio do modelo antigo recebe email_pend
   await db.exec(sql);// sem a tabela antiga (depois de 202611030002) continua sem erro
  }finally{await db.close();}
 });
+test('email_status: confirmada, pendente ou inexistente, e só o servidor pode chamar',async()=>{
+ const db=await newDb();
+ try{
+  await db.exec('alter table auth.users add column email_confirmed_at timestamptz');
+  await db.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now()),($3,$4,null)',[id(1),'ativa@exemplo.com',id(2),'pendente@exemplo.com']);
+  await db.exec(await migration('202611180003_email_status.sql'));
+  const status=async(email:string)=>(await db.query<{s:string}>('select public.email_status($1) as s',[email])).rows[0].s;
+  assert.equal(await status('ativa@exemplo.com'),'confirmed');
+  assert.equal(await status('  ATIVA@Exemplo.com '),'confirmed');// ignora caixa e espaços
+  assert.equal(await status('pendente@exemplo.com'),'unconfirmed');
+  assert.equal(await status('ninguem@exemplo.com'),'none');
+  await db.exec('set role authenticated');
+  await assert.rejects(db.query("select public.email_status('ativa@exemplo.com')"),/permission denied/i);// o navegador não consulta
+  await db.exec('reset role');await db.exec('set role service_role');
+  assert.equal(await status('ativa@exemplo.com'),'confirmed');
+ }finally{await db.close();}
+});

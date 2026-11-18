@@ -1,6 +1,6 @@
 import { authSchema } from '@/lib/auth-schema';
 import { usernameKey } from '@/lib/validation';
-import { adminClient, allow, anonClient, classifyMailError, clientIp, emailAlreadyRegistered, logAuthFailure, reply, resolveEmail, serverEnv } from '@/lib/auth-server';
+import { adminClient, allow, anonClient, classifyMailError, clientIp, emailAlreadyRegistered, emailStatus, logAuthFailure, reply, resolveEmail, serverEnv, usernameTakenByOther } from '@/lib/auth-server';
 export const runtime = 'nodejs';
 const wrong = 'Usuário/email ou senha não conferem.';
 const tooMany = 'Muitas tentativas. Dá uma pausa de alguns minutos e tenta de novo.';
@@ -70,9 +70,19 @@ export async function POST(request: Request) {
         if (error || !data.session) return reply({ error: wrong }, 401);
         return reply({ session: { access_token: data.session.access_token, refresh_token: data.session.refresh_token } });
       }
+      case 'check': {
+        // Aviso ao vivo no cadastro: o usuário e o email já têm conta? (decisão de produto: revelar, ver docs/AUTH.md)
+        if (!(await allow(admin, env.secret, 'check', ip, 40, 300))) return reply({ error: tooMany }, 429);
+        return reply({
+          ...(input.username !== undefined ? { usernameTaken: await usernameTakenByOther(admin, input.username, input.email) } : {}),
+          ...(input.email !== undefined ? { emailTaken: (await emailStatus(admin, input.email)) === 'confirmed' } : {}),
+        });
+      }
       case 'recover': {
         if (!(await allow(admin, env.secret, 'recover', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
-        // Email sem conta responde "ok" igual a um com conta. Já uma falha de envio (SMTP recusado, limite) não pode virar "enviado".
+        // Só envia o código se existe conta com o email; senão avisa (decisão de produto: revelar, ver docs/AUTH.md).
+        if ((await emailStatus(admin, input.email)) === 'none') return reply({ error: 'Não existe uma conta com esse email.', code: 'email_not_found' }, 404);
+        // Uma falha de envio (SMTP recusado, limite) não pode virar "enviado".
         const { error } = await anonClient(env).auth.resetPasswordForEmail(input.email);
         if (error) return mailFailure('recover', error, 'Não foi possível enviar o código agora. Tente novamente em instantes.');
         return reply({ ok: true });

@@ -16,7 +16,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 | Cadastro | `signup` valida usuário, email e senha (12+ caracteres, confirmada) → Supabase cria a conta e envia o código → tela de código → `verify` confirma → volta ao login. Se o **email já tem conta** ou o **usuário já está em uso**, a tela avisa (409) e, no caso do email, oferece "Entrar" e "Esqueci a senha". Cadastro que ficou sem confirmar (mesmo email e usuário) refaz o envio do código em vez de travar |
 | Código | 6 dígitos, uso único, validade configurada no Supabase (10 min), reenvio com intervalo de 60 s |
 | Login | Usuário **ou** email + senha. Resposta única para usuário inexistente e senha errada |
-| Recuperação | `recover` (resposta igual exista ou não a conta) → código por email → `recover-confirm` com nova senha 12+ confirmada → sessões antigas são encerradas |
+| Recuperação | `recover` confere se o email tem conta: **sem conta, avisa "Não existe uma conta com esse email" (404) e não envia nada**; com conta, envia o código → código por email → `recover-confirm` com nova senha 12+ confirmada → sessões antigas são encerradas |
 | 2FA | Após o primeiro login, um convite oferece ativar. Configurações → Segurança: QR Code TOTP → código de 6 dígitos → só então o 2FA vale. Gera 10 códigos de recuperação (aparecem uma vez) |
 | Login com 2FA | Sessão `aal1` → tela de código do app (ou código de recuperação) → sessão `aal2` |
 | Email das contas antigas | Contas do modelo antigo recebem `app_metadata.email_pending=true` (migration `202611180002`). Ao entrar, o app mostra uma tela que **bloqueia o uso** até a pessoa informar um email e confirmar um código de 6 dígitos (`POST /api/auth/email`: `request` e `confirm`). Email novo: o Supabase envia o código ao endereço novo (`email_change`). Mesmo email do cadastro: código de acesso ao endereço atual. Confirmado, a marca vira `false`. Contas novas nunca têm a marca |
@@ -26,7 +26,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 
 | Rota | Ações | Observações |
 | --- | --- | --- |
-| `POST /api/auth` | `signup`, `verify`, `resend`, `login`, `recover`, `recover-confirm` | Valida com zod, confere a origem, limita tamanho e tentativas |
+| `POST /api/auth` | `signup`, `check`, `verify`, `resend`, `login`, `recover`, `recover-confirm` | Valida com zod, confere a origem, limita tamanho e tentativas |
 | `POST /api/auth/mfa` | `status`, `generate-codes`, `use-code`, `disable` | Exige Bearer; `generate-codes` e `disable` exigem sessão `aal2`; `disable` pede a senha |
 | `POST /api/auth/email` | `request`, `confirm` | Só para contas marcadas `email_pending`; exige Bearer e, com 2FA, sessão `aal2` |
 | `POST /api/auth/password` | troca de senha logado | Exige a senha atual e, com 2FA, sessão `aal2` |
@@ -37,7 +37,7 @@ As mesmas regras (`src/lib/auth-schema.ts`) rodam no navegador (feedback imediat
 ## Proteções
 
 - **Limites de tentativas** (`consume_rate_limit`, só `service_role`): por IP, por email, por usuário e por ação. O banco guarda somente o HMAC (SHA-256 com a chave de serviço), nunca IP ou email puros. Além disso valem os limites nativos do Supabase para envio de email e verificação de código.
-- **Enumeração:** `login` devolve a mesma mensagem para usuário inexistente e senha errada, e `recover` responde igual exista ou não a conta. Exceção deliberada (decisão do produto, 2026-11-08): o **cadastro** informa quando o **username** ou o **email** já têm conta, porque deixar a pessoa sem aviso (o Supabase, sozinho, responde "ok" e não envia nada) era pior do que expor isso. O custo é que dá para descobrir se um email tem conta; a mitigação é o limite por IP (5 cadastros/10 min) e o limite global de 60 pedidos/5 min.
+- **Enumeração:** `login` devolve a mesma mensagem para usuário inexistente e senha errada, Exceções deliberadas (decisão do produto): o **cadastro** informa, ao vivo (`check`, com pausa de 500 ms na digitação) e no envio, quando o **username** ou o **email** já têm conta, e o **"esqueci a senha"** informa quando **não existe conta** com o email, em vez de fingir que enviou. Deixar a pessoa sem aviso era pior do que expor isso. O custo é que dá para descobrir se um email ou usuário tem conta; as mitigações são os limites por IP (5 cadastros/10 min, 40 checagens/5 min), por email (3 recuperações/10 min) e o global de 60 pedidos/5 min. A consulta de email é a função `email_status` (migration `202611180003`), restrita ao `service_role`.
 - **Falha de envio nunca vira "enviado":** se o Supabase não consegue mandar o email (SMTP recusado, provedor fora do ar, limite de envio), `signup`, `resend` e `recover` respondem 503 ("Não conseguimos enviar o email agora") ou 429 ("Aguarde um minuto"), e o motivo (status e código, nunca email nem IP) vai para o log do servidor na Vercel com o prefixo `[auth]`.
 - **Código inválido e expirado** compartilham uma mensagem: o Supabase não distingue os dois casos.
 - **Cadastros abandonados:** o perfil nasce no cadastro, então `purge_unconfirmed_accounts()` libera nicks de contas não confirmadas há mais de 1 dia (executa a cada cadastro).

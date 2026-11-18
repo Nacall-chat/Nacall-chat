@@ -18,7 +18,7 @@
 .jacall-character{inset:60px auto 0 50%;width:auto;height:calc(100% - 60px);aspect-ratio:.64;transform:translateX(-50%)}
 /* Autenticação: senha com mostrar/ocultar, código, 2FA e códigos de recuperação */
 .password-field{display:flex;align-items:center;gap:6px}.password-field input{flex:1;min-width:0}
-.field-hint{display:block;margin-top:6px;color:var(--muted);font-size:12px}
+.field-hint{display:block;margin-top:6px;color:var(--muted);font-size:12px}.field-hint.bad{color:var(--error)}.field-hint.bad .link{display:inline;padding:0;color:inherit;text-decoration:underline;font-size:inherit}
 .password-field+.field-hint{color:var(--primary)}
 .code-input{letter-spacing:.5em;text-align:center;font-size:22px;font-variant-numeric:tabular-nums}
 .auth-layout.solo{grid-template-columns:minmax(0,520px);justify-content:center}

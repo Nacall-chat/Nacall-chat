@@ -5,7 +5,7 @@ import {POST} from '../src/app/api/auth/route';
 const url='https://qa.example.invalid';
 const ownerId='22222222-2222-4222-8222-222222222222';
 const email='dona@exemplo.com';
-type Stub={profile?:string|null;owner?:{email:string;confirmed:boolean}|null;signup?:Response;recover?:Response;resend?:Response};
+type Stub={emailStatus?:'confirmed'|'unconfirmed'|'none';profile?:string|null;owner?:{email:string;confirmed:boolean}|null;signup?:Response;recover?:Response;resend?:Response};
 const authError=(status:number,code:string,msg:string)=>new Response(JSON.stringify({code:status,error_code:code,msg}),{status});
 const newUser=(identities:unknown[])=>Response.json({id:'33333333-3333-4333-8333-333333333333',email,identities,user_metadata:{}});
 async function call(body:unknown,stub:Stub={}){
@@ -14,6 +14,7 @@ async function call(body:unknown,stub:Stub={}){
   const target=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url);const path=target.pathname;calls.push(`${options?.method??'GET'} ${path}`);
   if(path==='/rest/v1/rpc/consume_rate_limit')return Response.json(true);
   if(path==='/rest/v1/rpc/purge_unconfirmed_accounts')return Response.json(0);
+  if(path==='/rest/v1/rpc/email_status')return Response.json(stub.emailStatus??'confirmed');
   if(path==='/rest/v1/profiles')return Response.json(stub.profile?[{id:stub.profile}]:[]);
   if(path===`/auth/v1/admin/users/${ownerId}`)return stub.owner?Response.json({id:ownerId,email:stub.owner.email,email_confirmed_at:stub.owner.confirmed?'2026-11-03T19:12:11Z':null}):authError(404,'user_not_found','User not found');
   if(path==='/auth/v1/signup')return stub.signup??newUser([{id:'1'}]);
@@ -66,6 +67,20 @@ test('rota de auth: avisa email/usuário já existentes e nunca diz "enviado" qu
    assert.deepEqual((await call({action:'recover',email})).data,{ok:true});
    const wait=await call({action:'recover',email},{recover:authError(429,'over_email_send_rate_limit','For security purposes, you can only request this after 45 seconds.')});
    assert.equal(wait.status,429);assert.equal(wait.data.code,'rate_limited');
+  });
+  await t.test('esqueci a senha: email sem conta avisa e NÃO envia código',async()=>{
+   const r=await call({action:'recover',email},{emailStatus:'none'});
+   assert.equal(r.status,404);assert.equal(r.data.code,'email_not_found');assert.match(String(r.data.error),/Não existe uma conta/);
+   assert.ok(!r.calls.includes('POST /auth/v1/recover'));
+  });
+  await t.test('checagem ao vivo no cadastro: usuário e email já em uso',async()=>{
+   assert.deepEqual((await call({action:'check',username:'Nick_01',email})).data,{usernameTaken:false,emailTaken:true});
+   assert.deepEqual((await call({action:'check',email},{emailStatus:'none'})).data,{emailTaken:false});
+   assert.deepEqual((await call({action:'check',email},{emailStatus:'unconfirmed'})).data,{emailTaken:false});// cadastro pendente pode refazer o envio
+   const taken=await call({action:'check',username:'Nick_01'},{profile:ownerId});assert.deepEqual(taken.data,{usernameTaken:true});
+   const own=await call({action:'check',username:'Nick_01',email},{profile:ownerId,owner:{email,confirmed:false}});assert.equal(own.data.usernameTaken,false);// o nick é do próprio dono do email
+   const other=await call({action:'check',username:'Nick_01',email},{profile:ownerId,owner:{email:'outra@exemplo.com',confirmed:true}});assert.equal(other.data.usernameTaken,true);
+   assert.equal((await call({action:'check'})).status,400);
   });
   await t.test('reenviar código: falha de envio aparece; limite pede para aguardar; ok segue',async()=>{
    assert.equal((await call({action:'resend',email})).status,200);

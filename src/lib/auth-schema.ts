@@ -20,6 +20,7 @@ export const authSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('signup'), username: usernameSchema, displayName: nameSchema, email: emailSchema, password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch),
   z.object({ action: z.literal('verify'), email: emailSchema, code: codeSchema }),
   z.object({ action: z.literal('resend'), email: emailSchema }),
+  z.object({ action: z.literal('check'), username: usernameSchema.optional(), email: emailSchema.optional() }).refine(d => d.username !== undefined || d.email !== undefined, { message: 'Informe o usuário ou o email.' }),
   z.object({ action: z.literal('recover'), email: emailSchema }),
   z.object({ action: z.literal('recover-confirm'), email: emailSchema, code: codeSchema, password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch),
 ]);
