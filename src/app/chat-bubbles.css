@@ -1,0 +1,16 @@
+/* Balões de mensagem: o que a pessoa envia fica à direita, numa cor um pouco mais clara; o que os outros enviam fica à esquerda, mais escuro. */
+.message{--bubble-other:var(--surface);--bubble-mine:color-mix(in srgb,var(--accent) 22%,var(--panel));gap:10px;padding:6px 0}
+.main .message{gap:10px;padding:6px 0}
+.message .bubble{flex:0 1 auto;min-width:0;max-width:min(78%,640px);padding:8px 13px 10px;border-radius:4px 16px 16px 16px;background:var(--bubble-other);border:1px solid color-mix(in srgb,var(--line),transparent 35%)}
+.message.mine{flex-direction:row-reverse}
+.message.mine .bubble{border-radius:16px 4px 16px 16px;background:var(--bubble-mine);border-color:color-mix(in srgb,var(--accent),transparent 68%)}
+.message.mine .row{justify-content:flex-end}
+.message .bubble p{margin:4px 0 0}
+.message .bubble .audio-player{margin-top:6px}
+.message[data-kind="audio"] .bubble{width:min(380px,78%)}
+.message.theirs .audio-player{background:var(--panel)}
+.message.mine .audio-player{background:color-mix(in srgb,var(--bubble-mine),#000 24%);border-color:transparent}
+@media(max-width:720px){
+ .message .bubble{max-width:min(86%,640px);padding:7px 11px 9px}
+ .message[data-kind="audio"] .bubble{width:min(380px,86%)}
+}

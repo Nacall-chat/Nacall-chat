@@ -46,6 +46,7 @@ export function WhatsNew({userId}:{userId:string}){
  const total=whatsNewSlides.length;
  const last=index===total-1;
  useEffect(()=>{if(!alreadySeen(key))setOpen(true);},[key]);
+ useEffect(()=>{const reopen=()=>{setIndex(0);setOpen(true);};window.addEventListener('nacall-open-novidades',reopen);return()=>window.removeEventListener('nacall-open-novidades',reopen);},[]); // botão "Ver novidades" do sino
  const close=()=>{markSeen(key);setOpen(false);};
  const go=(to:number)=>setIndex(clampSlide(to,total));
  useEffect(()=>{

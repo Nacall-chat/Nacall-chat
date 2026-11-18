@@ -100,6 +100,8 @@ A migration `202611020005_profile_covers.sql` adiciona capa de perfil e Storage 
 
 A migration `202611190001_audio_e_figurinhas.sql` adiciona mensagens de áudio e figurinhas ao chat (buckets privados `chat-audio` e `stickers`, tabela `stickers`, colunas de mídia em `messages`) e o app ganhou seletor de emojis e uma janela de novidades. Detalhes, limites e segurança em [docs/CHAT-MIDIA.md](docs/CHAT-MIDIA.md).
 
+A migration `202611190002_leitura_de_dms.sql` guarda até quando cada pessoa leu cada DM (tabela `dm_reads`, `mark_dm_read` e `unread_dms`). Com ela, as mensagens do outro lado aparecem em balões à esquerda e as suas à direita, as DMs não lidas ganham bolinha vermelha, o sino mostra mensagens e novidades do NACALL (inclusive nova versão no ar) e toca um som quando chega mensagem. Detalhes em [docs/NOTIFICACOES.md](docs/NOTIFICACOES.md).
+
 ## Colaborar
 
 Repositório privado: https://github.com/Nacall-chat/Nacall-chat . Consulte CONTRIBUTING.md para configurar um ambiente de desenvolvimento e enviar alterações.
