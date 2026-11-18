@@ -1,0 +1,6 @@
+/* Amigos: a foto e o nome ficam à esquerda da linha (o botão herdava o alinhamento centralizado). */
+.social-person{justify-content:flex-start}
+
+/* Quem está falando na sala (lista da barra lateral): anel verde que acende na hora. */
+.voice-roster-person .avatar{transition:none}
+.voice-roster-person.speaking .avatar{border-color:var(--success);box-shadow:0 0 0 2px var(--success)}

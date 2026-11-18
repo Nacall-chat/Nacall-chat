@@ -88,17 +88,21 @@ O transmissor escolhe 720p ou 1080p antes de compartilhar, com 15/30 fps. A esco
 
 O DJ começa em modo leve: busca apenas informações da música, sem iframe do YouTube. “Não quero ouvir” afeta apenas o dispositivo local, descarrega o player e não pausa a música dos outros. Ativar escuta carrega o player oficial visível. Fechar o painel também descarrega o vídeo e interrompe a escuta local; ao reabrir, o player sincroniza novamente. Não há extração de áudio, reprodução invisível nem garantia de áudio sem tráfego de vídeo pelo YouTube.
 
-## Identidade gamer, call lateral e capa de perfil
+## Identidade gamer, barra de voz e capa de perfil
 
 A marca usa o jacaré gamer com duas chuquinhas e headset. Artes separadas para redes sociais acompanham a entrega; no site são usadas versões WebP mais leves, com favicon PNG.
 
-Ao entrar numa sala de voz, a área de chamada ocupa o centro. Abrir um canal de texto ou DM mantém a mesma conexão e leva a call para uma coluna lateral com participantes compactos. “Abrir call” retorna à área maior. Em telas pequenas, a call usa um painel inferior compacto.
+Ao entrar numa sala de voz, a área de chamada ocupa o centro. Os controles da call ficam numa **barra de voz** que acompanha a pessoa em qualquer tela, como no Discord: no desktop é um cartão acima do perfil, na barra lateral (estado da conexão, sala, tempo, microfone e fone com a seta para escolher o aparelho, câmera, tela, DJ, ajustes e sair); no celular é uma barra compacta acima do menu de baixo (estado, microfone, fone e sair). Abrir um canal de texto, DM ou outra tela usa a área toda e mantém a mesma conexão; tocar na barra volta ao painel da call (participantes e telas). No desktop o painel não repete os botões (eles já estão na barra de voz) e os participantes aparecem em cartões do mesmo tamanho, centralizados; no celular, com a call em tela cheia, a barra de botões fica embaixo, acima do menu. O painel tem o botão de minimizar, que volta para a conversa de onde a pessoa veio.
 
 O endpoint autenticado `/api/livekit/rooms` valida o acesso aos canais pelo RLS e consulta participantes reais no LiveKit. O início da sessão é mantido nos metadados da sala somente pelo servidor, compartilhado entre observadores; sair de um usuário não reinicia enquanto outro permanece. A sala vazia tem início nulo e o contador some. O próximo acesso pelo app verifica a ocupação antes de emitir o token e inicia uma nova sessão ao entrar. Consulta a cada 5 segundos; o relógio visual avança a cada segundo. Não é presença social inventada. Queda de rede pode adiar a detecção até o LiveKit confirmar a desconexão.
 
 A migration `202611020005_profile_covers.sql` adiciona capa de perfil e Storage próprio. JPG/PNG/WebP são convertidos para WebP 1200×400; GIF até 5 MB é preservado para manter animação. Apenas o dono grava/remove objetos na própria pasta. A capa aparece nas configurações e no cartão aberto pelos avatares das mensagens/lista de membros. As capas são públicas por URL, assim como fotos de perfil; não envie informação privada na imagem.
 
 A migration `202611190001_audio_e_figurinhas.sql` adiciona mensagens de áudio e figurinhas ao chat (buckets privados `chat-audio` e `stickers`, tabela `stickers`, colunas de mídia em `messages`) e o app ganhou seletor de emojis e uma janela de novidades. Detalhes, limites e segurança em [docs/CHAT-MIDIA.md](docs/CHAT-MIDIA.md).
+
+A migration `202611190002_leitura_de_dms.sql` guarda até quando cada pessoa leu cada DM (tabela `dm_reads`, `mark_dm_read` e `unread_dms`). Com ela, as mensagens do outro lado aparecem em balões à esquerda e as suas à direita, as DMs não lidas ganham bolinha vermelha, o sino mostra mensagens e novidades do NACALL (inclusive nova versão no ar) e toca um som quando chega mensagem. Detalhes em [docs/NOTIFICACOES.md](docs/NOTIFICACOES.md).
+
+A migration `202611190003_presenca.sql` adiciona o status de presença entre amigos (online, ausente, invisível/offline) e o "visto pela última vez", com cartão ao passar o mouse no amigo. Detalhes em [docs/PRESENCA.md](docs/PRESENCA.md).
 
 ## Colaborar
 

@@ -1,0 +1,43 @@
+/* Status de presença: bolinha no avatar, menu do próprio status e cartão ao passar o mouse. */
+.presence-avatar{position:relative;display:inline-flex;flex-shrink:0}
+.status-badge{position:absolute;right:-3px;bottom:-3px;box-sizing:content-box;width:9px;height:9px;border:2px solid var(--surface);border-radius:50%;background:#8a8f98}
+.status-badge.online{background:#3ecf8e}
+.status-badge.away{background:#f0b232}
+.status-badge.offline,.status-badge.invisible{background:#8a8f98}
+.status-badge.inline{position:static;display:inline-block;flex-shrink:0;width:9px;height:9px;margin-right:7px;border:0;vertical-align:middle}
+.social-row .status-badge,.member .status-badge{border-color:var(--bg)}
+
+/* linhas com o cartão: o contêiner não pode mudar o tamanho do botão */
+.hover-anchor{display:inline-flex;min-width:0}
+.hover-anchor.fill{flex:1}
+.hover-anchor.block{display:block;width:100%}
+.hover-anchor.fill>.social-person{flex:1}
+
+.hover-card{position:fixed;z-index:90;width:300px;overflow:hidden;pointer-events:none;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.hc-cover{height:62px;overflow:hidden;background:linear-gradient(130deg,var(--soft),var(--primary))}
+.hc-cover img{width:100%;height:100%;object-fit:cover}
+.hc-body{display:grid;gap:3px;padding:0 16px 16px}
+.hc-body .presence-avatar{margin-top:-28px;margin-bottom:6px;width:max-content}
+.hc-body .avatar{width:56px;height:56px;border-radius:18px;border:4px solid var(--surface);font-size:18px}
+.hc-body .status-badge{right:-4px;bottom:-4px;width:12px;height:12px;border-color:var(--surface)}
+.hc-body strong{font-size:15px}
+.hc-body small{font-size:12px;color:var(--muted)}
+.hc-status{display:flex;align-items:center;margin:6px 0 0;font-size:12px;font-weight:700;color:var(--text)}
+.hc-bio{margin:6px 0 0;font-size:12px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere}
+.profile-card-content .hc-status{margin:2px 0 8px;font-weight:700}
+
+/* próprio status, no rodapé da barra lateral */
+.status-menu-wrap{position:relative;flex-shrink:0}
+.shell .account .account-avatar{min-width:0;min-height:0;padding:0;border:0;border-radius:11px;background:transparent}
+.shell .account .account-avatar:hover{background:transparent}
+.status-menu{position:absolute;left:-4px;bottom:calc(100% + 12px);z-index:80;width:270px;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.status-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:0;margin:0;padding:9px 10px;text-align:left;border:1px solid transparent;border-radius:9px;background:transparent}
+.status-menu button:hover{background:var(--raised);border-color:transparent}
+.status-menu button[aria-checked="true"]{background:var(--soft)}
+.status-menu button>span:not(.status-badge){display:grid;gap:2px;flex:1;min-width:0}
+.status-menu button strong{font-size:13px}
+.status-menu button small{font-size:11px;line-height:1.35;color:var(--muted);white-space:normal}
+@media(max-width:720px){
+ .status-menu{width:min(270px,calc(100vw - 40px))}
+ .shell>.sidebar .account .account-avatar{min-width:0;min-height:0;padding:0}
+}

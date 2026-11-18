@@ -1,0 +1,41 @@
+/* Painel da call: cartões simétricos e botões no lugar certo.
+   - Desktop e tablet (acima de 720 px): os botões já estão na barra de voz, perto do perfil; o painel só mostra a call.
+   - Celular (até 720 px): a barra de botões fica embaixo, acima do menu de baixo. */
+
+/* Cartões de participante: mesma proporção com foto ou com câmera (16:9 + nome), largura máxima e centralizados, em vez de esticar na tela inteira. */
+.call-dock .participants{--tile-max:320px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:14px}
+.call-dock .participants>.participant{flex:0 0 min(100%,var(--tile-max))}
+.call-dock .participant-photo{height:auto;aspect-ratio:16/9}
+.call-dock .participant-photo>.avatar{width:76px;height:76px;border-radius:26px;font-size:24px}
+.call-dock .with-stream{--tile-max:190px}
+.call-dock .with-stream .participant-photo{height:auto}
+.call-dock .with-stream .participant-photo>.avatar{width:48px;height:48px;border-radius:17px;font-size:16px}
+
+@media(min-width:721px){
+ .call-dock .call-toolbar{display:none}
+ .call-dock .voice-panel{grid-template-columns:minmax(0,1fr)}
+ .call-dock .call-stage,.call-dock .share-quality,.call-dock .call-device-settings,.call-dock .voice-panel>div[hidden],.call-dock .voice-panel>div:has(>.music-panel),.call-dock .ptt-hint{grid-column:1}
+}
+
+@media(max-width:720px){
+ /* duas por linha; uma sozinha fica maior */
+ .call-dock .participants{gap:10px}
+ .call-dock .participants>.participant{flex:0 0 min(calc((100% - 10px) / 2),210px)}
+ .call-dock .participants:has(>.participant:only-child)>.participant{flex-basis:min(100%,260px)}
+ .call-focus .participant-photo,.call-dock .participant-photo{height:auto}
+ .call-dock .participant-photo>.avatar{width:56px;height:56px;border-radius:19px;font-size:18px}
+ .call-dock .with-stream .participant-photo>.avatar{width:40px;height:40px;border-radius:14px;font-size:14px}
+
+ /* barra de botões embaixo, sempre à vista (fixa na base do painel, mesmo com DJ ou ajustes abertos) */
+ .call-dock .voice-panel{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(100px,1fr) auto auto auto auto auto}
+ .call-dock .call-stage,.call-dock .share-quality,.call-dock .call-device-settings,.call-dock .voice-panel>div[hidden],.call-dock .voice-panel>div:has(>.music-panel),.call-dock .ptt-hint{grid-column:1}
+ .call-dock .call-toolbar{grid-column:1;grid-row:7;position:sticky;bottom:0;z-index:3;min-height:min-content;flex-shrink:0;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:6px;margin:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));overflow:visible;border-top:1px solid var(--line);border-right:0;background:var(--surface)}
+ .call-dock .call-controls{flex:1 1 auto!important;flex-direction:row;justify-content:space-between;gap:6px;min-width:0;width:auto}
+ .call-dock .call-controls button{flex:1 1 0;min-width:0;max-width:56px;width:auto}
+ .call-dock .leave-call{flex:0 0 48px;width:48px;min-width:48px;margin:0}
+}
+
+/* Lista de aparelhos dos ajustes: o item escolhido fica com um verde de fundo suave e texto claro de verdade (antes era verde forte com letra cinza, ilegível). */
+.call-dock .lk-media-device-select [data-lk-active="true"]>.lk-button{background:color-mix(in srgb,var(--accent) 20%,var(--panel));color:var(--text);font-weight:700;box-shadow:inset 3px 0 0 var(--accent)}
+.call-dock .lk-media-device-select li:not([data-lk-active="true"])>.lk-button{color:var(--text)}
+.call-dock .lk-media-device-select li>.lk-button{border-radius:10px;text-align:left}
