@@ -79,7 +79,7 @@ export function VoiceBar(p: VoiceBarProps) {
   const deafButton = <button type="button" className={`vb-btn ${p.deaf ? 'off' : ''}`} aria-label={deafLabel} aria-pressed={p.deaf} title={deafLabel} onClick={p.onDeaf}>{p.deaf ? <VolumeX size={19} /> : <Headphones size={19} />}</button>;
   const info = <button type="button" className="vb-info" aria-label={`Abrir a call ${p.name}`} title="Abrir a call" onClick={p.onOpen}>
     <span className={`vb-signal ${p.tone}`}><Wifi size={16} /></span>
-    <span className="vb-text"><strong className={p.tone}>{p.status}</strong><small>{p.name}{p.duration ? ` · ${p.duration}` : ''}</small></span>
+    <span className="vb-text"><strong className={p.tone}>{p.status}</strong><small><span className="vb-name">{p.name}</span>{p.duration && <span className="vb-time"> · {p.duration}</span>}</small></span>
   </button>;
   const leave = <button type="button" className="vb-btn vb-leave" aria-label="Sair da call" title="Sair da call" onClick={p.onLeave}><PhoneOff size={19} /></button>;
 
