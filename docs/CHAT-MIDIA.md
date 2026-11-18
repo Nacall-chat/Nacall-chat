@@ -11,6 +11,13 @@ Tudo usa o chat que já existia (`messages`, canais e DMs, Realtime). Não há s
 - Quem ouve: o app pede links assinados de 1 hora (`createSignedUrls`, em lote, renovados sozinhos). A política de leitura do Storage só libera o arquivo para quem pode ler a mensagem que o referencia (membro do canal ou participante da DM). Por isso o destinatário ouve depois de atualizar a página ou reabrir a conversa: o que persiste é o arquivo e a linha da mensagem, não o link.
 - Excluir a mensagem apaga também o arquivo (a pessoa é a dona da pasta).
 
+## Microfone (call e áudio)
+`src/components/mic-gate.tsx` mostra uma janela do NACALL antes de usar o microfone, tanto ao **entrar numa call** quanto ao **gravar áudio**:
+- Se o navegador ainda não liberou o microfone, a janela explica e o botão **Permitir microfone** chama o aviso do navegador (que o site não consegue substituir). Depois de liberado, a mesma janela lista as **entradas** (com barra de nível ao vivo) e as **saídas** de áudio (com tom de teste, onde o navegador permite escolher a saída) e tem **Cancelar** e **Usar este microfone**.
+- A escolha fica em `localStorage` (`nacall-mic`). Com a permissão liberada e a escolha feita, a call e o áudio entram direto, sem janela e sem novo aviso. O NACALL usa o aparelho salvo na call (LiveKit), nas gravações e na saída do player.
+- A janela volta a aparecer só se o navegador esquecer a permissão (por exemplo, "Permitir desta vez"; por isso o texto pede "Permitir ao visitar o site") ou se estiver bloqueada (a janela mostra como desbloquear). Em Configurações → Áudio, **Escolher microfone e saída de áudio** reabre a janela; trocar o aparelho em Ajustes da call também fica salvo.
+- Regras puras (etapas, lista de aparelhos, preferência salva) em `src/lib/mic.ts`, com testes.
+
 ## Emojis
 `src/components/chat-picker.tsx`. Painel flutuante com abas **Emojis** e **Figurinhas** (não fecha ao escolher). Biblioteca em português, ~1.900 emojis de Unicode até 15.1, em 9 categorias, com busca sem acento e recentes (por aparelho). Entram no cursor, quantos forem. A biblioteca é gerada por `node scripts/gerar-emojis.mjs` a partir do pacote `emojibase-data` (devDependency) em `src/lib/emoji-data.json` e só é baixada quando o painel abre. Mensagem só de emojis (até 8) aparece grande.
 

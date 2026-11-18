@@ -13,6 +13,7 @@ import type { Channel, DM, Friendship, Message, Profile, Server, Sticker } from 
 import { prepareAudio, uploadAudio } from '@/lib/chat-media';
 import { clearSignedUrls } from '@/lib/signed-urls';
 import { Composer } from './composer';
+import { useMicGate } from './mic-gate';
 import { MessageContent } from './message-content';
 import type { Recording } from './use-audio-recorder';
 import { WhatsNew } from './whats-new';
@@ -89,6 +90,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const [roles,setRoles]=useState<ServerRole[]>([]);
   const [assignments,setAssignments]=useState<MemberRole[]>([]);
   const [pendingInvite,setPendingInvite]=useState<string|null>(()=>typeof window==='undefined'?null:inviteCode(new URLSearchParams(window.location.search).get('invite')||''));
+  const { ensureMic } = useMicGate();
   const bottom = useRef<HTMLDivElement>(null);
   const historyLimit = useRef(50);
   const followMessages = useRef(true);
@@ -231,6 +233,8 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
     if (voice?.channelId===channel.id){setTarget(null);setServerId(channel.server_id);return;}
     if (voice) { setNotice('Saia da chamada atual antes de entrar em outra sala.'); return; }
     setMobileNavOpen(false);
+    // Janela do NACALL: libera e escolhe o microfone na primeira vez; depois de liberado entra direto na call.
+    if (!(await ensureMic())) return;
     await act(async () => {
       const { data: { session: fresh } } = await db.auth.getSession();
       const response = await fetch('/api/livekit/token', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${fresh?.access_token ?? ''}` }, body: JSON.stringify({ channelId: channel.id }) });
