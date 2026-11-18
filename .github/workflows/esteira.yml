@@ -1,4 +1,4 @@
-name: Esteira
+name: Site · Esteira (HML e PRD)
 on:
   push:
     branches: [release, main]
@@ -38,7 +38,7 @@ jobs:
       - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
   producao:
     name: PRD
-    # Manual: Actions > Esteira > Run workflow, escolhendo a branch main. Nunca roda sozinho (aprovação da produção é humana).
+    # Manual: Actions > Site · Esteira (HML e PRD) > Run workflow, escolhendo a branch main. Nunca roda sozinho (aprovação da produção é humana).
     if: github.event_name == 'workflow_dispatch'
     needs: verificar
     runs-on: ubuntu-latest
