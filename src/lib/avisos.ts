@@ -26,8 +26,16 @@ export const unreadAvisos = (read: string[], list: Aviso[] = avisos) => list.fil
 
 export const withRead = (read: string[], ids: string[]) => [...new Set([...read, ...ids])].slice(-200);
 
-/** Há uma versão mais nova no ar? Só compara quando os dois lados conhecem a versão (em desenvolvimento, não). */
-export const updateAvailable = (current: string, latest: string) => Boolean(current) && Boolean(latest) && current !== latest;
+/**
+ * Acompanha a versão publicada em /api/version. A primeira resposta vira a versão desta aba; se uma resposta seguinte for diferente, saiu uma versão nova.
+ * Não depende de variável de build: a Esteira publica com a CLI da Vercel, que não leva o hash do commit para dentro do app.
+ * Resposta vazia (desenvolvimento, sem versão) nunca avisa.
+ */
+export function trackVersion(baseline: string, latest: string): { baseline: string; update: boolean } {
+  if (!latest) return { baseline, update: false };
+  if (!baseline) return { baseline: latest, update: false };
+  return { baseline, update: latest !== baseline };
+}
 
 const SOUND_KEY = 'nacall:aviso-som';
 /** O som de aviso vem ligado; só desliga se a pessoa desligou. */
