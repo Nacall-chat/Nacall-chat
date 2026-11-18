@@ -55,7 +55,7 @@ Se faltarem as credenciais de uma etapa, ela falha com uma mensagem clara e nada
 
 A migration precisa estar aplicada no Supabase do ambiente **antes** de o código que a usa ser publicado nele. Migrations devem ser aditivas. Ordem: aplicar em HML → mesclar na `release` → testar → aplicar em PRD → mesclar na `main` → Run workflow.
 
-Cuidado com migrations que apagam dados: `202611030002_auth_seguranca.sql` apaga contas com email `@accounts.nacall.invalid`. Em produção, onde essas contas são de pessoas reais, **aplique antes `202611170001_preservar_contas_antigas.sql`**, que as converte para o email real em vez de apagá-las (detalhes em `docs/AUTH.md`). Antes de aplicar qualquer migration em PRD, olhe o que ela apaga ou altera no banco de produção e confirme com quem decide.
+Cuidado com migrations que apagam dados: `202611030002_auth_seguranca.sql` apaga contas com email `@accounts.nacall.invalid`. Em produção, onde essas contas são de pessoas reais, **aplique antes `202611170001_preservar_contas_antigas.sql`**, que as converte para o email real em vez de apagá-las (detalhes em `docs/AUTH.md`). Em produção a ordem para as contas antigas é: `202611170001` (converte) → `202611180002` (marca `email_pending`, enquanto `account_emails` ainda existe) → restante de `202611030002` (remove as tabelas antigas) → `202611180001` (nick livre). Antes de aplicar qualquer migration em PRD, olhe o que ela apaga ou altera no banco de produção e confirme com quem decide.
 
 ## Configuração
 
