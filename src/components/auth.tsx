@@ -8,7 +8,7 @@ import {Brand} from './brand';
 import {ThemeSelector} from './preferences';
 import {PasswordField,postJson,type ApiError} from './auth-fields';
 import {authSchema,passwordIssue} from '@/lib/auth-schema';
-import {errorText} from '@/lib/validation';
+import {errorText,usernameHint,usernamePattern} from '@/lib/validation';
 type Credentials={access_token:string;refresh_token:string};
 type Mode='login'|'signup'|'verify'|'recover'|'recover-confirm';
 const copy:Record<Mode,{eyebrow:string;title:React.ReactNode;text:string}>={
@@ -54,7 +54,7 @@ export function Auth({db}:{db:SupabaseClient}){
  <section className="auth-card"><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p className="muted">{mode==='verify'&&email?<>Enviamos 6 dígitos para <strong>{email}</strong>. O código vale por poucos minutos e só funciona uma vez.</>:text.text}</p>
  <form onSubmit={submit} aria-busy={busy}>
   {mode==='login'&&<label>Usuário ou email<input autoComplete="username" required minLength={3} maxLength={254} placeholder="seu_nick ou voce@exemplo.com" value={identifier} onChange={e=>setIdentifier(e.target.value)}/></label>}
-  {mode==='signup'&&<><label>Usuário<input autoComplete="username" required minLength={3} maxLength={24} pattern="[a-z0-9_]{3,24}" placeholder="seu_nick" value={username} onChange={e=>setUsername(e.target.value.toLowerCase().replace(/\s/g,''))}/><small className="field-hint">3 a 24 letras minúsculas, números ou _, sem espaços.</small></label>
+  {mode==='signup'&&<><label>Usuário<input autoComplete="username" required minLength={3} maxLength={24} pattern={usernamePattern.source.slice(1,-1)} title={usernameHint} placeholder="seu_nick" value={username} onChange={e=>setUsername(e.target.value.replace(/\s/g,''))}/><small className="field-hint">{usernameHint}</small></label>
    <label>Como a galera te chama?<input autoComplete="nickname" required minLength={2} maxLength={60} value={name} onChange={e=>setName(e.target.value)} placeholder="Nome que aparece na call"/></label></>}
   {(mode==='signup'||mode==='recover')&&<label>Email<input type="email" autoComplete="email" required maxLength={254} value={email} onChange={e=>setEmail(e.target.value)} placeholder="voce@exemplo.com"/></label>}
   {mode==='recover-confirm'&&<label>Email<input type="email" autoComplete="email" required maxLength={254} value={email} onChange={e=>setEmail(e.target.value)}/></label>}

@@ -14,13 +14,13 @@ test('senha exige 12+ caracteres, mistura e rejeita as óbvias; aceita frases lo
  assert.equal(passwordIssue('Tr0ca-Esta-Senha!'),null);
  assert.equal(passwordIssue('uma frase longa de senha 2026'),null);
 });
-test('cadastro valida usuário, email e senhas; normaliza e recusa divergência',()=>{
+test('cadastro valida usuário, email e senhas; mantém o nick como digitado, normaliza o email e recusa divergência',()=>{
  const ok=authSchema.parse({...base,username:' Nick_01 ',email:' Nick@Exemplo.COM '});
- assert.ok(ok.action==='signup');assert.equal(ok.username,'nick_01');assert.equal(ok.email,'nick@exemplo.com');
+ assert.ok(ok.action==='signup');assert.equal(ok.username,'Nick_01');assert.equal(ok.email,'nick@exemplo.com');
  const bad=(patch:object)=>authSchema.safeParse({...base,...patch});
  assert.equal(bad({confirmPassword:'Outra-Senha-123!'}).success,false);
  assert.equal(bad({password:'curta1!',confirmPassword:'curta1!'}).success,false);
- for(const username of ['ab','nick com espaço','nick-01','a'.repeat(25),'Ñandú'])assert.equal(bad({username}).success,false,username);
+ for(const username of ['ab','nick com espaço','@nick','nick@x','a'.repeat(25),'Ñandú'])assert.equal(bad({username}).success,false,username);
  for(const email of [undefined,'','sem-arroba','a@','@b.com','a b@c.com',`${'a'.repeat(250)}@b.com`])assert.equal(bad({email}).success,false,String(email));
  assert.equal(bad({displayName:'x'}).success,false);
 });

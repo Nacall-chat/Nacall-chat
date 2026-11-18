@@ -5,7 +5,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 ## Modelo de identidade
 
 - **Identidade:** o email real, confirmado por código de 6 dígitos. Fica em `auth.users`; nada de email duplicado em tabelas nossas.
-- **Username:** só em `profiles.username` (único, `^[a-z0-9_]{3,24}$`, sempre minúsculo, sem espaços). O trigger `handle_new_user` cria o perfil a partir dos metadados do cadastro.
+- **Username (nick):** só em `profiles.username`, guardado como a pessoa digitou: 3 a 24 caracteres entre letras (maiúsculas e minúsculas), números e `_ . - ! # $ * + = ~ ^ ?`, sem espaços nem `@` (assim o login distingue nick de email). É único **sem diferenciar maiúsculas** (`profiles.username_key`, minúscula gerada pelo banco): `Maria` e `maria` são o mesmo nick, e o login e a busca de amigos ignoram a caixa. A regra vive em `usernamePattern` (`src/lib/validation.ts`) e no `check` `profiles_username_check` (migration `202611180001_nick_livre.sql`). O trigger `handle_new_user` cria o perfil a partir dos metadados do cadastro.
 - **Login por username:** o servidor (`/api/auth`) resolve username → email com a chave de serviço e chama o Supabase. A chave de serviço nunca vai ao navegador, e nenhuma tabela administrativa é lida pelo frontend.
 - Contas do modelo antigo (email fictício `@accounts.nacall.invalid`): onde só havia dados de teste (HML), foram apagadas pela migration `202611030002_auth_seguranca.sql`. Onde já havia pessoas usando (produção), **são preservadas** pela migration `202611170001_preservar_contas_antigas.sql`, que troca o email fictício pelo email real salvo no cadastro (`account_emails`) e mantém id, usuário, senha, grupos, amizades e DMs. O sistema próprio de recuperação (`account_recovery`, `account_emails`) é removido por `202611030002`.
 
@@ -19,6 +19,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 | Recuperação | `recover` (resposta igual exista ou não a conta) → código por email → `recover-confirm` com nova senha 12+ confirmada → sessões antigas são encerradas |
 | 2FA | Após o primeiro login, um convite oferece ativar. Configurações → Segurança: QR Code TOTP → código de 6 dígitos → só então o 2FA vale. Gera 10 códigos de recuperação (aparecem uma vez) |
 | Login com 2FA | Sessão `aal1` → tela de código do app (ou código de recuperação) → sessão `aal2` |
+| Email das contas antigas | Contas do modelo antigo recebem `app_metadata.email_pending=true` (migration `202611180002`). Ao entrar, o app mostra uma tela que **bloqueia o uso** até a pessoa informar um email e confirmar um código de 6 dígitos (`POST /api/auth/email`: `request` e `confirm`). Email novo: o Supabase envia o código ao endereço novo (`email_change`). Mesmo email do cadastro: código de acesso ao endereço atual. Confirmado, a marca vira `false`. Contas novas nunca têm a marca |
 | Sessões | "Sair dos outros dispositivos" (`scope: others`) e "Sair de todos" (`scope: global`); trocar a senha encerra as outras sessões |
 
 ## Rotas (servidor)
@@ -27,6 +28,7 @@ O Supabase Auth é a fonte da verdade: ele guarda as senhas (hash), envia e vali
 | --- | --- | --- |
 | `POST /api/auth` | `signup`, `verify`, `resend`, `login`, `recover`, `recover-confirm` | Valida com zod, confere a origem, limita tamanho e tentativas |
 | `POST /api/auth/mfa` | `status`, `generate-codes`, `use-code`, `disable` | Exige Bearer; `generate-codes` e `disable` exigem sessão `aal2`; `disable` pede a senha |
+| `POST /api/auth/email` | `request`, `confirm` | Só para contas marcadas `email_pending`; exige Bearer e, com 2FA, sessão `aal2` |
 | `POST /api/auth/password` | troca de senha logado | Exige a senha atual e, com 2FA, sessão `aal2` |
 | `POST /api/livekit/token` e `/rooms` | — | Conta com 2FA só passa com sessão `aal2` |
 
@@ -51,7 +53,8 @@ Sem isto o cadastro por código não funciona. Feito no painel, em cada projeto.
    - Sender: `suporte.nacall@gmail.com`, nome `NACALL`.
    - Host `smtp.gmail.com`, porta `465`, usuário `suporte.nacall@gmail.com`.
    - Senha: uma **senha de app** do Google (exige verificação em duas etapas ligada na conta). Cadastre só no painel, nunca no repositório. Limite do Gmail: cerca de 500 emails/dia; para produção em escala, migrar para um provedor transacional.
-3. **Authentication → Email Templates:** em **Confirm signup** e **Reset Password**, cole o conteúdo de `supabase/templates/confirmar-cadastro.html` e `supabase/templates/recuperar-senha.html`. Eles usam `{{ .Token }}` (o código de 6 dígitos) em vez de link.
+3. **Authentication → Email Templates:** em **Confirm signup**, **Reset Password**, **Change Email Address** e **Magic Link**, cole o conteúdo de `supabase/templates/confirmar-cadastro.html`, `recuperar-senha.html`, `trocar-email.html` e `codigo-de-acesso.html` (assuntos sugeridos no topo de cada arquivo). Eles usam `{{ .Token }}` (o código de 6 dígitos) em vez de link.
+   - **Secure email change desligado** (Authentication → Sign In / Providers → Email, ou Settings de Auth): com ele ligado o Supabase também exige confirmar no email antigo, que nas contas do modelo antigo pode estar errado ou ser fictício, e a troca nunca terminaria.
 4. **Authentication → Rate Limits:** com SMTP próprio, ajuste "emails sent per hour" (ex.: 30) e mantenha o intervalo de 60 s entre envios.
 5. **Authentication → Multi-Factor:** TOTP habilitado (padrão).
 6. **Authentication → URL Configuration:** Site URL do ambiente (`https://nacall-hml.vercel.app` em HML, `https://nacall.vercel.app` em PRD).

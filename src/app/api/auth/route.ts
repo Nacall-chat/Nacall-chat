@@ -1,4 +1,5 @@
 import { authSchema } from '@/lib/auth-schema';
+import { usernameKey } from '@/lib/validation';
 import { adminClient, allow, anonClient, classifyMailError, clientIp, emailAlreadyRegistered, logAuthFailure, reply, resolveEmail, serverEnv } from '@/lib/auth-server';
 export const runtime = 'nodejs';
 const wrong = 'Usuário/email ou senha não conferem.';
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       case 'signup': {
         if (!(await allow(admin, env.secret, 'signup', ip, 5, 600))) return reply({ error: tooMany }, 429);
         await admin.rpc('purge_unconfirmed_accounts'); // libera nicks de cadastros abandonados há mais de um dia
-        const taken = await admin.from('profiles').select('id').eq('username', input.username).maybeSingle();
+        const taken = await admin.from('profiles').select('id').eq('username_key', usernameKey(input.username)).maybeSingle();
         if (taken.error) return reply({ error: 'Não foi possível consultar o nome de usuário.' }, 503);
         if (taken.data) {
           // O nick pode ser do próprio dono deste email: conta já criada ou cadastro que ficou sem confirmar.

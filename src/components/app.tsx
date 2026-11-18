@@ -5,9 +5,10 @@ import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { Hash, Headphones, Plus, Users, Radio, LogOut, Settings, ArrowRight, MessageCircle, SunMoon, Gamepad2, ShieldCheck, Menu, X, House, Compass, ShoppingBag, UserPlus } from 'lucide-react';
 import {Landing} from './landing';
 import {MfaChallenge,TwoFactorPrompt} from './mfa';
+import {EmailUpdate,needsEmailUpdate} from './email-update';
 import {CommunityCount} from './community-count';
 import { getSupabase } from '@/lib/supabase';
-import { errorText, messageSchema, nameSchema, usernameSchema } from '@/lib/validation';
+import { errorText, messageSchema, nameSchema, usernameKey, usernameSchema } from '@/lib/validation';
 import type { Channel, DM, Friendship, Message, Profile, Server } from '@/lib/types';
 import {durationLabel,type RoomSnapshot} from '@/lib/room-clock';
 import {profileTag,friendNumber} from '@/lib/identity';
@@ -51,6 +52,8 @@ export function App({initialScreen='landing'}:{initialScreen?:'landing'|'login'}
   if (!session) return initialScreen==='landing'&&!pendingInvite?<Landing/>:<>{pendingInvite&&<div className="invite-auth"><InviteCard db={db} code={pendingInvite} loggedIn={false}/></div>}<Auth db={db} /></>;
   if (mfaGate === 'checking') return <main className="setup" role="status">Conferindo sua segurança…</main>;
   if (mfaGate === 'challenge') return <MfaChallenge db={db} signOut={() => void db.auth.signOut()} />;
+  // Conta do modelo antigo: não usa o app até confirmar um email válido. Contas novas nunca passam por aqui.
+  if (needsEmailUpdate(session.user)) return <EmailUpdate db={db} user={session.user} signOut={() => void db.auth.signOut()} />;
   return <Workspace key={session.user.id} db={db} session={session} recovery={recovery} recovered={() => setRecovery(false)} />;
 }
 
@@ -180,7 +183,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
     await act(async () => {
       const number=friendNumber(raw);
       const query=db.from('profiles').select('id');
-      const { data, error } = await (number!==null?query.eq('user_number',number):query.eq('username',usernameSchema.parse(raw.trim().replace(/^@/,'')))).single();
+      const { data, error } = await (number!==null?query.eq('user_number',number):query.eq('username_key',usernameKey(usernameSchema.parse(raw.trim().replace(/^@/,''))))).single();
       if (error || !data) throw new Error('Usuário não encontrado.');
       if (data.id === me) throw new Error('Use o identificador de um amigo.');
       const result = await db.from('friendships').insert({ sender_id: me, receiver_id: data.id });
