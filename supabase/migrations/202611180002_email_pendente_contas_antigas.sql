@@ -3,7 +3,7 @@ begin;
 -- app_metadata.email_pending = true. O app segura essas contas numa tela que pede um email válido, confirmado por código, antes de
 -- liberar o uso. A marca está em app_metadata, que a própria pessoa não consegue editar. Contas novas nunca recebem a marca.
 --
--- ORDEM em produção: 202611170001 (converte para o email real) -> esta -> o restante de 202611030002 (que apaga account_emails).
+-- ORDEM em produção, depois do deploy: 202611170001 (converte para o email real) -> esta -> o restante de 202611030002 (que apaga account_emails).
 -- Depois que account_emails some, esta migration não faz nada (idempotente).
 do $$
 begin
