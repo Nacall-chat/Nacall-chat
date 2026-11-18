@@ -39,7 +39,8 @@ Supabase, projeto atual:
 - [ ] Authentication → Sign In / Providers: Email ligado, "Confirm email" desligado, cadastros permitidos.
 - [ ] Authentication → URL Configuration: Site URL e Redirect URLs.
 - [ ] Storage: buckets `avatars`, `group-icons`, `profile-covers`, `chat-audio` e `stickers` (privados; criados pela migration `202611190001`) presentes.
-- [ ] Database → Publications → `supabase_realtime`: `messages`, `friendships`, `room_media`.
+- [ ] Database → Publications → `supabase_realtime`: `messages`, `friendships`, `room_media`, `dms` e `dm_reads`.
+- [ ] Tabela `dm_reads` e funções `mark_dm_read` e `unread_dms` presentes (migration `202611190002`).
 
 ## Fase 3 — Homologação
 
