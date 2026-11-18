@@ -1,21 +1,14 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {AUDIO_BITRATE,AUDIO_MAX_MS,pickAudioMime} from '@/lib/chat-media';
+import {micConstraint,microphoneError} from '@/lib/mic';
+import {useMicGate} from './mic-gate';
 
 export type Recording={blob:Blob;ms:number};
 export type RecorderPhase='idle'|'requesting'|'recording';
 type Session={recorder:MediaRecorder;stream:MediaStream;chunks:Blob[];startedAt:number;endedMs:number;timer:number;raf:number;ctx:AudioContext|null;finished:Promise<Recording>|null;failure:Error|null};
 
 export const recorderSupported=()=>typeof window!=='undefined'&&Boolean(navigator.mediaDevices?.getUserMedia)&&typeof MediaRecorder!=='undefined';
-
-/** Traduz o erro do navegador em uma mensagem que diz o que fazer. */
-export function microphoneError(error:unknown):Error{
- const name=error&&typeof error==='object'&&'name' in error?String(error.name):'';
- if(name==='NotAllowedError'||name==='SecurityError')return new Error('O navegador bloqueou o microfone. Libere a permissão no cadeado da barra de endereço e tente de novo.');
- if(name==='NotFoundError'||name==='OverconstrainedError')return new Error('Nenhum microfone foi encontrado neste dispositivo.');
- if(name==='NotReadableError'||name==='AbortError')return new Error('Não consegui abrir o microfone. Ele pode estar em uso por outro programa.');
- return new Error('Não foi possível iniciar a gravação. Tente de novo.');
-}
 
 /**
  * Grava áudio com MediaRecorder. `start` pede a permissão do microfone, `finish` encerra e devolve o arquivo,
@@ -63,13 +56,17 @@ export function useAudioRecorder(){
   setPhase('idle');setElapsed(0);setLevels([]);setLimitReached(false);
  },[release]);
 
+ const{ensureMic}=useMicGate();
  const start=useCallback(async()=>{
   if(session.current)return;
   if(!recorderSupported())throw new Error('Este navegador não suporta gravar áudio. Tente o Chrome, o Edge, o Firefox ou o Safari atualizados.');
   wantsCancel.current=false;
   setPhase('requesting');
+  // A janela do NACALL explica a permissão e deixa escolher o microfone; depois de liberado, entra direto.
+  const mic=await ensureMic();
+  if(!mic||wantsCancel.current){setPhase('idle');return;}
   let stream:MediaStream;
-  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{...micConstraint(mic.inputId),echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
   catch(error){setPhase('idle');throw microphoneError(error);}
   if(wantsCancel.current){stream.getTracks().forEach(track=>track.stop());return;}
   let recorder:MediaRecorder;
@@ -103,7 +100,7 @@ export function useAudioRecorder(){
     s.raf=requestAnimationFrame(tick);
    }
   }catch{/* sem medidor */}
- },[finish]);
+ },[finish,ensureMic]);
 
  useEffect(()=>()=>{ // trocar de conversa ou fechar a aba solta o microfone
   const s=session.current;

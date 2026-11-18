@@ -1,8 +1,9 @@
 'use client';
-import {useRef,useState,type CSSProperties} from 'react';
+import {useEffect,useRef,useState,type CSSProperties} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {Pause,Play,RotateCw} from 'lucide-react';
 import {formatClock} from '@/lib/chat-media';
+import {readMicPrefs} from '@/lib/mic';
 import {useSignedUrl} from './use-signed-url';
 
 let current:HTMLAudioElement|null=null; // só um áudio toca por vez
@@ -17,6 +18,10 @@ export function AudioPlayer({db,path,durationMs}:{db:SupabaseClient;path:string;
  const[playing,setPlaying]=useState(false);
  const[time,setTime]=useState(0);
  const[broken,setBroken]=useState(false);
+ useEffect(()=>{ // toca na saída de áudio escolhida na janela do microfone (onde o navegador permite)
+  const el=audio.current as (HTMLAudioElement&{setSinkId?:(id:string)=>Promise<void>})|null;const out=readMicPrefs().outputId;
+  if(el?.setSinkId&&out)void el.setSinkId(out).catch(()=>{});
+ },[url]);
  const total=Math.max(durationMs/1000,0.1);
  const shown=Math.min(time,total);
  const failed=signError||broken;
