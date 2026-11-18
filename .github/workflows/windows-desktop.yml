@@ -1,4 +1,4 @@
-name: Build NACALL Windows
+name: Desktop · Build Windows
 on:
   workflow_dispatch:
   push:

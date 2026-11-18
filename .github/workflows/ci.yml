@@ -1,4 +1,4 @@
-name: Verificar NACALL
+name: PR · Verificar (typecheck, testes e build)
 on:
   pull_request:
   workflow_call:

@@ -5,7 +5,7 @@ feat/* → PR para release → CI + Preview (Vercel, backend de HML)
 merge em release → Esteira: Verificar → HML (nacall-hml.vercel.app)
 PR release → main (merge commit) → CI (só verifica; nada é publicado)
 merge em main → CI (nada é publicado)
-Actions > Esteira > Run workflow (branch main) → Verificar → PRD (nacall.vercel.app)
+Actions > Site · Esteira (HML e PRD) > Run workflow (branch main) → Verificar → PRD (nacall.vercel.app)
 ```
 
 ## Aprovação
@@ -31,6 +31,18 @@ As regras de "Ignored Build Step" de cada projeto decidem quem constrói o quê:
 
 As variáveis de ambiente de produção existem **somente** no ambiente Production do `nacall-prd`. Nunca cadastre credenciais de produção em Preview nem em `nacall-hml`.
 
+## Workflows do repositório
+
+Há três, e o nome começa com a área para ficar claro o que cada um faz na aba Actions:
+
+| Nome na aba Actions | Arquivo | Quando roda | Para que serve |
+| --- | --- | --- | --- |
+| **PR · Verificar (typecheck, testes e build)** | `ci.yml` | A cada PR, e chamado pela Esteira | Typecheck, testes e build. É o "check" verde/vermelho dos PRs |
+| **Site · Esteira (HML e PRD)** | `esteira.yml` | Push em `release` ou `main`, e o botão **Run workflow** | Verifica e publica o **site**: `release` vai para HML; produção só pelo botão, com a branch `main` |
+| **Desktop · Build Windows** | `windows-desktop.yml` | Mudanças em `desktop/**`, ou manualmente | Gera o instalador do app de Windows. Não mexe no site |
+
+Só o segundo publica o site. Os comandos usam o nome do arquivo (por exemplo `gh run list --workflow esteira.yml`), que não muda.
+
 ## Esteira (`.github/workflows/esteira.yml`)
 
 | Etapa | Quando | O que faz |
@@ -39,7 +51,7 @@ As variáveis de ambiente de produção existem **somente** no ambiente Producti
 | HML | push na `release`, depois de Verificar | publica o commit no projeto `nacall-hml` |
 | PRD | **só manual** (Run workflow), depois de Verificar | envia a `main` para o `nacall-prd`, que constrói na Vercel com as variáveis de produção |
 
-**Como publicar em produção:** GitHub → aba **Actions** → **Esteira** → **Run workflow** → em "Use workflow from" escolha **`main`** → **Run workflow**. O job PRD recusa qualquer outra branch e nunca roda sozinho. Depois, confira o deploy em https://nacall.vercel.app.
+**Como publicar em produção:** GitHub → aba **Actions** → **Site · Esteira (HML e PRD)** → **Run workflow** → em "Use workflow from" escolha **`main`** → **Run workflow**. O job PRD recusa qualquer outra branch e nunca roda sozinho. Depois, confira o deploy em https://nacall.vercel.app.
 
 Se faltarem as credenciais de uma etapa, ela falha com uma mensagem clara e nada é publicado.
 
