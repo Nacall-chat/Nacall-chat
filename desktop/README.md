@@ -9,9 +9,9 @@ Primeiro aplicativo nativo para Windows, desenvolvido com **Electron 45**, mante
 - Reaproveita login, chats, servidores e chamadas já presentes na versão web, sem duplicar a lógica LiveKit/Supabase.
 
 ## Gerar o .exe
-O workflow `Build NACALL Windows` compila em `windows-latest` e disponibiliza dois artefatos: `NACALL-Setup-0.1.0-x64.exe` e `NACALL-Portable-0.1.0-x64.exe`.
+O workflow `Desktop · Build Windows` compila em `windows-latest` e disponibiliza dois artefatos: `NACALL-Setup-0.1.0-x64.exe` e `NACALL-Portable-0.1.0-x64.exe`.
 
-No GitHub: **Actions → Build NACALL Windows → executar workflow (branch selecionada)**. Depois baixe o artefato da execução. Também é acionado automaticamente por alterações em `desktop/**` no PR.
+No GitHub: **Actions → Desktop · Build Windows → executar workflow (branch selecionada)**. Depois baixe o artefato da execução. Também é acionado automaticamente por alterações em `desktop/**` no PR.
 
 Localmente no Windows com Node 22 ou mais recente:
 
