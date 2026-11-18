@@ -3,6 +3,7 @@ import './globals.css';
 import '@livekit/components-styles';
 import '@fontsource-variable/nunito';
 import './jacall.css';
+import './chat-media.css';
 import { PreferencesProvider } from '@/components/preferences';
 export const metadata: Metadata = { manifest:'/manifest.webmanifest', applicationName:'NACALL', appleWebApp:{capable:true,title:'NACALL',statusBarStyle:'black-translucent'}, title: 'NACALL · A call é sua. A resenha é nossa.', description: 'Junta o squad, abre o mic e vem pra resenha com o mascote JACALL. Voz, vídeo, comunidades e música para sua galera.', icons: { icon:[{url:'/brand/jacall-avatar.webp?v=3',type:'image/webp'}], shortcut:'/brand/jacall-avatar.webp?v=3',apple:'/brand/jacall-avatar.webp?v=3' } };
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
