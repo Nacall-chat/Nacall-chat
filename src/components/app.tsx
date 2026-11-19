@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import dynamic from 'next/dynamic';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
-import { Hash, Headphones, Plus, Users, Radio, LogOut, Settings, ArrowRight, MessageCircle, SunMoon, Gamepad2, ShieldCheck, Menu, X, House, Compass, ShoppingBag } from 'lucide-react';
+import { Hash, Headphones, Plus, Users, Radio, LogOut, Settings, ArrowRight, MessageCircle, SunMoon, Gamepad2, ShieldCheck, Menu, X, Compass, ShoppingBag } from 'lucide-react';
 import {Landing} from './landing';
 import {MfaChallenge,TwoFactorPrompt} from './mfa';
 import {EmailUpdate,needsEmailUpdate} from './email-update';
@@ -21,7 +21,8 @@ import { PresenceAvatar, ProfileHover, StatusMenu } from './presence-ui';
 import { offlineInfo } from '@/lib/presence';
 import { NotificationBell } from './notification-bell';
 import { badgeText, unreadTotal } from '@/lib/unread';
-import { mobileTabFor, shellCallClass } from '@/lib/nav';
+import { shellCallClass } from '@/lib/nav';
+import { useDrawerSwipe } from '@/lib/use-drawer-swipe';
 import { MessageContent } from './message-content';
 import type { Recording } from './use-audio-recorder';
 import { WhatsNew } from './whats-new';
@@ -93,6 +94,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const [notice, setNotice] = useState('');
   const [settings, setSettings] = useState(false);
   const [mobileNavOpen,setMobileNavOpen]=useState(false);
+  useDrawerSwipe({open:mobileNavOpen,setOpen:setMobileNavOpen});
   // Com uma call ativa, o painel da call só ocupa a tela quando a pessoa o abre (entrar na call, botão Call, tocar na barra de voz). Início, Amigos, servidores e conversas mostram a própria tela, a call segue conectada e os controles ficam na barra de voz.
   const [callView,setCallView]=useState(false);
   // Os controles da call ficam numa barra de voz, num lugar só (como no Discord): cartão acima do perfil na barra lateral; no celular, barra compacta acima do menu de baixo.
@@ -283,24 +285,17 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
     await act(async () => { const { data, error } = await db.from('messages').select('*').eq(selected.type === 'channel' ? 'channel_id' : 'dm_id', selected.id).lt('created_at', messages[0].created_at).order('created_at', { ascending: false }).limit(50); if (error) throw error; if (activeTarget.current?.id !== selected.id) return; followMessages.current = false; historyLimit.current += data?.length ?? 0; setMessages(prev => [...(data ?? []).reverse(), ...prev]); setOlder(data?.length === 50); });
   }
   const inCallView = Boolean(voice) && callView && !target;
-  const mobileTab = mobileTabFor({ navOpen: mobileNavOpen, serverId, target, inCallView });
   function openCallView() { returnTo.current = target; setTarget(null); const c = channels.find(c => c.id === voice?.channelId); if (c) setServerId(c.server_id); setCallView(true); setMobileNavOpen(false); }
   function minimizeCall() { setCallView(false); if (returnTo.current) { setTarget(returnTo.current); returnTo.current = null; } }
   return <div className={`shell ${mobileNavOpen?'nav-open':''} ${shellCallClass({ voice: Boolean(voice), callView, target: Boolean(target) })}`}>
-    <button className="mobile-nav-toggle" aria-label={mobileNavOpen?'Fechar canais':'Abrir canais e conversas'} aria-expanded={mobileNavOpen} aria-controls="workspace-sidebar" onClick={()=>setMobileNavOpen(v=>!v)}>{mobileNavOpen?<X size={21}/>:<Menu size={21}/>}</button>
+    <button className="mobile-nav-toggle" aria-label={mobileNavOpen?'Fechar canais':'Abrir canais e conversas'} aria-expanded={mobileNavOpen} aria-controls="workspace-sidebar" onClick={()=>setMobileNavOpen(v=>!v)}>{mobileNavOpen?<X size={21}/>:<Menu size={21}/>}{!mobileNavOpen&&unreadMessages+pendingIn>0&&<span className="nav-toggle-badge" aria-label={`${unreadMessages+pendingIn} novidades`}>{badgeText(unreadMessages+pendingIn)}</span>}</button>
     {mobileNavOpen&&<button className="mobile-nav-shade" aria-label="Fechar navegação" onClick={()=>setMobileNavOpen(false)}/>}
     <nav className="rail" aria-label="Navegação principal"><button className="logo-button" title="Início" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(false); }}><Brand compact/></button><div className="rail-line" />
-      <button className={!serverId ? 'selected' : ''} title="Amigos" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(false); }}><Users size={22} />{unreadMessages > 0 && <span className="rail-badge" aria-label={`${unreadMessages} mensagens não lidas`}>{badgeText(unreadMessages)}</span>}</button>
+      <button className={!serverId ? 'selected' : ''} title="Amigos" aria-label="Início, amigos e mensagens" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(true); }}><Users size={22} />{unreadMessages > 0 && <span className="rail-badge" aria-label={`${unreadMessages} mensagens não lidas`}>{badgeText(unreadMessages)}</span>}</button>
       {servers.map(s => <button key={s.id} className={serverId === s.id ? 'selected' : ''} title={s.name} onClick={() => { setServerId(s.id); setTarget(null); setCallView(false); setMobileNavOpen(true); }}><GroupIcon server={s}/>{serverCallCount(s.id)>0&&<span className="server-voice-badge" aria-label={`${serverCallCount(s.id)} pessoas em call`}><Headphones size={10}/>{serverCallCount(s.id)}</span>}</button>)}
       <button title="Criar ou entrar em servidor" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('communities');setMobileNavOpen(false); }}><Plus size={23} /></button>
       <button className="rail-theme" title="Escolher tema" aria-label="Escolher tema" onClick={() => {setSettingsTab('appearance');setSettings(true);}}><SunMoon size={21}/></button><span className="rail-bottom">NACALL</span></nav>
     <div className="voice-dock-bar" ref={setDockBar} />
-    <nav className="mobile-bottom-nav" aria-label="Navegação mobile" style={{gridTemplateColumns:`repeat(${voice?4:3},minmax(0,1fr))`}}>
-      <button type="button" className={mobileTab==='home'?'active':''} aria-current={mobileTab==='home'?'page':undefined} aria-label="Ir para o início" onClick={()=>{setServerId(null);setTarget(null);setCallView(false);setHomeView('friends');setMobileNavOpen(false);}}><House size={21}/><span>Início</span></button>
-      <button type="button" className={mobileTab==='servers'?'active':''} aria-current={mobileTab==='servers'?'page':undefined} aria-label="Ver comunidades e canais" onClick={()=>{const official=servers.find(s=>s.is_official);if(!serverId&&official)setServerId(official.id);setMobileNavOpen(true);}}><Compass size={21}/><span>Servidores</span></button>
-      <button type="button" className={mobileTab==='messages'?'active':''} aria-current={mobileTab==='messages'?'page':undefined} aria-label="Ver mensagens privadas" onClick={()=>{setServerId(null);setTarget(null);setCallView(false);setHomeView('friends');setMobileNavOpen(true);}}><MessageCircle size={21}/><span>Mensagens</span>{unreadMessages>0?<span className="mobile-nav-badge" aria-label={`${unreadMessages} mensagens não lidas`}>{badgeText(unreadMessages)}</span>:friends.some(f=>f.receiver_id===me&&f.status==='pending')&&<i className="mobile-nav-dot" aria-label="Solicitações pendentes"/>}</button>
-      {voice&&<button type="button" className={mobileTab==='call'?'active':''} aria-current={mobileTab==='call'?'page':undefined} aria-label="Abrir chamada atual" onClick={openCallView}><Headphones size={21}/><span>Call</span><i className="mobile-call-dot"/></button>}
-    </nav>
     <aside className="sidebar" id="workspace-sidebar"><header><Brand/></header>
       <div className="side-content"><div className="section-label">{server ? 'COMUNIDADE' : 'CONEXÕES'}</div><h2>{server?.name || 'Seu ponto de encontro'}</h2>
         {server ? <><div className="group-sidebar-profile"><GroupIcon server={server}/><p className="muted small">{server.description||"O lobby dessa galera."}</p></div><div className="section-label">CANAIS DE TEXTO</div>{channels.filter(c => c.server_id === serverId && c.kind === 'text').map(c => <button className={`nav-item ${target?.id === c.id ? 'active' : ''}`} key={c.id} onClick={() => {setTarget({ id: c.id, type: 'channel', name: c.name });setMobileNavOpen(false);}}><Hash size={18} />{c.name}</button>)}
