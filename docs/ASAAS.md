@@ -1,0 +1,12 @@
+# Checkout Asaas — NACALL
+## Estado
+Flag ASAAS_ENABLED=false em produção até aprovação de homologação.
+Produtos cosméticos: Jacall Plus (R$ 9,90) e Call Pro (R$ 14,90), avulsos, 30 dias desde aprovação.
+## HML
+Conta separada https://sandbox.asaas.com/. No Vercel nacall-hml, Production (ambiente de homologação do projeto), configure ASAAS_API_KEY com chave Sandbox, ASAAS_ENV=sandbox, ASAAS_WEBHOOK_TOKEN com token exclusivo Sandbox, APP_URL=https://nacall-hml.vercel.app e ASAAS_ENABLED=false inicialmente. Nunca reutilize chaves de PRD.
+Aplicar migration 202611190004_store_orders.sql em HML antes de publicar código. Webhook Sandbox: https://nacall-hml.vercel.app/api/payments/webhook, token correspondente, eventos CHECKOUT_PAID/CANCELED/EXPIRED e PAYMENT_CONFIRMED/RECEIVED/REFUNDED/PARTIALLY_REFUNDED/CHARGEBACK_REQUESTED; incluir demais eventos de estorno e contestação disponíveis. Ativar webhook após rota publicada; então ASAAS_ENABLED=true apenas HML e redeploy.
+Testar pagamento Pix/cartão Sandbox, cancelamento, expiração, repetição de eventos, valor diferente, estorno, duas contas, expiração de benefício; verificar o log e status dos pedidos. Se solicitação de criação de checkout falhar após envio ao Asaas, pedido pendente fica bloqueado por segurança: conciliar no painel e corrigir registro com responsável antes de tentar outra cobrança. Não apagar eventos de auditoria. Não liberar PRD enquanto testes reais em Sandbox não passarem.
+## PRD
+Responsável aplica migration aditiva antes do deploy. Variáveis Production no nacall-prd: ASAAS_API_KEY (secret), ASAAS_WEBHOOK_TOKEN (secret), ASAAS_ENV=production, APP_URL=https://nacall.site, ASAAS_ENABLED=false. Publicar via fluxo de release e aprovação humana. Confirmar URL final sem redirecionamento e webhook correspondente antes de ativar flag; novo deploy necessário. Nenhum segredo no GitHub.
+## Limitações
+Sem renovação automática, sem armazenamento de cartão. Não há reconciliação automática para checkout cuja criação tenha resultado ambíguo, nem fila própria de processamento; falhas retornam 503 para retentativa Asaas. Monitorar logs e filas pausadas; eventos não conciliados exigem revisão operacional. Revogação conservadora de benefício quando houver contestação ou estorno parcial; reativação após reversão exige revisão. A interface verifica os benefícios em intervalos e no foco, sem cron de expiração. Nenhuma alteração das regras de Auth/LiveKit.
