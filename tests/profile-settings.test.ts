@@ -27,3 +27,19 @@ test('perfil: capa com a foto por cima, botões de trocar dentro da imagem e sal
  assert.match(css,/\.hero-id\{[^}]*margin-top:-40px/,'foto sobe sobre a capa');
  assert.match(css,/\.save-bar\{position:sticky/,'botão de salvar fica à vista no celular');
 });
+
+test('botões da capa: mesma altura, lixeira quadrada e mão do mouse em todos',async()=>{
+ const css=await read('src/app/profile-settings.css');
+ assert.match(css,/\.cover-action\{[^}]*height:36px/,'altura fixa');
+ assert.match(css,/\.cover-action\.icon-only\{width:36px/,'lixeira só com ícone, quadrada');
+ assert.match(css,/\.cover-action,\.cover-action \*\{cursor:pointer\}/,'mão do mouse em todo o botão');
+ assert.match(css,/\.cover-action input,\.avatar-edit-btn input\{[^}]*pointer-events:none/,'o campo escondido não rouba o cursor');
+ assert.match(await read('src/components/profile-cover-editor.tsx'),/className="cover-action icon-only"/);
+});
+
+test('barra lateral: o avatar do perfil não divide a linha com o nome; lista da call à esquerda e com barra curta',async()=>{
+ const css=await read('src/app/social.css');
+ assert.match(css,/\.account>\.status-menu-wrap\{flex:0 0 auto/,'o avatar não ganha flex:1');
+ assert.match(css,/\.voice-roster-person\{justify-content:flex-start/,'nomes à esquerda');
+ assert.match(css,/\.voice-roster::before\{[^}]*top:9px;bottom:9px/,'barra verde mais curta, sem encostar na da sala de baixo');
+});
