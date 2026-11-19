@@ -4,3 +4,14 @@
 /* Quem está falando na sala (lista da barra lateral): anel verde que acende na hora. */
 .voice-roster-person .avatar{transition:none}
 .voice-roster-person.speaking .avatar{border-color:var(--success);box-shadow:0 0 0 2px var(--success)}
+
+/* Amigos: "Adicionar amigo" é um botão à parte; as abas cabem na largura, sem rolar para o lado. */
+.social-add{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;background:var(--accent);color:#101722;font-weight:800;padding:9px 12px;border-radius:9px;font-size:13px;white-space:nowrap}
+.social-add.active{outline:2px solid color-mix(in srgb,var(--accent),#fff 45%);outline-offset:2px}
+@media(max-width:720px){
+ .social-heading{gap:8px 10px}
+ .social-heading>h2{order:1}
+ .social-add{order:2;margin-left:auto;min-height:40px;padding:8px 12px;font-size:12px}
+ .social-tabs{order:3;width:100%;flex-wrap:nowrap;overflow:visible;padding:3px;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+ .social-tabs button{flex:1 1 0;min-width:0;min-height:40px;padding:8px 2px;font-size:12px;text-align:center;overflow:hidden;text-overflow:ellipsis}
+}
