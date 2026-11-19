@@ -6,7 +6,7 @@ export const products={
 } as const;
 export const productSchema=z.enum(['jacall-plus','call-pro']);
 export type ProductId=z.infer<typeof productSchema>;
-export function asaasConfig(){
+export function asaasConfig():{key:string;token:string;env:'sandbox'|'production';base:string}|null{
  const key=process.env.ASAAS_API_KEY,token=process.env.ASAAS_WEBHOOK_TOKEN,env=process.env.ASAAS_ENV;
  if(!key||!token||token.length<32||(env!=='sandbox'&&env!=='production'))return null;
  // Never let previews or HML use production payment credentials.
