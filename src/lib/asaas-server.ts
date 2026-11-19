@@ -11,6 +11,7 @@ export function asaasConfig(){
  if(!key||!token||token.length<32||(env!=='sandbox'&&env!=='production'))return null;
  // Never let previews or HML use production payment credentials.
  if(env==='production'&&(process.env.VERCEL_ENV!=='production'||process.env.NEXT_PUBLIC_SUPABASE_URL!=='https://cjtcumnymflxfdhdqtdn.supabase.co'))return null;
+ if(env==='sandbox'&&process.env.NEXT_PUBLIC_SUPABASE_URL!=='https://vpqutlhziliiilrrkqll.supabase.co')return null;
  const base=env==='production'?'https://api.asaas.com/v3':'https://api-sandbox.asaas.com/v3';
  return {key,token,env,base};
 }
