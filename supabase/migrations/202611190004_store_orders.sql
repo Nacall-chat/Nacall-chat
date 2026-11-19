@@ -11,6 +11,7 @@ create table public.store_orders (
  paid_at timestamptz,
  expires_at timestamptz
 );
+create unique index store_one_pending on public.store_orders(user_id,product) where status='pending';
 create index store_orders_owner_idx on public.store_orders(user_id,created_at desc);
 alter table public.store_orders enable row level security;
 revoke all on public.store_orders from public,anon,authenticated;
@@ -38,8 +39,8 @@ begin
  insert into public.store_payment_events(id) values(p_event) on conflict do nothing;
  if not found then return true; end if;
  if p_status='revoked' then
- update public.store_orders set status='revoked' where id=o.id;
- elsif p_status='paid' and o.status='pending' then
+ update public.store_orders set status='revoked',payment_id=coalesce(p_payment,payment_id) where id=o.id;
+ elsif p_status='paid' and o.status in ('pending','expired','canceled') then
  update public.store_orders set status='paid',paid_at=now(),expires_at=now()+interval '30 days',payment_id=coalesce(p_payment,payment_id) where id=o.id;
  elsif p_status in ('canceled','expired') and o.status='pending' then
  update public.store_orders set status=p_status where id=o.id;
