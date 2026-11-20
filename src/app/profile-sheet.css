@@ -27,3 +27,11 @@ dialog.profile-card-dialog{margin:auto;max-height:calc(100dvh - 40px);overflow-y
  .profile-social-actions button{min-height:48px}
 }
 @media(prefers-reduced-motion:reduce){dialog.profile-card-dialog,dialog.profile-card-dialog::backdrop{animation:none}}
+
+/* desktop: o cartão é um balão ao lado de quem foi clicado, sem escurecer a tela */
+@media(min-width:721px){
+ dialog.profile-card-dialog{width:360px;border-radius:16px;box-shadow:0 18px 50px #0007,0 0 0 1px var(--line);animation:pop-in 140ms ease-out}
+ dialog.profile-card-dialog::backdrop{background:transparent}
+}
+@keyframes pop-in{from{opacity:0;transform:translateY(6px) scale(.98)}}
+@media(prefers-reduced-motion:reduce){dialog.profile-card-dialog{animation:none}}
