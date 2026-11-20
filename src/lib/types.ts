@@ -1,4 +1,4 @@
-export type Profile = { id: string; username: string; display_name: string; bio: string; user_number?: number; avatar_path?: string; cover_path?: string };
+export type Profile = { id: string; username: string; display_name: string; bio: string; user_number?: number; avatar_path?: string; cover_path?: string; created_at?: string };
 export type Server = { id: string; name: string; owner_id: string | null; is_official?: boolean; description?: string; icon_path?: string };
 export type Channel = { id: string; name: string; kind: 'text' | 'voice'; server_id: string };
 export type MessageKind = 'text' | 'audio' | 'sticker';
