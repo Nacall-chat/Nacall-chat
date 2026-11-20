@@ -27,6 +27,12 @@ export function sniffImage(bytes: Uint8Array): ImageKind | null {
   return null;
 }
 
+/** WebP animado (o "GIF" que Giphy, Tenor e afins entregam): cabeçalho VP8X com o bit de animação (0x02) ligado.
+ * Precisa dos primeiros 21 bytes do arquivo. Passar um desses por um canvas guarda só o primeiro quadro. */
+export function isAnimatedWebp(bytes: Uint8Array): boolean {
+  return bytes.length > 20 && ascii(bytes, 'RIFF', 0) && ascii(bytes, 'WEBP', 8) && ascii(bytes, 'VP8X', 12) && (bytes[20] & 0x02) !== 0;
+}
+
 /** Descobre o contêiner de áudio gravado pelo navegador (WebM/Matroska, Ogg ou MP4/M4A). */
 export function sniffAudio(bytes: Uint8Array): { mime: 'audio/webm' | 'audio/ogg' | 'audio/mp4'; ext: AudioExt } | null {
   if (startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3])) return { mime: 'audio/webm', ext: 'webm' };

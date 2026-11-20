@@ -39,3 +39,10 @@
 .call-dock .lk-media-device-select [data-lk-active="true"]>.lk-button{background:color-mix(in srgb,var(--accent) 20%,var(--panel));color:var(--text);font-weight:700;box-shadow:inset 3px 0 0 var(--accent)}
 .call-dock .lk-media-device-select li:not([data-lk-active="true"])>.lk-button{color:var(--text)}
 .call-dock .lk-media-device-select li>.lk-button{border-radius:10px;text-align:left}
+
+/* Várias transmissões de tela: centraliza só quando cabe. Com justify-content:center e rolagem, o topo da primeira
+   tela era cortado e não dava para rolar até ele; margens automáticas centralizam sem cortar. As telas continuam
+   empilhadas: lado a lado ficaria estreito demais na coluna lateral da call (280–320 px). */
+.call-dock .call-stage,.main.show-call .voice-panel.expanded .call-stage{justify-content:flex-start}
+.call-stage>.screen-stream:first-child{margin-top:auto}
+.call-stage>.screen-stream:last-child{margin-bottom:auto}
