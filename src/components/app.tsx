@@ -24,6 +24,7 @@ import { badgeText, unreadTotal } from '@/lib/unread';
 import { shellCallClass } from '@/lib/nav';
 import { useDrawerSwipe } from '@/lib/use-drawer-swipe';
 import type { ProfileCall } from '@/lib/profile-info';
+import { installPointerAnchor } from '@/lib/pointer-anchor';
 import { MessageContent } from './message-content';
 import type { Recording } from './use-audio-recorder';
 import { WhatsNew } from './whats-new';
@@ -96,6 +97,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const [settings, setSettings] = useState(false);
   const [mobileNavOpen,setMobileNavOpen]=useState(false);
   useDrawerSwipe({open:mobileNavOpen,setOpen:setMobileNavOpen});
+  useEffect(()=>installPointerAnchor(),[]);
   // Com uma call ativa, o painel da call só ocupa a tela quando a pessoa o abre (entrar na call, botão Call, tocar na barra de voz). Início, Amigos, servidores e conversas mostram a própria tela, a call segue conectada e os controles ficam na barra de voz.
   const [callView,setCallView]=useState(false);
   // Os controles da call ficam numa barra de voz, num lugar só (como no Discord): cartão acima do perfil na barra lateral; no celular, barra compacta acima do menu de baixo.
