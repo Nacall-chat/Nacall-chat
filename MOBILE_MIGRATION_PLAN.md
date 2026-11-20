@@ -160,7 +160,7 @@ Lidas na documentação oficial; versões exatas são fixadas pelo `npx expo ins
 
 | Tema | Decisão | Motivo |
 | --- | --- | --- |
-| Framework | **Expo (SDK estável mais recente na hora de criar) + React Native + TypeScript** | Pedido; ferramentas oficiais para build e lojas. _A validar a versão exata:_ o índice de documentação lista SDKs até o 58 (pré-lançamento), então a estável deve ser a 56 ou 57. |
+| Framework | **Expo SDK 58 (estável atual: `npm view expo` → 58.0.x) + React Native 0.88 + React 19.3 + TypeScript** | Pedido; ferramentas oficiais para build e lojas. Verificado na Fase 0 (`create-expo-app` e `expo-doctor` 20/20). |
 | Navegação | **Expo Router** | Rotas por arquivos, layouts, abas, modais e _deep links_ |
 | Layout principal | `Drawer` (gaveta com a coluna de servidores + lista de canais) e rotas empilhadas | É o desenho que já validamos no celular |
 | Perfil | _Bottom sheet_ animado (sobe de baixo, não cobre a tela toda) | Pedido recente do produto |
@@ -196,8 +196,8 @@ Nacall-chat/
 ├─ supabase/ …               migrations (só mudam com aprovação, aditivas)
 ├─ MOBILE_MIGRATION_PLAN.md  este documento
 └─ apps/mobile/              NOVO — independente da raiz
-   ├─ package.json, pnpm-lock.yaml (próprios), app.config.ts, eas.json, tsconfig.json
-   ├─ app/                         Expo Router
+   ├─ package.json, package-lock.json (npm, próprios), app.json, metro.config.js, eas.json (Fase 5), tsconfig.json
+   ├─ src/app/                     Expo Router (pasta `src/app`, padrão do SDK 58)
    │  ├─ _layout.tsx               provedores (sessão, tema, presença)
    │  ├─ (auth)/                   entrar, cadastro, código, recuperar, 2FA
    │  └─ (app)/                    _layout = Drawer (servidores + canais/DMs)
@@ -216,7 +216,7 @@ Nacall-chat/
    └─ modules/ (se precisar)       módulo nativo Expo (ex.: serviço de call em 1º plano)
 ```
 
-**Fora do `pnpm install` da raiz:** o `apps/mobile` tem lockfile próprio, não entra no `pnpm-workspace.yaml` e é ignorado pelo `tsconfig` e pelo build da Vercel (`.vercelignore`). A CI ganha um **workflow próprio** (como o `windows-desktop.yml`), disparado só quando `apps/mobile/**` muda. Assim o site e a Esteira atuais seguem intactos.
+**Fora do `pnpm install` da raiz:** o `apps/mobile` usa **npm** (o padrão do Expo e do EAS) com lockfile próprio, não entra no `pnpm-workspace.yaml` e é ignorado pelo `tsconfig` e pelo build da Vercel (`.vercelignore`). A CI ganha um **workflow próprio** (como o `windows-desktop.yml`), disparado só quando `apps/mobile/**` muda. Assim o site e a Esteira atuais seguem intactos.
 
 ---
 
@@ -352,3 +352,20 @@ Total aproximado: **12–18 semanas**. Cada fase termina em **PR para a `release
 - **Site, backend, banco e desktop não são alterados** por este plano. Mudanças de backend só por migration aditiva, com testes, em HML primeiro, e **com a sua aprovação**.
 - Nenhuma chave de serviço, segredo ou variável privada entra no app ou no repositório.
 - Nenhum deploy automático; builds de loja só quando você mandar.
+
+---
+
+## 14. Andamento
+
+### Fase 0 — Fundação (concluída no código; falta teste em aparelho)
+
+Entregue em `apps/mobile` (PR da branch `feature/mobile-app`):
+- App **Expo SDK 58** + Expo Router com **rotas protegidas** (`(auth)`, `mfa`, `(app)`), tema claro/escuro/sistema com os mesmos tokens do site, cliente Supabase (AsyncStorage, renovação de sessão só em primeiro plano), cliente das rotas `/api` (Bearer, tempo limite, mensagens de erro).
+- **Telas:** entrar (usuário ou email), cadastro com verificação ao vivo de usuário/email, código de email, recuperar senha, **2FA** (app autenticador e código de recuperação) e uma tela inicial provisória que lê o perfil (prova de sessão + RLS).
+- **Reuso do site sem tocar nele:** `validation` e `auth-schema` (TS puro) importados de `../../src/lib` via `@nacall/core/*`.
+- **Proteções:** raiz com `tsconfig` e `.vercelignore` excluindo `apps`; workflow próprio `mobile.yml` (tipos, testes, bundle Android) por `paths`.
+- **Verificação:** `tsc` limpo, **21 testes** (inclui conferência de contraste e de que as cores do app são as do `jacall.css`), `expo export` Android gerou o bundle Hermes **também sem o `node_modules` da raiz** (condição da CI), `expo-doctor` 20/20 e fluxo de login/cadastro/tema exercitado na versão web contra um servidor de mentira local.
+- **Não verificado:** execução em **Android/iPhone reais ou emulador**, login contra a **HML de verdade**, 2FA real, teclado/áreas seguras no aparelho.
+
+### Próximo: Fase 0.5 — Spike da call
+Entrar numa sala LiveKit (HML) com áudio no Android e no iPhone físico. Exige um _development build_ (conta Expo e, para iPhone, conta Apple) e aparelho; ainda não iniciado.
