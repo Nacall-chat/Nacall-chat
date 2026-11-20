@@ -1,6 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {z} from 'zod';
-import {hasVerifiedFactor,jwtClaims} from '@/lib/auth-server';
+import {adminClient,allow,emailPending,hasVerifiedFactor,jwtClaims,serverEnv} from '@/lib/auth-server';
 import {roomSnapshots} from '@/lib/livekit-rooms';
 export const runtime='nodejs';
 export async function POST(request:Request){
@@ -10,6 +10,10 @@ export async function POST(request:Request){
  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{global:{headers:{Authorization:auth}},auth:{persistSession:false}});
  const user=await db.auth.getUser(auth.slice(7));if(user.error||!user.data.user)return reply({error:'Sessão inválida'},401);
  if(hasVerifiedFactor(user.data.user)&&jwtClaims(auth.slice(7)).aal!=='aal2')return reply({error:'Confirme o 2FA'},401);
+ if(emailPending(user.data.user))return reply({error:'Confirme seu email para usar as calls'},403);
+ // Cada chamada consulta o LiveKit com o segredo do servidor: limite por usuário (a lista atualiza a cada 12 s).
+ const env=serverEnv();if(!env)return reply({error:'Chamadas não configuradas'},503);
+ try{if(!await allow(adminClient(env),env.secret,'livekit-rooms',user.data.user.id,60,60))return reply({error:'Muitas consultas. Aguarde um pouco.'},429);}catch{return reply({error:'Não foi possível validar o limite agora'},503);}
  if(Number(request.headers.get('content-length')||0)>4096)return reply({error:'Pedido muito grande'},413);
  const parsed=z.object({channelIds:z.array(z.uuid()).max(30)}).safeParse(await request.json().catch(()=>null));if(!parsed.success)return reply({error:'Canais inválidos'},400);
  if(!parsed.data.channelIds.length)return reply({rooms:[],serverNow:Date.now()});
