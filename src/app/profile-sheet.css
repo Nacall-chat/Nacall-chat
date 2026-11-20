@@ -1,0 +1,29 @@
+/* Cartão de perfil: seções (Em voz, Sobre mim, Membro desde) e, no celular, uma folha que sobe de baixo (sem cobrir a tela toda). */
+/* o reset do Tailwind zera a margem do <dialog>, e o cartão ficava colado no canto da tela */
+dialog.profile-card-dialog{margin:auto;max-height:calc(100dvh - 40px);overflow-y:auto}
+.pc-grabber{display:none}
+.pc-section{margin-top:12px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:14px}
+.pc-section h3{margin:0 0 8px;font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+.pc-bio{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.pc-since{display:flex;align-items:center;gap:8px;margin:0}
+.pc-since svg{color:var(--muted);flex-shrink:0}
+.pc-call-row{display:flex;align-items:center;gap:12px}
+.pc-call-people{display:grid;grid-template-columns:repeat(2,28px);gap:3px;flex-shrink:0}
+.pc-call-people .avatar{width:28px;height:28px;border-radius:10px;font-size:10px}
+.pc-call-row strong{display:block}
+.pc-call-row small{color:var(--muted)}
+.pc-join{width:100%;min-height:46px;margin-top:12px}
+.profile-social-actions button{flex:1 1 auto}
+
+@keyframes sheet-up{from{transform:translateY(100%)}}
+@keyframes sheet-fade{from{opacity:0}}
+@media(max-width:720px){
+ dialog.profile-card-dialog{width:100%;max-width:100%;max-height:88dvh;margin:auto 0 0;border-width:1px 0 0;border-radius:22px 22px 0 0;overflow-y:auto;overscroll-behavior:contain;animation:sheet-up 300ms cubic-bezier(.2,.9,.3,1)}
+ dialog.profile-card-dialog::backdrop{animation:sheet-fade 220ms ease}
+ .pc-top{position:relative;touch-action:none}
+ .pc-grabber{display:block;position:absolute;top:8px;left:50%;z-index:2;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:#fff;box-shadow:0 0 0 1px #0005}
+ dialog.profile-card-dialog .profile-cover{height:132px}
+ dialog.profile-card-dialog .profile-card-content{padding:0 16px calc(20px + env(safe-area-inset-bottom))}
+ .profile-social-actions button{min-height:48px}
+}
+@media(prefers-reduced-motion:reduce){dialog.profile-card-dialog,dialog.profile-card-dialog::backdrop{animation:none}}

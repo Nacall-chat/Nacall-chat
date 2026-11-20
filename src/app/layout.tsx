@@ -14,6 +14,7 @@ import './presence.css';
 import './social.css';
 import './mobile-drawer.css';
 import './profile-settings.css';
+import './profile-sheet.css';
 import './theme-fixes.css';
 import { PreferencesProvider } from '@/components/preferences';
 import { MicGateProvider } from '@/components/mic-gate';
