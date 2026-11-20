@@ -21,7 +21,7 @@ test('perfil: capa com a foto por cima, botões de trocar dentro da imagem e sal
  assert.match(tsx,/className="avatar-edit-btn"/);
  assert.match(tsx,/className="save-bar"/);
  const cover=await read('src/components/profile-cover-editor.tsx');
- assert.match(cover,/className="cover-actions"/);
+ assert.match(cover,/className={`cover-actions /);
  assert.match(cover,/aria-label="Remover capa"/);
  const css=await read('src/app/profile-settings.css');
  assert.match(css,/\.hero-id\{[^}]*margin-top:-40px/,'foto sobe sobre a capa');
@@ -42,4 +42,16 @@ test('barra lateral: o avatar do perfil não divide a linha com o nome; lista da
  assert.match(css,/\.account>\.status-menu-wrap\{flex:0 0 auto/,'o avatar não ganha flex:1');
  assert.match(css,/\.voice-roster-person\{justify-content:flex-start/,'nomes à esquerda');
  assert.match(css,/\.voice-roster::before\{[^}]*top:9px;bottom:9px/,'barra verde mais curta, sem encostar na da sala de baixo');
+});
+
+test('capa: um lápis abre a câmera e a lixeira ao lado, só com ícones, e fecha ao tocar fora ou com Esc',async()=>{
+ const tsx=await read('src/components/profile-cover-editor.tsx');
+ assert.match(tsx,/aria-label="Editar capa" aria-expanded=\{open\}/,'o lápis é o botão que abre');
+ assert.match(tsx,/inert=\{!open\}/,'fechado, os botões não recebem foco');
+ assert.match(tsx,/pointerdown/,'fecha ao tocar fora');
+ assert.match(tsx,/e\.key==='Escape'/,'fecha com Esc sem fechar os Ajustes');
+ assert.doesNotMatch(tsx,/<span>\{profile\?\.cover_path\?'Trocar capa'/,'sem texto nos botões, só ícones');
+ const css=await read('src/app/profile-settings.css');
+ assert.match(css,/\.cover-actions\.open \.cover-tools\{opacity:1;visibility:visible;transform:none/,'cresce a partir do lápis');
+ assert.match(css,/prefers-reduced-motion:reduce\)\{\.cover-tools\{transition:none/,'respeita movimento reduzido');
 });
