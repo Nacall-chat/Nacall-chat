@@ -25,3 +25,11 @@ npx expo-doctor
 - Só variáveis `EXPO_PUBLIC_*` (visíveis em texto puro no app). **Nunca** coloque chave de serviço, LiveKit ou Asaas aqui.
 - Código compartilhado com o site: só TypeScript puro de `../../src/lib` (`validation`, `auth-schema`), importado como `@nacall/core/*`. Não importe nada de `next/*` nem do DOM.
 - O app é independente da raiz: tem `package-lock.json` próprio e fica fora do `pnpm install`, do `tsconfig` e do build da Vercel do site.
+
+## Instalar o APK de teste no celular Android (sem Expo Go e sem Android Studio)
+O APK é compilado pela CI do GitHub e publicado como **pré-release** do repositório.
+1. **Uma vez só**, em GitHub > Settings > Secrets and variables > Actions > **Variables**, cadastre os valores **públicos da homologação**: `MOBILE_SUPABASE_URL` e `MOBILE_SUPABASE_ANON_KEY` (opcional: `MOBILE_API_URL`, padrão `https://nacall-hml.vercel.app`). Nada de chave de serviço.
+2. GitHub > Actions > **Mobile · APK de teste (Android)** > **Run workflow**. Leva uns 15 a 25 minutos.
+3. No fim, abra **Releases** pelo celular (logado no GitHub), baixe o `.apk` e toque nele. Se o Android pedir, permita instalar apps desta fonte.
+- É um app de **teste**: aponta para a homologação e é assinado com a chave de depuração (não serve para as lojas). Só celulares Android 64 bits (arm64), que são quase todos os atuais.
+- Não aparece na landing page: o repositório é privado e o app ainda é a Fase 0.
