@@ -1,0 +1,24 @@
+/* Celular: gaveta com os ícones dos servidores ao lado da lista de canais (como no Discord), aberta pelo botão ou arrastando para a direita. Não há mais menu fixo embaixo. */
+.nav-toggle-badge{position:absolute;top:-6px;right:-6px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:19px;height:19px;padding:0 5px;border:2px solid var(--bg);border-radius:999px;background:#e5384f;color:#fff;font-size:10px;font-weight:800;line-height:1;pointer-events:none}
+
+@media(max-width:720px){
+ .shell{--rail-w:64px;--drawer-w:min(92vw,390px)}
+ .mobile-bottom-nav{display:none!important}
+ .shell.has-voice{--vb:calc(57px + env(safe-area-inset-bottom))}
+ .shell.has-voice>.voice-dock-bar{padding-bottom:env(safe-area-inset-bottom);background:var(--panel)}
+
+ /* coluna dos servidores: Início/Amigos, todos os servidores da pessoa e o "+" */
+ .shell.nav-open>.rail{display:flex!important;position:absolute;z-index:75;left:0;top:0;bottom:var(--vb,0px);width:var(--rail-w);height:auto;grid-column:auto;grid-row:auto;padding:12px 0 14px;gap:10px;align-items:center;background:color-mix(in srgb,var(--bg),#000 18%);border-right:1px solid var(--line);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+ .shell.nav-open>.rail::-webkit-scrollbar{display:none}
+ .shell>.rail .logo-button,.shell>.rail .rail-line,.shell>.rail .rail-theme,.shell>.rail .rail-bottom{display:none}
+
+ /* lista de canais ao lado da coluna */
+ .shell.nav-open>.sidebar{left:var(--rail-w)!important;right:auto!important;top:0!important;bottom:var(--vb,0px)!important;height:auto!important;width:calc(var(--drawer-w) - var(--rail-w))!important;max-width:none!important}
+ .shell.nav-open>.mobile-nav-shade{inset:0 0 var(--vb,0px) 0!important;height:auto!important}
+ .shell.nav-open .mobile-nav-toggle{left:calc(var(--drawer-w) - 53px);right:auto;top:11px}
+ .shell:not(.has-voice)>.sidebar .account{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+
+ .shell.nav-open>.rail,.shell.nav-open>.sidebar{animation:drawer-in 160ms ease-out}
+}
+@keyframes drawer-in{from{transform:translateX(-18px);opacity:.4}}
+@media(prefers-reduced-motion:reduce){.shell.nav-open>.rail,.shell.nav-open>.sidebar{animation:none}}

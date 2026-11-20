@@ -1,0 +1,56 @@
+/* Ajustes > Meu perfil: capa com a foto por cima (como no Discord), campos agrupados e, no celular, a tela toda. */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.settings-layout>nav .tab-short{display:none}
+
+.profile-hero .cover-editor{margin-bottom:0}
+.profile-hero .profile-cover{border-radius:16px;height:150px}
+.cover-actions{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:8px}
+.cover-tools{display:flex;align-items:center;gap:8px;transform-origin:right center;opacity:0;visibility:hidden;transform:scale(.15) translateX(30px);transition:transform 200ms cubic-bezier(.2,.9,.3,1.25),opacity 140ms ease,visibility 0s linear 200ms}
+.cover-actions.open .cover-tools{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.cover-edit{z-index:1}
+.cover-action{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;height:36px;min-height:36px;padding:0 12px;border-radius:999px;background:#0d0d0dcc;color:#fff;border:1px solid #ffffff33;font-size:12px;font-weight:700;cursor:pointer}
+.cover-action,.cover-action *{cursor:pointer}
+.cover-action:disabled{cursor:not-allowed}
+.cover-action.icon-only{width:36px;padding:0}
+.cover-action:hover{background:#000;transform:none}
+@media(prefers-reduced-motion:reduce){.cover-tools{transition:none}}
+.cover-action:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.cover-action input,.avatar-edit-btn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
+.hero-id{display:flex;align-items:flex-start;gap:14px;padding:0 14px;margin-top:-40px;position:relative;min-width:0}
+.avatar-edit{position:relative;flex-shrink:0}
+.profile-hero .avatar-edit .avatar{width:88px;height:88px;border-radius:30px;font-size:28px;border:5px solid var(--surface)}
+.avatar-edit-btn,.avatar-edit-btn *{cursor:pointer}
+.avatar-edit-btn{position:absolute;right:-4px;bottom:-4px;width:34px;height:34px;min-height:0;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#101722;border:3px solid var(--surface);cursor:pointer}
+.avatar-edit-btn:focus-within{outline:2px solid var(--text);outline-offset:2px}
+.hero-name{min-width:0;padding-top:50px}
+.hero-name strong{display:block;font-size:20px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-name small{display:block;color:var(--muted);font-size:13px}
+.hero-hint{margin:12px 2px 0}
+
+.settings-body .profile-form{max-width:none;margin-top:16px}
+.field-card{display:grid;gap:16px;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:14px}
+.field-card label{display:grid;gap:7px;margin:0;font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+.field-card input,.field-card textarea{text-transform:none;letter-spacing:0;font-weight:400;color:var(--text)}
+.field-card textarea{min-height:96px;resize:vertical}
+.field-card label small{text-transform:none;letter-spacing:0;font-weight:400;font-size:12px;line-height:1.45}
+.save-bar{margin-top:16px}
+.save-bar button{width:100%;min-height:46px}
+
+@media(max-width:720px){
+ dialog.settings-panel[open]{display:flex;flex-direction:column;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0}
+ dialog.settings-panel>header{flex-shrink:0;padding:max(12px,env(safe-area-inset-top)) 14px 12px 16px}
+ dialog.settings-panel h2{margin:4px 0 0;font-size:20px}
+ dialog.settings-panel .settings-layout{display:flex;flex-direction:column;flex:1;min-height:0}
+ .settings-layout>nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px;overflow:visible;flex-shrink:0}
+ .settings-layout>nav button{flex-direction:column;justify-content:center;gap:4px;min-height:56px;padding:7px 2px;border-radius:12px;font-size:11px;line-height:1.1;text-align:center;white-space:normal}
+ .settings-layout>nav button svg{width:20px;height:20px}
+ .settings-layout>nav .tab-full{display:none}
+ .settings-layout>nav .tab-short{display:inline}
+ dialog.settings-panel .settings-body{flex:1;min-height:0;max-height:none;padding:14px 14px calc(18px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+ .profile-hero .profile-cover{height:128px;border-radius:14px}
+ .profile-hero .avatar-edit .avatar{width:80px;height:80px;border-radius:27px}
+ .hero-id{margin-top:-36px;padding:0 12px}
+ .hero-name{padding-top:44px}
+ .hero-name strong{font-size:18px}
+ .save-bar{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom));margin:16px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--surface) 28%)}
+}

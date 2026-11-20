@@ -1,12 +1,14 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {Upload,Trash2} from 'lucide-react';
+import {Camera,Pencil,Trash2,X} from 'lucide-react';
 import type {Profile} from '@/lib/types';
 import {coverUrl} from './profile-card';
 import {errorText} from '@/lib/validation';
 export function ProfileCoverEditor({db,profile,reload,report}:{db:SupabaseClient;profile?:Profile;reload:()=>Promise<void>;report:(text:string)=>void}){
- const[busy,setBusy]=useState(false);
+ const[busy,setBusy]=useState(false);const[open,setOpen]=useState(false);const tools=useRef<HTMLDivElement>(null);
+ // o lápis abre a câmera e a lixeira ao lado; fecha ao tocar fora ou com Esc
+ useEffect(()=>{if(!open)return;const outside=(e:PointerEvent)=>{if(!tools.current?.contains(e.target as Node))setOpen(false);};const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setOpen(false);}};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape,true);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape,true);};},[open]);
  async function save(file?:File){if(!profile||!file)return;setBusy(true);try{
   if(!['image/gif','image/png','image/jpeg','image/webp'].includes(file.type)||file.size>5*1024*1024)throw new Error('Use GIF, PNG, JPG ou WebP de até 5 MB.');
   let blob:Blob=file;let extension='gif';
@@ -17,5 +19,5 @@ export function ProfileCoverEditor({db,profile,reload,report}:{db:SupabaseClient
   if(profile.cover_path)await db.storage.from('profile-covers').remove([profile.cover_path]);await reload();report('Capa atualizada. Seu perfil entrou no clima.');
  }catch(e){report(errorText(e));}finally{setBusy(false);}}
  async function remove(){if(!profile)return;setBusy(true);try{const r=await db.from('profiles').update({cover_path:''}).eq('id',profile.id);if(r.error)throw r.error;if(profile.cover_path)await db.storage.from('profile-covers').remove([profile.cover_path]);await reload();report('Capa removida.');}catch(e){report(errorText(e));}finally{setBusy(false);}}
- return <section className="cover-editor"><div className="profile-cover">{coverUrl(profile?.cover_path)?<img src={coverUrl(profile?.cover_path)} alt="Sua capa de perfil"/>:<span>Sua capa. Seu clima.</span>}</div><div className="row wrap"><label className="upload-button"><Upload size={16}/>Escolher imagem ou GIF<input disabled={busy} type="file" accept="image/gif,image/png,image/jpeg,image/webp" onChange={e=>{void save(e.target.files?.[0]);e.target.value='';}}/></label>{profile?.cover_path&&<button disabled={busy} onClick={()=>void remove()}><Trash2 size={16}/>Remover capa</button>}</div><p className="muted small">Até 5 MB. Imagens usam recorte central 3:1; GIFs mantêm a animação. A capa é pública para quem abrir seu perfil. Evite efeitos piscantes.</p></section>;
+ return <section className="cover-editor"><div className="profile-cover">{coverUrl(profile?.cover_path)?<img src={coverUrl(profile?.cover_path)} alt="Sua capa de perfil"/>:<span>Sua capa. Seu clima.</span>}<div className={`cover-actions ${open?'open':''}`} ref={tools}><div className="cover-tools" inert={!open}><label className="cover-action icon-only" title={profile?.cover_path?'Trocar capa':'Adicionar capa'}><Camera size={16}/><span className="sr-only">{profile?.cover_path?'Trocar capa':'Adicionar capa'}</span><input disabled={busy} type="file" accept="image/gif,image/png,image/jpeg,image/webp" onChange={e=>{void save(e.target.files?.[0]);e.target.value='';setOpen(false);}}/></label>{profile?.cover_path&&<button className="cover-action icon-only" disabled={busy} aria-label="Remover capa" title="Remover capa" onClick={()=>{void remove();setOpen(false);}}><Trash2 size={16}/></button>}</div><button className="cover-action icon-only cover-edit" aria-label="Editar capa" aria-expanded={open} title="Editar capa" onClick={()=>setOpen(v=>!v)}>{open?<X size={16}/>:<Pencil size={16}/>}</button></div></div></section>;
 }
