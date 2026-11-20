@@ -1,0 +1,29 @@
+/* Temas claro e escuro: cores que estavam fixas no escuro (ou fracas no claro) passam a seguir as variáveis do tema. */
+:root{--brand-call:#4ee8a0;--brand-dot:#31dded;--badge:#c8203a;--on-primary:#14181f}
+:root[data-theme=light]{--brand-call:#1f7a52;--brand-dot:#17798c}
+.jacall-landing{--brand-call:#4ee8a0;--brand-dot:#31dded}
+.gamer-brand .brand-call{color:var(--brand-call)}
+.gamer-brand .brand-period{color:var(--brand-dot)}
+.rail-bottom{color:var(--text)}
+
+/* bolinhas de aviso: vermelho com contraste de texto branco acima de 4,5:1 nos dois temas */
+.unread-badge,.rail-badge,.mobile-nav-badge,.bell-badge,.nav-toggle-badge,.bell-new{background:var(--badge)}
+
+/* botões de cor cheia: o texto escuro só funciona sobre o verde-menta; no tema claro o --accent é um verde escuro */
+.social-add,.avatar-edit-btn{background:var(--primary);color:var(--on-primary)}
+
+/* transmissão de tela */
+.screen-stream>header{background:var(--surface)}
+.screen-stream .tag{background:var(--panel);border-color:var(--line)}
+
+@media(max-width:720px){
+ /* gaveta do celular: a lista de canais usava um azul-escuro fixo */
+ .shell.nav-open>.sidebar{background:var(--surface);box-shadow:12px 0 35px #0a0f1a40}
+ :root[data-theme=light] .shell.nav-open>.rail{background:var(--panel)}
+}
+
+/* balão das mensagens da própria pessoa: no tema claro, um verde bem suave (o texto cinza continua legível) */
+:root[data-theme=light] .message{--bubble-mine:color-mix(in srgb,var(--accent) 13%,var(--surface))}
+
+/* hora e textos secundários dentro do balão da própria pessoa (fundo mais colorido que o do tema) */
+.message.mine .muted,.message.mine time{color:color-mix(in srgb,var(--text) 78%,transparent)}
