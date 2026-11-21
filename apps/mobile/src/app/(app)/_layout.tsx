@@ -1,6 +1,60 @@
-import { Stack } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
+import { useWindowDimensions } from 'react-native';
+import { DrawerPanel } from '@/features/nav/drawer-panel';
+import { ProfileSheetProvider } from '@/features/profile/profile-sheet';
+import { PresenceProvider } from '@/features/social/presence';
+import { RoomsProvider } from '@/features/social/rooms';
+import { SocialProvider, useSocial } from '@/features/social/social';
+import { UnreadProvider } from '@/features/social/unread';
+import { useSession } from '@/lib/session';
+import { useTheme } from '@/theme/theme';
 
-// Fase 1 troca isto pelo Drawer (coluna de servidores + canais e DMs).
+/**
+ * Área logada: provedores dos dados (social, presença, não lidas, salas), a folha de perfil e a gaveta
+ * (arrastar da esquerda, de qualquer lugar da tela, ou pelo botão de menu), como no Discord.
+ */
 export default function AppLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  const { session } = useSession();
+  return (
+    <SocialProvider>
+      <Providers me={session?.user.id ?? ''} />
+    </SocialProvider>
+  );
+}
+
+function Providers({ me }: { me: string }) {
+  const { dms, channels } = useSocial();
+  return (
+    <PresenceProvider me={me}>
+      <UnreadProvider me={me} dmIds={dms.map((d) => d.id)}>
+        <RoomsProvider voiceChannelIds={channels.filter((c) => c.kind === 'voice').map((c) => c.id)}>
+          <ProfileSheetProvider>
+            <Navigation />
+          </ProfileSheetProvider>
+        </RoomsProvider>
+      </UnreadProvider>
+    </PresenceProvider>
+  );
+}
+
+function Navigation() {
+  const { tokens } = useTheme();
+  const { width } = useWindowDimensions();
+  return (
+    <Drawer
+      drawerContent={(props) => <DrawerPanel navigation={props.navigation as unknown as { closeDrawer: () => void }} />}
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'front',
+        swipeEdgeWidth: width, // arrastar para a direita abre de qualquer ponto da tela
+        drawerStyle: { width: Math.min(width * 0.92, 390), backgroundColor: tokens.surface },
+        sceneStyle: { backgroundColor: tokens.bg },
+      }}
+    >
+      <Drawer.Screen name="index" />
+      <Drawer.Screen name="dm/[id]" />
+      <Drawer.Screen name="channel/[id]" />
+      <Drawer.Screen name="settings" />
+    </Drawer>
+  );
 }

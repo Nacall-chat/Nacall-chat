@@ -2,7 +2,7 @@
 
 App nativo em **Expo (SDK 58) + React Native + Expo Router**. Reaproveita o backend do site (Supabase, LiveKit e as rotas `/api`) — veja `../../MOBILE_MIGRATION_PLAN.md`.
 
-> **Fase 0 (atual):** base do app, tema claro/escuro, login, cadastro, código de email, recuperar senha e 2FA. Amigos, conversas, servidores e call chegam nas próximas fases.
+> **Fase 1 (atual):** além do login (cadastro, código de email, recuperar senha, 2FA) e do tema, o app tem a **gaveta** (servidores, canais e conversas; arrasta de qualquer ponto da tela), **Amigos** com presença e busca, **conversas diretas e canais de texto** em tempo real com não lidas, **perfil em folha** (em voz, sobre mim, membro desde) e **Ajustes** (tema e status). **Ainda não há:** call, áudio e figurinhas no chat, criar/entrar em servidores, convites, editar perfil e push.
 
 ## Rodar
 ```
@@ -32,4 +32,4 @@ O APK é compilado pela CI do GitHub e publicado como **pré-release** do reposi
 2. GitHub > Actions > **Mobile · APK de teste (Android)** > **Run workflow**. Leva uns 15 a 25 minutos.
 3. No fim, abra **Releases** pelo celular (logado no GitHub), baixe o `.apk` e toque nele. Se o Android pedir, permita instalar apps desta fonte.
 - É um app de **teste**: aponta para a homologação e é assinado com a chave de depuração (não serve para as lojas). Só celulares Android 64 bits (arm64), que são quase todos os atuais.
-- Não aparece na landing page: o repositório é privado e o app ainda é a Fase 0.
+- O APK também fica disponível no botão "Download Android" da landing page do site (a Esteira copia a pré-release mais recente).
