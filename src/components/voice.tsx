@@ -101,4 +101,3 @@ function Controls({session,leave,report,db,profile,focused=false,bar=null,barVar
  <div hidden={!music}><Music db={db} channelId={session.channelId} deaf={deaf} visible={music}/></div>
  </section></>;
 }
-function LiveBadge(){return <span className="live-badge" aria-label="Ao vivo"><i aria-hidden="true"/>AO VIVO</span>;}
