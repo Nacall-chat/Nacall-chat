@@ -97,7 +97,7 @@ Objetivo: entrar no desktop confirmando num celular já autenticado, sem digitar
 ## Riscos e limites conhecidos
 
 - **Dependência do SMTP:** sem o Gmail configurado nos dois projetos, ninguém recebe o código. O Gmail tem limite diário.
-- **`aal2` só é exigido pelas nossas APIs** (livekit e rotas de segurança). O acesso direto do navegador ao banco via PostgREST usa apenas o RLS por usuário; um token `aal1` de uma conta com 2FA continuaria lendo dados que o RLS permite. Fechar isso pede políticas restritivas com `auth.jwt()->>'aal'` em cada tabela, planejado como evolução.
+- **`aal2` também é exigido no banco** para contas com 2FA verificado: políticas restritivas `mfa_aal2_required` nas tabelas privadas e nos áudios/figurinhas (`202611200001_mfa_aal2_rls.sql`) e a checagem `public.require_mfa()` / `public.mfa_satisfied()` dentro das RPCs `SECURITY DEFINER` chamadas pelo app (`202611210001_mfa_aal2_rpcs.sql`). Um token `aal1` dessas contas não lê nem escreve nada privado, nem pelo PostgREST direto. Ainda sem a checagem: os helpers booleanos usados dentro do RLS (`is_member`, `can_dm`, `has_server_permission`, `member_rank`, `chat_media_*`) e as escritas nos buckets públicos (avatars, profile-covers).
 - **Listagem de dispositivos:** o Supabase não expõe a lista de sessões ao cliente, então só há "sair dos outros" e "sair de todos". Mostrar dispositivos exigiria registrar sessões em tabela própria.
 - **Usar um código de recuperação desativa o 2FA** até a pessoa configurar de novo.
 - **Admins:** 2FA obrigatório para contas administrativas foi avaliado e fica como decisão futura (hoje a conta de dono do grupo é um papel do app, não uma conta administrativa do Supabase).
