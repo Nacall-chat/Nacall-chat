@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useState,type FormEvent} from 'react';
+import {useEffect,useRef,useState,type FormEvent} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import type {SupabaseClient} from '@supabase/supabase-js';
@@ -20,7 +20,7 @@ const copy:Record<Mode,{eyebrow:string;title:React.ReactNode;text:string}>={
 };
 export function Auth({db}:{db:SupabaseClient}){
  const router=useRouter();
- const[mode,setMode]=useState<Mode>('login');
+ const[mode,setMode]=useState<Mode>('login');const[feedbackBad,setFeedbackBad]=useState(false);const formRef=useRef<HTMLFormElement>(null);
  const[identifier,setIdentifier]=useState('');const[username,setUsername]=useState('');const[name,setName]=useState('');const[email,setEmail]=useState('');
  const[password,setPassword]=useState('');const[confirm,setConfirm]=useState('');const[code,setCode]=useState('');
  const[busy,setBusy]=useState(false);const[feedback,setFeedback]=useState('');const[themeOpen,setThemeOpen]=useState(false);const[cooldown,setCooldown]=useState(0);const[existing,setExisting]=useState(false);const[taken,setTaken]=useState<{username?:boolean;email?:boolean}>({});const[missing,setMissing]=useState(false);
@@ -37,12 +37,14 @@ export function Auth({db}:{db:SupabaseClient}){
  const newPassword=mode==='signup'||mode==='recover-confirm';
  const passwordHint=newPassword&&password?passwordIssue(password)??undefined:undefined;
  const mismatch=newPassword&&confirm&&confirm!==password?'As senhas não conferem.':undefined;
- function go(next:Mode,message=''){setMode(next);setFeedback(message);setExisting(false);setMissing(false);setPassword('');setConfirm('');setCode('');}
+ // Ao trocar de etapa o botão clicado some e o foco cairia no body: leva o foco ao primeiro campo ainda vazio (na volta ao login, a senha).
+ function focusNextField(){window.setTimeout(()=>{Array.from(formRef.current?.querySelectorAll<HTMLInputElement>('input:not([type=hidden])')??[]).find(i=>!i.value)?.focus();},60);}
+ function go(next:Mode,message=''){focusNextField();setFeedbackBad(false);setMode(next);setFeedback(message);setExisting(false);setMissing(false);setPassword('');setConfirm('');setCode('');}
  async function enter(session:Credentials){const{error}=await db.auth.setSession(session);if(error)throw error;router.replace('/');}
  // A mesma validação do servidor roda aqui antes de enviar, para o erro aparecer sem esperar a rede.
  function validated<T extends {action:string}>(body:T):T{const result=authSchema.safeParse(body);if(!result.success)throw new Error(result.error.issues[0]?.message??'Confira os campos.');return body;}
  async function submit(e:FormEvent){
-  e.preventDefault();setBusy(true);setFeedback('');setExisting(false);setMissing(false);
+  e.preventDefault();setBusy(true);setFeedback('');setFeedbackBad(false);setExisting(false);setMissing(false);
   try{
    if(mode==='login'){const result=await postJson<{session:Credentials}>('/api/auth',validated({action:'login',identifier,password}));await enter(result.session);return;}
    if(mode==='signup'){await postJson('/api/auth',validated({action:'signup',username,displayName:name,email,password,confirmPassword:confirm}));go('verify',`Enviamos um código para ${email}. Confira também o spam.`);setCooldown(60);return;}
@@ -52,16 +54,16 @@ export function Auth({db}:{db:SupabaseClient}){
   }catch(error){
    const failure=error as ApiError;
    if(failure.data?.needsVerification){setEmail(String(failure.data.email??''));go('verify',failure.message);}
-   else{setFeedback(errorText(error));setExisting(failure.data?.code==='email_exists');setMissing(failure.data?.code==='email_not_found');}
+   else{setFeedback(errorText(error));setFeedbackBad(true);setExisting(failure.data?.code==='email_exists');setMissing(failure.data?.code==='email_not_found');}
   }finally{setBusy(false);}
  }
- async function resend(){if(cooldown>0||busy)return;setBusy(true);setFeedback('');try{await postJson('/api/auth',validated({action:'resend',email}));setFeedback('Código reenviado. Pode levar um minutinho.');setCooldown(60);}catch(error){setFeedback(errorText(error));}finally{setBusy(false);}}
+ async function resend(){if(cooldown>0||busy)return;setBusy(true);setFeedback('');setFeedbackBad(false);try{await postJson('/api/auth',validated({action:'resend',email}));setFeedback('Código reenviado. Pode levar um minutinho.');setCooldown(60);}catch(error){setFeedback(errorText(error));setFeedbackBad(true);}finally{setBusy(false);}}
  const text=copy[mode];
  const label=busy?'Conectando o lobby…':{login:'Bora NACALL',signup:'Criar minha conta',verify:'Confirmar email','recover':'Enviar código','recover-confirm':'Trocar senha'}[mode];
  return <main className="auth-page jacall-auth"><header className="landing-nav"><Link href="/" aria-label="Voltar para o início"><Brand/></Link><span className="landing-note"><span className="status-dot"/>Jacaré, pode chegar.</span><button className="icon-button" aria-label="Escolher tema" aria-expanded={themeOpen} onClick={()=>setThemeOpen(!themeOpen)}><SunMoon size={20}/></button></header>{themeOpen&&<div className="landing-theme"><ThemeSelector/></div>}
  <div className="auth-layout"><section className="auth-story"><span className="eyebrow"><Gamepad2 size={15}/> FEITO PRA QUEM FICA MAIS UMA.</span><h1>Jacaré,<br/>vá pra casa.<br/><em>A sua é NACALL.</em></h1><p>Sua galera, seu cantinho e o JACALL de headset. Só falta você na resenha.</p><div className="story-features"><span><Headphones/>Voz da galera</span><span><MonitorPlay/>Tela em 720/1080p</span><span><ShieldCheck/>Seu espaço</span></div><div className="mascot-hero" aria-hidden="true"><img src="/brand/jacall-sheet.webp" alt=""/><span>O JACALL JÁ CHEGOU.</span></div><div className="landing-footnote">NACALL <span>Entra na call. O resto a gente improvisa.</span></div></section>
  <section className="auth-card"><span className="eyebrow">{text.eyebrow}</span><h2>{text.title}</h2><p className="muted">{mode==='verify'&&email?<>Enviamos 6 dígitos para <strong>{email}</strong>. O código vale por poucos minutos e só funciona uma vez.</>:text.text}</p>
- <form onSubmit={submit} aria-busy={busy}>
+ <form ref={formRef} onSubmit={submit} aria-busy={busy}>
   {mode==='login'&&<label>Usuário ou email<input autoComplete="username" required minLength={3} maxLength={254} placeholder="seu_nick ou voce@exemplo.com" value={identifier} onChange={e=>setIdentifier(e.target.value)}/></label>}
   {mode==='signup'&&<><label>Usuário<input autoComplete="username" required minLength={3} maxLength={24} pattern={usernamePattern.source.slice(1,-1)} title={usernameHint} placeholder="seu_nick" value={username} onChange={e=>setUsername(e.target.value.replace(/\s/g,''))}/><small className="field-hint">{usernameHint}</small></label>
    {taken.username&&<small className="field-hint bad" role="alert">Esse usuário já está na party. Escolha outro nome.</small>}
@@ -76,7 +78,7 @@ export function Auth({db}:{db:SupabaseClient}){
  </form>
  {mode==='verify'&&<div className="auth-links"><button className="link" disabled={cooldown>0||busy} onClick={()=>void resend()}>{cooldown>0?`Reenviar código em ${cooldown}s`:'Reenviar código'}</button><button className="link" onClick={()=>go('signup')}>Corrigir meus dados</button></div>}
  {mode!=='verify'&&<div className="auth-links"><button className="link" onClick={()=>go(mode==='signup'?'login':'signup')}>{mode==='signup'?'Já sou da casa. Entrar':'Primeira call? Crie sua conta'}</button><button className="link" onClick={()=>go(mode==='recover'||mode==='recover-confirm'?'login':'recover')}>{mode==='recover'||mode==='recover-confirm'?'Voltar ao login':'Esqueci a senha'}</button></div>}
- {feedback&&<p className="form-feedback" role="status">{feedback}</p>}
+ {feedback&&<p className={feedbackBad?'form-feedback bad':'form-feedback'} role={feedbackBad?'alert':'status'}>{feedback}</p>}
  {missing&&mode==='recover'&&<div className="auth-links"><button type="button" className="link" onClick={()=>go('signup')}>Criar uma conta com esse email</button></div>}
  {existing&&mode==='signup'&&<div className="auth-links"><button type="button" className="link" onClick={()=>{setIdentifier(email);go('login');}}>Entrar com esse email</button><button type="button" className="link" onClick={()=>go('recover')}>Esqueci a senha</button></div>}<small className="auth-smallprint">Microfone e tela só são acessados quando você decide ativá-los.</small></section></div></main>;
 }

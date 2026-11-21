@@ -38,6 +38,6 @@
 .status-menu button strong{font-size:13px}
 .status-menu button small{font-size:11px;line-height:1.35;color:var(--muted);white-space:normal}
 @media(max-width:720px){
- .status-menu{width:min(270px,calc(100vw - 40px))}
+ .status-menu{width:min(270px,calc(var(--drawer-w,100vw) - var(--rail-w,0px) - 24px))}
  .shell>.sidebar .account .account-avatar{min-width:0;min-height:0;padding:0}
 }
