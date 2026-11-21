@@ -85,7 +85,7 @@ test('os dois botões confusos do topo da call saíram',async()=>{
 // ---- janela própria antes do seletor do navegador ----
 test('compartilhar tela abre a janela do NACALL antes do seletor do navegador; parar é direto',async()=>{
  const voice=await read('src/components/voice.tsx'),dialog=await read('src/components/share-dialog.tsx');
- assert.match(voice,/const toggleScreen=\(\)=>\{if\(isScreenShareEnabled\)\{void action\(\(\)=>localParticipant\.setScreenShareEnabled\(false\)\);return;\}setShareOpen\(true\);\}/);
+ assert.match(voice,/const toggleScreen=\(\)=>\{if\(isScreenShareEnabled\)\{void action\(\(\)=>localParticipant\.setScreenShareEnabled\(false\)\);return;\}if\(!canShareScreen\(\)\)\{report\(SCREEN_UNSUPPORTED_MESSAGE\);return;\}setShareOpen\(true\);\}/);
  assert.match(voice,/const startScreen=\(\)=>\{setShareOpen\(false\);/);
  assert.match(voice,/<ShareDialog onClose=/);
  assert.match(dialog,/role="radiogroup"/);
