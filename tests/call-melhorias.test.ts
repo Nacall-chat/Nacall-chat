@@ -86,10 +86,10 @@ test('os dois botões confusos do topo da call saíram',async()=>{
 test('compartilhar tela abre a janela do NACALL antes do seletor do navegador; parar é direto',async()=>{
  const voice=await read('src/components/voice.tsx'),dialog=await read('src/components/share-dialog.tsx');
  assert.match(voice,/const toggleScreen=\(\)=>\{if\(isScreenShareEnabled\)\{void action\(\(\)=>localParticipant\.setScreenShareEnabled\(false\)\);return;\}if\(!canShareScreen\(\)\)\{report\(SCREEN_UNSUPPORTED_MESSAGE\);return;\}setShareOpen\(true\);\}/);
- assert.match(voice,/const startScreen=\(\)=>\{setShareOpen\(false\);/);
+ assert.match(voice,/const startScreen=\(surface:ShareSurface\)=>\{setShareOpen\(false\);/);
  assert.match(voice,/<ShareDialog onClose=/);
  assert.match(dialog,/role="radiogroup"/);
- for(const word of ['Qualidade','Fluidez','Compartilhar o som','Escolher o que mostrar'])assert.match(dialog,new RegExp(word));
+ for(const word of ['Qualidade','Fluidez','Compartilhar o som','O que mostrar'])assert.match(dialog,new RegExp(word));
 });
 
 // ---- cartão no meio ----
