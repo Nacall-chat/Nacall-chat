@@ -44,6 +44,15 @@ As mesmas regras (`src/lib/auth-schema.ts`) rodam no navegador (feedback imediat
 - **Códigos de recuperação do 2FA:** 10 códigos de 12 caracteres (~59 bits), só o hash SHA-256 fica em `mfa_recovery_codes` (RLS ligado, sem acesso de clientes). Usar um código desfaz o 2FA (o Supabase não tem "aal2 por código de backup") e a pessoa configura de novo. Gerar novos invalida os anteriores.
 - **Sem segredos no código:** a service role só existe no servidor.
 
+## Moderação, contato e limites (no banco)
+
+A chave `anon` do Supabase é pública, então estas regras valem no próprio banco (migration `202611210002_moderacao_e_limites.sql`), não só no app. Ainda **não há tela** para bloquear, sair do grupo e remover/banir: as funções existem e o app novo as usa em um PR de interface.
+
+- **Contato:** `block_user` e `unblock_user`. Bloquear desfaz a amizade; só quem bloqueou enxerga o bloqueio. Mensagem **nova** em DM só entre amigos aceitos e sem bloqueio (o histórico continua legível). No máximo 50 pedidos de amizade pendentes enviados por pessoa.
+- **Grupos:** `leave_server` (o dono e a comunidade oficial não saem), `remove_member` e `unban_member` (exigem o cargo `manage_roles` e posto maior que o do alvo), apagar mensagem alheia em canal (exige `manage_channels` ou ser o dono) e banimento que impede voltar pelo mesmo convite. Na comunidade oficial só o `service_role` (painel do Supabase) modera.
+- **Limites:** 40 mensagens por minuto por pessoa, 10 grupos criados por pessoa, 50 canais por grupo, 50 convites ativos por grupo e 20 arquivos por pessoa em cada bucket `avatars` e `profile-covers`.
+- Todas as funções novas exigem o 2FA confirmado (`require_mfa()`) e as tabelas novas (`user_blocks`, `server_bans`) têm a política restritiva `mfa_aal2_required`.
+
 ## Configuração necessária no Supabase (cada projeto: HML e PRD)
 
 Sem isto o cadastro por código não funciona. Feito no painel, em cada projeto.
