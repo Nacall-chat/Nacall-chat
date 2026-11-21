@@ -42,3 +42,25 @@ input[aria-invalid=true]{border-color:var(--error)}
 .setup h1{font-weight:950;margin:28px 0 14px}
 .setup p{margin:0 0 18px}
 .setup a{display:inline-flex;align-items:center;min-height:44px}
+
+/* Auditoria de UX (lote 2): layout. */
+/* Entre 1001 e 1300px o painel de membros já fica escondido (globals.css), mas a regra de 4 colunas do jacall.css vencia a de 3 e deixava uma faixa vazia de 224px à direita */
+@media(min-width:1001px) and (max-width:1300px){.shell:not(.call-focus):not(.call-chat){grid-template-columns:72px 266px minmax(0,1fr)}}
+/* telas grandes: mensagens, Amigos e Loja num miolo legível em vez de esticados até as bordas */
+@media(min-width:1700px){
+ .message-list{padding-inline:max(27px,calc((100% - 960px)/2))}
+ .social-page,.store-page{padding-inline:max(24px,calc((100% - 1000px)/2))}
+}
+@media(max-width:720px){
+ /* barra do topo: o nome do canal encolhe com reticências em vez de empurrar o sino e o "Atualizar" para fora */
+ .main>.topbar>.row{min-width:0;flex:1 1 0}
+ .main>.topbar strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ /* configurações do grupo: o conteúdo usa o resto da altura (como o Ajustes) e as 5 abas cabem numa linha só */
+ dialog.settings-panel .settings-content{flex:1;min-height:0;max-height:none;padding:14px 14px calc(18px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+ .group-settings .settings-layout>nav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+}
+/* barra da call em celulares estreitos: menos espaço entre botões para o toque não ficar em ~36px */
+@media(max-width:360px){
+ .call-dock .call-toolbar{padding:8px 6px calc(8px + env(safe-area-inset-bottom));gap:4px}
+ .call-dock .call-controls{gap:2px}
+}
