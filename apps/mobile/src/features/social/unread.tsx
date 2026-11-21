@@ -31,6 +31,7 @@ export function UnreadProvider({ me, dmIds, children }: PropsWithChildren<{ me: 
     void refresh();
   }, [db, refresh]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- o setState acontece depois da resposta do servidor
   useEffect(() => { void refresh(); }, [refresh, idsKey]);
 
   useEffect(() => {

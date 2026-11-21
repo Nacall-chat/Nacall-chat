@@ -1,12 +1,13 @@
 import { useFocusEffect } from 'expo-router';
 import { Send } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { Header } from '@/components/header';
 import { Notice } from '@/components/ui';
 import { useProfileSheet } from '@/features/profile/profile-sheet';
+import { useKeyboardVisible } from '@/lib/use-keyboard';
 import { bubbleText, peerOf, timeLabel } from '@/features/social/logic';
 import { usePresence } from '@/features/social/presence';
 import { useSocial } from '@/features/social/social';
@@ -21,6 +22,7 @@ import { useMessages, type ChatTarget } from './use-messages';
 export function ChatScreen({ target }: { target: ChatTarget }) {
   const { tokens, scheme } = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardVisible();
   const { me, dms, channels, profiles, nameOf, servers } = useSocial();
   const { infoOf } = usePresence();
   const { markRead, byDm } = useUnread();
@@ -28,6 +30,7 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
   const { messages, loading, hasOlder, error, loadOlder, send } = useMessages(target);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const sendLock = useRef(false); // dois toques no mesmo instante enviariam duas vezes (o estado só atualiza na próxima renderização)
   const [failure, setFailure] = useState('');
 
   const dm = target.type === 'dm' ? dms.find((d) => d.id === target.id) : undefined;
@@ -37,19 +40,23 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
 
   // Conversa aberta e em foco conta como lida (e marca de novo quando chega mensagem enquanto você olha).
   const unread = target.type === 'dm' ? byDm[target.id] ?? 0 : 0;
+  // unread e messages.length entram nas dependências de propósito: chegou mensagem com a conversa aberta, marca de novo.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useFocusEffect(useCallback(() => { if (target.type === 'dm') void markRead(target.id); }, [target.type, target.id, markRead, unread, messages.length]));
 
   const mineBg = scheme === 'light' ? mix(tokens.accent, tokens.surface, 0.13) : mix(tokens.accent, tokens.panel, 0.22);
   const data = useMemo(() => [...messages].reverse(), [messages]); // a lista é invertida: a mais nova fica embaixo
 
   async function submit() {
-    if (sending || !text.trim()) return;
+    if (sendLock.current || !text.trim()) return;
+    sendLock.current = true;
     setSending(true);
     setFailure('');
     const problem = await send(text);
     if (problem) setFailure(problem);
     else setText('');
     setSending(false);
+    sendLock.current = false;
   }
 
   const renderItem = ({ item }: { item: Message }) => {
@@ -72,7 +79,7 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: tokens.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: tokens.bg }} behavior="padding">
       <Header
         title={dm ? nameOf(peerId as string) : `# ${channel?.name ?? 'canal'}`}
         subtitle={dm ? undefined : server?.name}
@@ -94,10 +101,10 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
             <Text style={{ color: tokens.muted, textAlign: 'center' }}>{loading ? 'Carregando mensagens…' : 'Aqui ainda tá quietinho. Mande a primeira mensagem.'}</Text>
           </View>
         }
-        ListFooterComponent={hasOlder ? <Text style={{ color: tokens.faint, textAlign: 'center', padding: space.md, fontSize: 12 }}>Carregando mensagens antigas…</Text> : undefined}
+        ListFooterComponent={hasOlder ? <Text style={{ color: tokens.muted, textAlign: 'center', padding: space.md, fontSize: 12 }}>Carregando mensagens antigas…</Text> : undefined}
       />
       {failure ? <View style={{ paddingHorizontal: space.md }}><Notice tone="error">{failure}</Notice></View> : null}
-      <View style={[styles.composer, { backgroundColor: tokens.surface, borderTopColor: tokens.line, paddingBottom: insets.bottom + space.sm }]}>
+      <View style={[styles.composer, { backgroundColor: tokens.surface, borderTopColor: tokens.line, paddingBottom: (keyboard ? 0 : insets.bottom) + space.sm }]}>
         <TextInput
           accessibilityLabel={dm ? `Mensagem para ${nameOf(peerId as string)}` : `Mensagem em ${channel?.name ?? 'canal'}`}
           placeholder={dm ? `Conversar com ${nameOf(peerId as string)}…` : `Conversar em #${channel?.name ?? 'canal'}…`}

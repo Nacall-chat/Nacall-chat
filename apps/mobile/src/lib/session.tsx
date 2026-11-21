@@ -20,15 +20,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       setLoaded(true);
+      if (!next) setMfa('checking'); // saiu: na próxima entrada o 2FA é conferido de novo
     });
     return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!supabase || !session) {
-      setMfa('checking');
-      return;
-    }
+    if (!supabase || !session) return;
     let live = true;
     // Conta com 2FA só entra depois de confirmar o código (sessão aal2).
     void supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
