@@ -380,5 +380,17 @@ Entregue em `apps/mobile` (PR `feature/mobile-fase-1`):
 - **Não verificado:** execução em celular/emulador, Realtime de verdade (o servidor de mentira não tem websocket), push, gestos reais de arrastar com o dedo, e o app contra a HML de verdade.
 - **Fica para as próximas entregas:** criar/entrar em servidor e convites, editar perfil/capa/foto, áudio e figurinhas, 2FA nos Ajustes, push, e a call.
 
+### Fase 1b — Conta e comunidades (primeira entrega no código)
+
+Entregue em `apps/mobile` (PR `feature/mobile-fase-1b`):
+- **Ajustes** viram um menu: Meu perfil, Segurança, status e tema.
+- **Meu perfil:** nome, usuário, bio (mesmas validações do site e do banco), foto (recorte quadrado 256 px em WebP) e capa (recorte 3:1 em WebP ou GIF como está), com troca e remoção; usuário repetido avisa "já está na party".
+- **Segurança:** trocar senha (dicas ao vivo), **2FA** (ativar com QR desenhado em react-native-svg e a chave, confirmar o código, códigos de recuperação com copiar, gerar novos, desativar com a senha) e encerrar sessões (outros aparelhos ou todos).
+- **Comunidades:** criar e entrar por convite (link ou código; prévia com nome e membros; convite inválido ou expirado avisa), com o "+" na gaveta.
+- **Sino:** mensagens não lidas e novidades do NACALL (as mesmas do site), marcando como visto ao fechar.
+- **Verificação:** `tsc`, lint e **50 testes** (recortes, formulário, convite, QR, troca de senha); fluxos vistos na versão web contra um servidor de mentira (perfil, senha, 2FA completo, criar comunidade, convite válido/inválido/malformado, sino).
+- **Não verificado:** escolher e enviar foto/capa de verdade (o seletor de imagens só abre em aparelho), escaneamento real do QR, e tudo contra a HML real.
+- **Fica para depois:** gerar convites, cargos e configurações do grupo, push, áudio/figurinhas e a call.
+
 ### Próximo: Fase 0.5 — Spike da call
 Entrar numa sala LiveKit (HML) com áudio no Android e no iPhone físico. Exige um _development build_ (conta Expo e, para iPhone, conta Apple) e aparelho; ainda não iniciado.

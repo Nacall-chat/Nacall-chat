@@ -1,3 +1,6 @@
+import { useRouter } from 'expo-router';
+import { ChevronRight, Palette, ShieldCheck, UserRound } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Header } from '@/components/header';
 import { Body, Eyebrow, LinkButton, Screen } from '@/components/ui';
@@ -11,8 +14,9 @@ import { statusHint, statusLabel, type PresenceStatus } from '@nacall/core/prese
 const themes: [ThemePreference, string][] = [['system', 'Seguir o sistema'], ['dark', 'Escuro'], ['light', 'Claro']];
 const statuses: PresenceStatus[] = ['online', 'away', 'invisible'];
 
-/** Ajustes do app: tema, status de presença e sair. (Perfil, voz e segurança chegam depois.) */
+/** Ajustes: perfil e segurança (telas próprias), status, tema e sair. */
 export default function Settings() {
+  const router = useRouter();
   const { tokens, preference, setPreference } = useTheme();
   const { signOut } = useSession();
   const { mine, setMine } = usePresence();
@@ -27,13 +31,18 @@ export default function Settings() {
           <Body>{profiles[me] ? `${profiles[me].display_name} · @${profiles[me].username}` : ''}</Body>
         </View>
 
+        <View style={{ gap: space.sm }}>
+          <Row icon={<UserRound size={20} color={tokens.accent} />} title="Meu perfil" hint="Nome, usuário, bio, foto e capa" onPress={() => router.navigate('/settings/profile')} />
+          <Row icon={<ShieldCheck size={20} color={tokens.accent} />} title="Segurança" hint="Senha, 2FA e sessões" onPress={() => router.navigate('/settings/security')} />
+        </View>
+
         <Group title="Status">
           {statuses.map((status) => (
             <Option key={status} label={statusLabel[status]} hint={statusHint[status]} selected={mine === status} onPress={() => setMine(status)} />
           ))}
         </Group>
 
-        <Group title="Tema">
+        <Group title="Tema" icon={<Palette size={14} color={tokens.muted} />}>
           {themes.map(([id, label]) => (
             <Option key={id} label={label} selected={preference === id} onPress={() => setPreference(id)} />
           ))}
@@ -45,11 +54,28 @@ export default function Settings() {
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Row({ icon, title, hint, onPress }: { icon: ReactNode; title: string; hint: string; onPress: () => void }) {
+  const { tokens } = useTheme();
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, borderWidth: 1, backgroundColor: tokens.surface, borderColor: tokens.line }}>
+      {icon}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: tokens.text, fontWeight: '800', fontSize: 15 }}>{title}</Text>
+        <Text style={{ color: tokens.muted, fontSize: 12 }}>{hint}</Text>
+      </View>
+      <ChevronRight size={18} color={tokens.muted} />
+    </Pressable>
+  );
+}
+
+function Group({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   const { tokens } = useTheme();
   return (
     <View style={{ gap: space.sm }}>
-      <Text style={{ color: tokens.muted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>{title.toUpperCase()}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        {icon}
+        <Text style={{ color: tokens.muted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 }}>{title.toUpperCase()}</Text>
+      </View>
       <View style={{ gap: space.sm }}>{children}</View>
     </View>
   );

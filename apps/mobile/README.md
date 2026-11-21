@@ -2,7 +2,7 @@
 
 App nativo em **Expo (SDK 58) + React Native + Expo Router**. Reaproveita o backend do site (Supabase, LiveKit e as rotas `/api`) — veja `../../MOBILE_MIGRATION_PLAN.md`.
 
-> **Fase 1 (atual):** além do login (cadastro, código de email, recuperar senha, 2FA) e do tema, o app tem a **gaveta** (servidores, canais e conversas; arrasta de qualquer ponto da tela), **Amigos** com presença e busca, **conversas diretas e canais de texto** em tempo real com não lidas, **perfil em folha** (em voz, sobre mim, membro desde) e **Ajustes** (tema e status). **Ainda não há:** call, áudio e figurinhas no chat, criar/entrar em servidores, convites, editar perfil e push.
+> **Fase 1 (atual):** além do login (cadastro, código de email, recuperar senha, 2FA) e do tema, o app tem a **gaveta** (servidores, canais e conversas; arrasta de qualquer ponto da tela), **Amigos** com presença e busca, **conversas diretas e canais de texto** em tempo real com não lidas, **perfil em folha** (em voz, sobre mim, membro desde) e **Ajustes** (tema e status). **Fase 1b:** editar perfil (nome, usuário, bio, foto e capa), **Segurança** (trocar senha, ativar/desativar 2FA com QR e códigos de recuperação, encerrar sessões), **criar e entrar em comunidades por convite** e o **sino** (mensagens e novidades). **Ainda não há:** call, áudio e figurinhas no chat, gerar convites e cargos dos servidores, e push.
 
 ## Rodar
 ```

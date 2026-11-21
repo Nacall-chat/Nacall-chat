@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BellButton } from '@/features/notifications/notifications';
 import { useUnread } from '@/features/social/unread';
 import { useSocial } from '@/features/social/social';
 import { pendingIncoming } from '@/features/social/logic';
@@ -36,6 +37,7 @@ export function Header({ title, subtitle, left, right, onTitlePress }: { title: 
         {subtitle ? <Text numberOfLines={1} style={{ color: tokens.muted, fontSize: 12 }}>{subtitle}</Text> : null}
       </Pressable>
       {right}
+      <BellButton />
     </View>
   );
 }
