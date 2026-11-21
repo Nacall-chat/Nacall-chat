@@ -367,5 +367,18 @@ Entregue em `apps/mobile` (PR da branch `feature/mobile-app`):
 - **Verificação:** `tsc` limpo, **21 testes** (inclui conferência de contraste e de que as cores do app são as do `jacall.css`), `expo export` Android gerou o bundle Hermes **também sem o `node_modules` da raiz** (condição da CI), `expo-doctor` 20/20 e fluxo de login/cadastro/tema exercitado na versão web contra um servidor de mentira local.
 - **Não verificado:** execução em **Android/iPhone reais ou emulador**, login contra a **HML de verdade**, 2FA real, teclado/áreas seguras no aparelho.
 
+### Fase 1 — Núcleo social (em andamento: primeira entrega no código)
+
+Entregue em `apps/mobile` (PR `feature/mobile-fase-1`):
+- **Gaveta** (Drawer do Expo Router) com a coluna de servidores (Início + os seus, com a bolinha de call e a soma de não lidas), lista de canais de texto e de voz (quem está em cada sala e o cronômetro), amigos e mensagens diretas ordenadas por não lidas; abre pelo botão ou arrastando de qualquer ponto da tela.
+- **Amigos:** abas Online / Em call / Todos / Pendente, busca, adicionar por nome #número ou @usuário, aceitar, recusar, cancelar e remover (com confirmação), presença (online, ausente, offline).
+- **Conversas e canais de texto:** balões (os seus à direita), histórico com paginação, tempo real do Supabase + reconciliação a cada 15 s, envio de texto, **não lidas** (marca como lida ao abrir). Áudio e figurinha aparecem como aviso até terem tela própria.
+- **Perfil em folha** (sobe de baixo, arrasta para fechar): em voz, sobre mim, membro do NACALL desde, e as ações (mensagem, solicitação, aceitar, recusar).
+- **Ajustes:** tema, status de presença e sair.
+- Regras compartilhadas com o site (`presence`, `unread`, `identity`, `profile-info`, `room-clock`, `types`) importadas de `src/lib`.
+- **Verificação:** `tsc` limpo e testes das regras (amigos, conversas, mensagens, endereços de imagem); fluxo visto na versão web contra um servidor de mentira local (login, gaveta, servidor e canais, envio de mensagem, DM com balões, perfil, pedidos pendentes).
+- **Não verificado:** execução em celular/emulador, Realtime de verdade (o servidor de mentira não tem websocket), push, gestos reais de arrastar com o dedo, e o app contra a HML de verdade.
+- **Fica para as próximas entregas:** criar/entrar em servidor e convites, editar perfil/capa/foto, áudio e figurinhas, 2FA nos Ajustes, push, e a call.
+
 ### Próximo: Fase 0.5 — Spike da call
 Entrar numa sala LiveKit (HML) com áudio no Android e no iPhone físico. Exige um _development build_ (conta Expo e, para iPhone, conta Apple) e aparelho; ainda não iniciado.
