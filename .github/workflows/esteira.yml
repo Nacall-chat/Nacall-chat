@@ -13,7 +13,8 @@ jobs:
     uses: ./.github/workflows/ci.yml
   homologacao:
     name: HML
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+    # Sobe sozinho a cada push na release e também pelo botão: Actions > Site · Esteira (HML e PRD) > Run workflow, escolhendo a branch release.
+    if: github.ref == 'refs/heads/release'
     needs: verificar
     runs-on: ubuntu-latest
     env:
@@ -49,7 +50,8 @@ jobs:
   producao:
     name: PRD
     # Manual: Actions > Site · Esteira (HML e PRD) > Run workflow, escolhendo a branch main. Nunca roda sozinho (aprovação da produção é humana).
-    if: github.event_name == 'workflow_dispatch'
+    # Em qualquer outra branch o job nem começa (antes ele rodava e falhava na conferência abaixo, que continua valendo como segunda trava).
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: verificar
     runs-on: ubuntu-latest
     env:
