@@ -93,11 +93,11 @@ test('compartilhar tela abre a janela do NACALL antes do seletor do navegador; p
 });
 
 // ---- cartão no meio ----
-test('o cartão de transmissão e os participantes ficam centralizados na área da call',async()=>{
+test('os cartões dos participantes (e os das transmissões, que são da mesma grade) ficam centralizados na área da call',async()=>{
  const css=await read('src/app/call-stage.css');
- assert.match(css,/\.call-stage>\.stream-cards:first-child,\.call-stage>\.participants:first-child\{margin-top:auto\}/);
+ assert.match(css,/\.call-stage>\.participants:first-child\{margin-top:auto\}/);
  assert.match(css,/\.call-stage>\.participants:last-child\{margin-bottom:auto\}/);
- assert.match(css,/\.stream-card\{width:min\(100%,440px\);margin-inline:auto\}/);
+ assert.doesNotMatch(css,/\.stream-card\b/,'a faixa larga "está transmitindo" saiu: o cartão agora é da grade');
 });
 
 test('compartilhar tela só é oferecido onde o navegador tem getDisplayMedia',()=>{

@@ -60,7 +60,8 @@ test('a call mostra AO VIVO, o cartão de assistir e o volume da transmissão',a
  assert.match(badge,/function LiveBadge/);
  assert.match(voice,/import \{LiveBadge\} from '\.\/live-badge'/);
  assert.match(voice,/Sair da transmissão/);
- assert.match(voice,/Assistir à transmissão de/);
+ const tile=await readFile(new URL('../src/components/stream-tile.tsx',import.meta.url),'utf8');
+ assert.match(tile,/Assistir à transmissão de/,'o cartão da grade é o botão de assistir');
  assert.match(voice,/Volume da transmissão de/);
  assert.match(voice,/setVolume\(v,Track\.Source\.ScreenShareAudio\)/,'o volume da transmissão mexe só no áudio da tela, não na voz');
  assert.doesNotMatch(voice,/EyeOff|hiddenScreens/,'o olho antigo (que não parava o áudio) saiu');
