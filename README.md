@@ -34,7 +34,7 @@ No LiveKit, crie credenciais e configure URL WSS, API key e API secret. O endpoi
 - Perfil com nome personalizado, bio e foto; upload convertido para WebP com isolamento por usuário.
 - Temas claro, escuro e sistema; identidade NACALL, fonte Manrope local e controles com ícones.
 - Voz LiveKit com cards de participantes, foto, nome, indicação de fala, mic, ensurdecer, volume individual, dispositivos e qualidade de conexão.
-- Supressão de ruído nativa do navegador, cancelamento de eco, ganho automático e push-to-talk segurando V. O processamento disponível depende do navegador/dispositivo; não é Krisp.
+- Supressão de ruído nativa do navegador, cancelamento de eco, ganho automático e push-to-talk segurando uma tecla à escolha (padrão V; Ajustes → Voz, com aviso para teclas problemáticas). O processamento disponível depende do navegador/dispositivo; não é Krisp.
 - Tela com limite solicitado de 1280×720 ou 1920×1080, 15/30 fps e áudio opcional quando o navegador permitir. Câmera opcional em 720p. A resolução efetiva depende da captura e conexão.
 - DJ do lobby: link do YouTube, player oficial visível, estado compartilhado de tocar/pausar/remover, volume local e sincronização aproximada. Cada pessoa ativa seu player; vídeos restritos e bloqueio de autoplay podem impedir reprodução. Não é um bot que extrai áudio do YouTube.
 

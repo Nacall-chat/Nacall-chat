@@ -4,7 +4,8 @@
 2. Editar nome/foto/bio; alternar claro/escuro/sistema e recarregar.
 3. Solicitar/aceitar amizade, trocar DM, criar servidor, aceitar convite e trocar mensagens de canal entre dois navegadores.
 4. Entrar na voz em dois dispositivos. Confirmar áudio, indicador de fala, mute, ensurdecer, volume individual e troca de microfone/saída.
-5. Testar ruído, eco e ganho no navegador usado. Com push-to-talk ligado, só transmitir segurando V; sair da janela deve silenciar.
+5. Testar ruído, eco e ganho no navegador usado. Com push-to-talk ligado, só transmitir segurando a tecla escolhida (padrão V; trocar em Ajustes → Voz e conferir que a escolha continua depois de recarregar); sair da janela deve silenciar.
+   Transmissão de tela: com duas contas, quem não assiste vê um cartão na grade com a última imagem da tela e AO VIVO; clicar entra, sair volta ao cartão, e o contador "N assistindo" muda para quem transmite, para quem assiste e no cartão.
 6. Compartilhar uma janela em 720p; testar 15/30 fps, finalizar pelo navegador e pelo app. Áudio de aba/sistema varia por navegador e origem de captura. Testar câmera separadamente.
 7. Colocar link YouTube permitido; ativar player nos dois usuários; tocar/pausar/remover e ajustar volume local. Verificar erro de vídeo restrito e ressincronização.
 8. Sair da chamada, trocar de servidor, recarregar, sair da conta. Conferir layout no celular e teclado, incluindo fechar o diálogo com Esc.
