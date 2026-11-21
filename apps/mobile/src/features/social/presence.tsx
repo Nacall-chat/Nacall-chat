@@ -39,6 +39,8 @@ export function PresenceProvider({ me, children }: PropsWithChildren<{ me: strin
 
   useEffect(() => {
     const active = () => AppState.currentState === 'active';
+    // cargas iniciais: o setState acontece depois da resposta do servidor (assíncrono)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (active()) { void beat(); void loadFriends(); }
     const heart = setInterval(() => { if (active()) void beat(); }, HEARTBEAT_MS);
     const friends = setInterval(() => { if (active()) void loadFriends(); }, 30000);

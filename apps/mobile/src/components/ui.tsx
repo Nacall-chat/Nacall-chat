@@ -15,14 +15,17 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { mix } from '@/theme/mix';
 import { radius, space } from '@/theme/tokens';
+import { useKeyboardVisible } from '@/lib/use-keyboard';
 import { useTheme } from '@/theme/theme';
 
 /** Tela com fundo do tema, áreas seguras e rolagem que desvia do teclado. */
 export function Screen({ children, scroll = true, style }: { children: ReactNode; scroll?: boolean; style?: StyleProp<ViewStyle> }) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
-  const padding = { paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.lg, paddingHorizontal: space.lg };
+  const keyboard = useKeyboardVisible();
+  const padding = { paddingTop: insets.top + space.lg, paddingBottom: (keyboard ? 0 : insets.bottom) + space.lg, paddingHorizontal: space.lg };
   const body = scroll ? (
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.grow, padding, style]}>
       {children}
@@ -31,7 +34,7 @@ export function Screen({ children, scroll = true, style }: { children: ReactNode
     <View style={[styles.grow, padding, style]}>{children}</View>
   );
   return (
-    <KeyboardAvoidingView style={[styles.fill, { backgroundColor: tokens.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[styles.fill, { backgroundColor: tokens.bg }]} behavior="padding">
       {body}
     </KeyboardAvoidingView>
   );
@@ -86,7 +89,7 @@ export function Field({
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text accessibilityRole="alert" style={{ color: tokens.error, fontSize: 12 }}>{error}</Text> : hint ? <Text style={{ color: tokens.faint, fontSize: 12 }}>{hint}</Text> : null}
+      {error ? <Text accessibilityRole="alert" style={{ color: tokens.error, fontSize: 12 }}>{error}</Text> : hint ? <Text style={{ color: tokens.muted, fontSize: 12 }}>{hint}</Text> : null}
     </View>
   );
 }
@@ -118,7 +121,7 @@ export function LinkButton({ label, onPress, disabled }: { label: string; onPres
 export function Notice({ children, tone = 'info' }: { children: string; tone?: 'info' | 'error' }) {
   const { tokens } = useTheme();
   return (
-    <View accessibilityRole={tone === 'error' ? 'alert' : undefined} style={[styles.notice, { backgroundColor: tokens.soft, borderColor: tone === 'error' ? tokens.error : tokens.line }]}>
+    <View accessibilityRole={tone === 'error' ? 'alert' : undefined} style={[styles.notice, { backgroundColor: tone === 'error' ? mix(tokens.error, tokens.surface, 0.14) : tokens.soft, borderColor: tone === 'error' ? tokens.error : tokens.line }]}>
       <Text style={{ color: tokens.text, fontSize: 13, lineHeight: 18 }}>{children}</Text>
     </View>
   );

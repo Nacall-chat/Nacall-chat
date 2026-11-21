@@ -35,6 +35,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Tipos
         run: npm run typecheck
+      - name: Lint (regras do React e do Expo)
+        run: npm run lint
       - name: Testes
         run: npm test
       - name: Bundle Android (confere que o Metro resolve tudo, inclusive os módulos compartilhados do site)

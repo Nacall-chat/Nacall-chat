@@ -1,12 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useRouter } from 'expo-router';
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { AppState } from 'react-native';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { friendNumber, profileTag } from '@nacall/core/identity';
 import type { Channel, DM, Friendship, Profile, Server } from '@nacall/core/types';
 import { errorText, usernameKey, usernameSchema } from '@nacall/core/validation';
+import { friendlyError } from '@/lib/errors';
 
 type Member = { user_id: string; server_id: string };
 
@@ -31,7 +32,8 @@ type SocialValue = {
   acceptFriend: (friendshipId: string) => void;
   removeFriend: (friendshipId: string) => void;
   openDm: (friendId: string) => Promise<void>;
-  addFriendByIdentifier: (raw: string) => Promise<void>;
+  /** true quando a solicitação foi enviada (o campo só limpa nesse caso). */
+  addFriendByIdentifier: (raw: string) => Promise<boolean>;
 };
 
 const SocialContext = createContext<SocialValue | null>(null);
@@ -56,8 +58,6 @@ export function SocialProvider({ children }: PropsWithChildren) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [railId, setRailId] = useState<string | null>(null);
-  const friendsRef = useRef<Friendship[]>([]);
-  friendsRef.current = friends;
 
   const reload = useCallback(async () => {
     const results = await Promise.all([
@@ -85,8 +85,10 @@ export function SocialProvider({ children }: PropsWithChildren) {
     setLoaded(true);
   }, [db, me]);
 
-  const safeReload = useCallback(() => { void reload().catch((e) => setNotice(errorText(e))); }, [reload]);
+  const safeReload = useCallback(() => { void reload().catch((e) => setNotice(friendlyError(errorText(e)))); }, [reload]);
 
+  // carga inicial: o setState acontece depois da resposta do servidor (assíncrono)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { safeReload(); }, [safeReload]);
 
   // Tempo real de amizades e conversas; recarrega quando o app volta ao primeiro plano e a cada 2 minutos.
@@ -108,7 +110,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
   const act = useCallback(async (task: () => Promise<void>) => {
     setBusy(true);
     setNotice('');
-    try { await task(); } catch (e) { setNotice(errorText(e)); } finally { setBusy(false); }
+    try { await task(); } catch (e) { setNotice(friendlyError(errorText(e))); } finally { setBusy(false); }
   }, []);
 
   const value = useMemo<SocialValue>(() => {
@@ -118,7 +120,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
       reload,
       nameOf,
       requestFriend: (id) => {
-        if (id === me || friendsRef.current.some((f) => f.sender_id === id || f.receiver_id === id)) return;
+        if (id === me || friends.some((f) => f.sender_id === id || f.receiver_id === id)) return;
         void act(async () => {
           const { error } = await db.from('friendships').insert({ sender_id: me, receiver_id: id });
           if (error) throw error;
@@ -149,6 +151,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
         });
       },
       addFriendByIdentifier: async (raw) => {
+        let sent = false;
         await act(async () => {
           const number = friendNumber(raw);
           const query = db.from('profiles').select('id');
@@ -162,7 +165,9 @@ export function SocialProvider({ children }: PropsWithChildren) {
           }
           await reload();
           setNotice('Solicitação enviada.');
+          sent = true;
         });
+        return sent;
       },
     };
   }, [me, profiles, friends, dms, servers, channels, members, loaded, busy, notice, railId, reload, act, db, router]);

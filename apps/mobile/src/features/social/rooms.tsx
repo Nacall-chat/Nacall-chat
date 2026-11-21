@@ -18,11 +18,11 @@ const RoomsContext = createContext<RoomsValue | null>(null);
  * Só mostra a informação: entrar na call chega numa fase própria.
  */
 export function RoomsProvider({ voiceChannelIds, children }: PropsWithChildren<{ voiceChannelIds: string[] }>) {
-  const [rooms, setRooms] = useState<Record<string, RoomSnapshot>>({});
+  const [roomsState, setRooms] = useState<Record<string, RoomSnapshot>>({});
   const idsKey = voiceChannelIds.slice().sort().join(',');
 
   useEffect(() => {
-    if (!idsKey) { setRooms({}); return; }
+    if (!idsKey) return;
     let live = true;
     const read = async () => {
       if (AppState.currentState !== 'active') return;
@@ -47,9 +47,11 @@ export function RoomsProvider({ voiceChannelIds, children }: PropsWithChildren<{
   }, [idsKey]);
 
   const value = useMemo<RoomsValue>(() => {
+    // sem salas de voz nos servidores, não há ninguém em call (e o estado antigo não vale)
+    const rooms = idsKey ? roomsState : {};
     const activeIds = new Set(Object.values(rooms).flatMap((room) => room.participants.map((p) => p.id)));
     return { rooms, activeIds, callOf: (userId) => Object.values(rooms).find((room) => room.participants.some((p) => p.id === userId)) };
-  }, [rooms]);
+  }, [roomsState, idsKey]);
 
   return <RoomsContext value={value}>{children}</RoomsContext>;
 }

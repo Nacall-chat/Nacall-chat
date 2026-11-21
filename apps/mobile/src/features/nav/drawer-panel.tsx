@@ -25,7 +25,7 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
   const router = useRouter();
   const { me, profiles, friends, dms, servers, channels, railId, setRailId, nameOf } = useSocial();
   const { items, total, byDm } = useUnread();
-  const { infoOf } = usePresence();
+  const { infoOf, mine } = usePresence();
   const { rooms } = useRooms();
   const { signOut } = useSession();
 
@@ -116,7 +116,7 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
 
           {/* Conta */}
           <View style={[styles.account, { borderTopColor: tokens.line, backgroundColor: tokens.panel, paddingBottom: insets.bottom + space.sm }]}>
-            <Avatar profile={profiles[me]} size={36} state={infoOf(me).state === 'offline' ? 'online' : infoOf(me).state} />
+            <Avatar profile={profiles[me]} size={36} state={mine === 'invisible' ? 'offline' : mine} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ color: tokens.text, fontSize: 13, fontWeight: '800' }}>{nameOf(me)}</Text>
               <Text numberOfLines={1} style={{ color: tokens.muted, fontSize: 11 }}>{profiles[me] ? `@${profiles[me].username}` : ''}</Text>

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { CalendarDays, Headphones } from 'lucide-react-native';
-import { createContext, use, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { Animated, Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
@@ -27,10 +27,11 @@ export const useProfileSheet = () => {
 export function ProfileSheetProvider({ children }: PropsWithChildren) {
   const [userId, setUserId] = useState<string | null>(null);
   const value = useMemo<SheetValue>(() => ({ open: setUserId }), []);
+  const close = useCallback(() => setUserId(null), []);
   return (
     <SheetContext value={value}>
       {children}
-      <ProfileSheet userId={userId} close={() => setUserId(null)} />
+      <ProfileSheet userId={userId} close={close} />
     </SheetContext>
   );
 }
@@ -43,23 +44,23 @@ function ProfileSheet({ userId, close }: { userId: string | null; close: () => v
   const { me, profiles, friends, channels, servers, busy, requestFriend, acceptFriend, removeFriend, openDm } = useSocial();
   const { infoOf } = usePresence();
   const { callOf } = useRooms();
-  const drag = useRef(new Animated.Value(0)).current;
-  const closeRef = useRef(close);
-  closeRef.current = close;
+  const [drag] = useState(() => new Animated.Value(0));
 
   useEffect(() => { drag.setValue(0); }, [userId, drag]);
 
   // Arrastar a capa para baixo acompanha o dedo e fecha se passar de ~110 px.
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderMove: (_e, g) => { if (g.dy > 0) drag.setValue(g.dy); },
-      onPanResponderRelease: (_e, g) => {
-        if (g.dy > CLOSE_DISTANCE) closeRef.current();
-        else Animated.spring(drag, { toValue: 0, useNativeDriver: true }).start();
-      },
-    }),
-  ).current;
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderMove: (_e, g) => { if (g.dy > 0) drag.setValue(g.dy); },
+        onPanResponderRelease: (_e, g) => {
+          if (g.dy > CLOSE_DISTANCE) close();
+          else Animated.spring(drag, { toValue: 0, useNativeDriver: true }).start();
+        },
+      }),
+    [drag, close],
+  );
 
   const profile = userId ? profiles[userId] : undefined;
   const own = userId === me;
@@ -115,7 +116,7 @@ function ProfileSheet({ userId, close }: { userId: string | null; close: () => v
                 <Text style={{ color: tokens.text, fontSize: 16, fontWeight: '800' }}>{roomChannel?.name ?? 'Sala de voz'}</Text>
                 {roomServer ? <Text style={{ color: tokens.muted, fontSize: 13 }}>{`em ${roomServer.name}`}</Text> : null}
                 <Text style={{ color: tokens.muted, fontSize: 13, marginTop: 4 }}>{room.participants.map((p) => p.name).join(', ')}</Text>
-                <Text style={{ color: tokens.faint, fontSize: 12, marginTop: 6 }}>Entrar na chamada chega ao app numa próxima fase; por enquanto entre pelo site.</Text>
+                <Text style={{ color: tokens.muted, fontSize: 12, marginTop: 6 }}>Entrar na chamada chega ao app numa próxima fase; por enquanto entre pelo site.</Text>
               </Section>
             ) : null}
 

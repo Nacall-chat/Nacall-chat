@@ -35,8 +35,8 @@ export function FriendsScreen() {
   async function add() {
     const raw = identifier.trim();
     if (!raw) return;
-    await addFriendByIdentifier(raw);
-    setIdentifier('');
+    // só limpa o campo se enviou; se deu erro, a pessoa corrige sem digitar tudo de novo
+    if (await addFriendByIdentifier(raw)) setIdentifier('');
   }
 
   const renderRow = ({ item }: { item: FriendRow }) => {

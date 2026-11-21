@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import type { Message } from '@nacall/core/types';
 import { errorText, messageSchema } from '@nacall/core/validation';
 import { appendMessage, sameMessages } from '@/features/social/logic';
+import { friendlyError } from '@/lib/errors';
 
 export type ChatTarget = { type: 'dm' | 'channel'; id: string };
 const PAGE = 50;
@@ -25,7 +26,7 @@ export function useMessages(target: ChatTarget) {
 
   const fetchLatest = useCallback(async () => {
     const { data, error: failure } = await db.from('messages').select('*').eq(field, target.id).order('created_at', { ascending: false }).limit(limit.current);
-    if (failure) setError(failure.message);
+    if (failure) setError(friendlyError(failure.message));
     else {
       const next = ((data ?? []) as Message[]).reverse();
       setMessages((prev) => (sameMessages(prev, next) ? prev : next));
@@ -37,8 +38,7 @@ export function useMessages(target: ChatTarget) {
 
   useEffect(() => {
     limit.current = PAGE;
-    setMessages([]);
-    setLoading(true);
+    // a tela é recriada a cada conversa (key na rota), então o estado já começa vazio e carregando
     void fetchLatest();
     const channel = db
       .channel(`messages-${target.id}`)
@@ -53,7 +53,7 @@ export function useMessages(target: ChatTarget) {
     const oldest = messages[0];
     if (!oldest || !hasOlder) return;
     const { data, error: failure } = await db.from('messages').select('*').eq(field, target.id).lt('created_at', oldest.created_at).order('created_at', { ascending: false }).limit(PAGE);
-    if (failure) { setError(failure.message); return; }
+    if (failure) { setError(friendlyError(failure.message)); return; }
     limit.current += data?.length ?? 0;
     setMessages((prev) => [...((data ?? []) as Message[]).reverse(), ...prev]);
     setHasOlder((data?.length ?? 0) === PAGE);
@@ -68,7 +68,7 @@ export function useMessages(target: ChatTarget) {
       setMessages((prev) => appendMessage(prev, data as Message));
       return null;
     } catch (e) {
-      return errorText(e);
+      return friendlyError(errorText(e));
     }
   }, [db, field, target.id]);
 

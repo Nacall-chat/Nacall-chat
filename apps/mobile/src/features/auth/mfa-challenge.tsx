@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Body, Eyebrow, Field, LinkButton, Notice, PrimaryButton, Screen, Title } from '@/components/ui';
 import { postJson } from '@/lib/api';
@@ -14,10 +14,12 @@ export function MfaChallenge() {
   const [recovery, setRecovery] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
   const [feedback, setFeedback] = useState('');
 
   async function verify() {
-    if (!supabase) return;
+    if (!supabase || inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setFeedback('');
     try {
@@ -40,6 +42,7 @@ export function MfaChallenge() {
       setCode('');
     } finally {
       setBusy(false);
+      inFlight.current = false;
     }
   }
 

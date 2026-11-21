@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Body, Brand, Eyebrow, Field, LinkButton, Notice, PrimaryButton, Screen, Title } from '@/components/ui';
 import { postJson, type ApiError } from '@/lib/api';
@@ -19,11 +19,12 @@ export function AuthFlow() {
   const [confirm, setConfirm] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false); // dois toques seguidos não repetem o cadastro/login
   const [feedback, setFeedback] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [existing, setExisting] = useState(false);
   const [missing, setMissing] = useState(false);
-  const [taken, setTaken] = useState<{ username?: boolean; email?: boolean }>({});
+  const [lookup, setLookup] = useState<{ key: string; username?: boolean; email?: boolean } | null>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -32,28 +33,25 @@ export function AuthFlow() {
   }, [cooldown]);
 
   // Aviso ao vivo no cadastro: usuário e email já em uso (consulta o servidor depois de uma pausa na digitação).
+  const checkUser = mode === 'signup' && usernamePattern.test(username) ? username : undefined;
+  const checkMail = mode === 'signup' && emailSchema.safeParse(email).success ? email.trim().toLowerCase() : undefined;
+  const lookupKey = `${checkUser ?? ''}|${checkMail ?? ''}`;
+  // o resultado só vale para os valores que foram consultados (digitou outra coisa: some o aviso antigo)
+  const taken: { username?: boolean; email?: boolean } = lookup && lookup.key === lookupKey ? lookup : {};
+
   useEffect(() => {
-    if (mode !== 'signup') {
-      setTaken({});
-      return;
-    }
-    const user = usernamePattern.test(username) ? username : undefined;
-    const mail = emailSchema.safeParse(email).success ? email.trim().toLowerCase() : undefined;
-    if (!user && !mail) {
-      setTaken({});
-      return;
-    }
+    if (!checkUser && !checkMail) return;
     let live = true;
     const timer = setTimeout(() => {
-      void postJson<{ usernameTaken?: boolean; emailTaken?: boolean }>('/api/auth', { action: 'check', ...(user ? { username: user } : {}), ...(mail ? { email: mail } : {}) })
-        .then((r) => { if (live) setTaken({ username: r.usernameTaken, email: r.emailTaken }); })
-        .catch(() => { if (live) setTaken({}); });
+      void postJson<{ usernameTaken?: boolean; emailTaken?: boolean }>('/api/auth', { action: 'check', ...(checkUser ? { username: checkUser } : {}), ...(checkMail ? { email: checkMail } : {}) })
+        .then((r) => { if (live) setLookup({ key: lookupKey, username: r.usernameTaken, email: r.emailTaken }); })
+        .catch(() => { if (live) setLookup(null); });
     }, 500);
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [mode, username, email]);
+  }, [checkUser, checkMail, lookupKey]);
 
   const newPassword = isNewPasswordMode(mode);
   const passwordError = passwordHint(mode, password);
@@ -76,6 +74,8 @@ export function AuthFlow() {
   }
 
   async function submit() {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setFeedback('');
     setExisting(false);
@@ -118,11 +118,13 @@ export function AuthFlow() {
       }
     } finally {
       setBusy(false);
+      inFlight.current = false;
     }
   }
 
   async function resend() {
-    if (cooldown > 0 || busy) return;
+    if (cooldown > 0 || inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setFeedback('');
     try {
@@ -133,6 +135,7 @@ export function AuthFlow() {
       setFeedback(errorText(error));
     } finally {
       setBusy(false);
+      inFlight.current = false;
     }
   }
 
