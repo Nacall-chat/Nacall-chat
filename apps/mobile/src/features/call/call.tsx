@@ -7,6 +7,7 @@ import { postJson } from '@/lib/api';
 import { friendlyError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { effectiveVolume, MIC_DENIED_MESSAGE, screenShareSupport, stepVolume, type StreamItem } from '@/features/call/logic';
+import { askNotificationPermission, startCallService, stopCallService } from '@/features/call/service';
 import { isCurrentCall } from '@nacall/core/call-session';
 import { DEAF_ATTRIBUTE, liveFlags, type PersonFlags } from '@nacall/core/room-people';
 import { isWatching, reconcileScreenSubscriptions, setWatching, type WatchState } from '@nacall/core/stream';
@@ -65,6 +66,7 @@ export function CallProvider({ children }: PropsWithChildren) {
     setJoining(channel.id);
     try {
       if (!(await ensureMicPermission())) throw new Error(MIC_DENIED_MESSAGE);
+      await askNotificationPermission();
       const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
       const accessToken = data.session?.access_token;
       if (!accessToken) throw new Error('Sua sessão expirou. Saia e entre de novo.');
@@ -83,6 +85,13 @@ export function CallProvider({ children }: PropsWithChildren) {
   // A sala antiga avisa "saí" ao ser trocada; esse aviso não pode derrubar a call nova.
   const leaveIfCurrent = useCallback((channelId: string) => setSession((current) => (isCurrentCall(current, channelId) ? null : current)), []);
   const report = useCallback((message: string) => Alert.alert('Call', message), []);
+
+  // Segundo plano (Android): serviço em primeiro plano com o aviso "Em call", para o microfone não parar ao minimizar o app.
+  useEffect(() => {
+    if (!session) return;
+    startCallService(session.name);
+    return () => stopCallService();
+  }, [session]);
 
   // Áudio do celular: fone/bluetooth primeiro, depois alto-falante (como numa call de grupo).
   useEffect(() => {
