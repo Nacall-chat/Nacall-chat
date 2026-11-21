@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+  <application>
+    <!-- Mantém a call viva com o app em segundo plano. O Android exige um serviço em primeiro plano (com aviso na barra) para o microfone continuar ligado. -->
+    <service
+      android:name="app.nacall.callservice.CallForegroundService"
+      android:exported="false"
+      android:foregroundServiceType="microphone"
+      android:stopWithTask="true" />
+  </application>
+</manifest>

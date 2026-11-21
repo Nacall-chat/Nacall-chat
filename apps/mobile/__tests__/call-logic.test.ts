@@ -84,4 +84,18 @@ describe('configuração do app', () => {
     expect(call).toMatch(/key=\{session\.channelId\}/);
     expect(call).toMatch(/registerGlobals\(\)/);
   });
+
+  it('a call continua em segundo plano: serviço em primeiro plano do tipo microfone, ligado e desligado com a call', () => {
+    const manifest = read('modules/nacall-call-service/android/src/main/AndroidManifest.xml');
+    expect(manifest).toMatch(/foregroundServiceType="microphone"/);
+    expect(manifest).toMatch(/FOREGROUND_SERVICE_MICROPHONE/);
+    const service = read('modules/nacall-call-service/android/src/main/java/app/nacall/callservice/CallForegroundService.kt');
+    expect(service).toMatch(/FOREGROUND_SERVICE_TYPE_MICROPHONE/);
+    expect(service).toMatch(/onTaskRemoved/);
+    const call = read('src/features/call/call.tsx');
+    expect(call).toMatch(/startCallService\(session\.name\)/);
+    expect(call).toMatch(/return \(\) => stopCallService\(\)/);
+    expect(JSON.parse(read('app.json')).expo.ios.infoPlist.UIBackgroundModes).toContain('audio');
+    expect(read('../../.github/workflows/mobile-apk.yml')).toMatch(/apps\/mobile\/modules\/\*\*/);
+  });
 });
