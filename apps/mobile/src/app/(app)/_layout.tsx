@@ -1,5 +1,7 @@
 import { Drawer } from 'expo-router/drawer';
-import { useWindowDimensions } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
+import { CallBar } from '@/features/call/call-bar';
+import { CallProvider } from '@/features/call/call';
 import { DrawerPanel } from '@/features/nav/drawer-panel';
 import { NotificationsProvider } from '@/features/notifications/notifications';
 import { ProfileSheetProvider } from '@/features/profile/profile-sheet';
@@ -31,7 +33,9 @@ function Providers({ me }: { me: string }) {
         <RoomsProvider voiceChannelIds={channels.filter((c) => c.kind === 'voice').map((c) => c.id)}>
           <ProfileSheetProvider>
             <NotificationsProvider>
-              <Navigation />
+              <CallProvider>
+                <Navigation />
+              </CallProvider>
             </NotificationsProvider>
           </ProfileSheetProvider>
         </RoomsProvider>
@@ -44,6 +48,8 @@ function Navigation() {
   const { tokens } = useTheme();
   const { width } = useWindowDimensions();
   return (
+    <View style={{ flex: 1, backgroundColor: tokens.bg }}>
+    <View style={{ flex: 1 }}>
     <Drawer
       drawerContent={(props) => <DrawerPanel navigation={props.navigation as unknown as { closeDrawer: () => void }} />}
       screenOptions={{
@@ -61,6 +67,10 @@ function Navigation() {
       <Drawer.Screen name="settings/profile" />
       <Drawer.Screen name="settings/security" />
       <Drawer.Screen name="servers/new" />
+      <Drawer.Screen name="call" />
     </Drawer>
+    </View>
+    <CallBar />
+    </View>
   );
 }

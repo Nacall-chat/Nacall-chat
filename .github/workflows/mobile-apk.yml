@@ -105,6 +105,6 @@ jobs:
           2. Toque no arquivo baixado. Se o Android pedir, permita "instalar apps desta fonte" para o navegador/Arquivos.
           3. Abra o NACALL e entre com uma conta da homologação.
 
-          Nesta versão há login, cadastro, amigos (com presença), conversas diretas, canais de texto, perfil (com foto e capa), segurança (senha e 2FA), criar e entrar em comunidades por convite e o sino de novidades. A call, os áudios e as figurinhas chegam nas próximas fases.
+          Nesta versão há login, cadastro, amigos (com presença), conversas diretas, canais de texto, perfil (com foto e capa), segurança (senha e 2FA), criar e entrar em comunidades por convite e o sino de novidades. A call de voz já funciona: entrar nas salas, mic, fone mudo, transmitir a tela (Android) e assistir às transmissões dos outros. Os áudios e as figurinhas chegam nas próximas fases. Transmitir a tela no iPhone ainda não está disponível.
           EOF
           gh release create "$TAG" dist/*.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "NACALL mobile (teste) #${GITHUB_RUN_NUMBER}" --notes-file notes.md
