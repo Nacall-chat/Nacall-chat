@@ -52,7 +52,7 @@ export const light: ThemeTokens = {
   onPrimary: '#14181f',
   text: '#1d2935',
   muted: '#526575',
-  faint: '#647889',
+  faint: '#586c7d',
   line: '#c8d9d0',
   soft: '#def2e6',
   success: '#246b46',

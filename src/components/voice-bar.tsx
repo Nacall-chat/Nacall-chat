@@ -75,8 +75,8 @@ export function VoiceBar(p: VoiceBarProps) {
 
   const micLabel = p.pushToTalk ? 'Apertar para falar ativo: segure V' : p.mic ? 'Desligar microfone' : 'Ligar microfone';
   const deafLabel = p.deaf ? 'Voltar a ouvir a call' : 'Silenciar áudio da call';
-  const micButton = <button type="button" className={`vb-btn ${p.mic ? '' : 'off'}`} aria-label={micLabel} aria-pressed={p.mic} title={micLabel} disabled={p.busy || p.pushToTalk} onClick={p.onMic}>{p.mic ? <Mic size={19} /> : <MicOff size={19} />}</button>;
-  const deafButton = <button type="button" className={`vb-btn ${p.deaf ? 'off' : ''}`} aria-label={deafLabel} aria-pressed={p.deaf} title={deafLabel} onClick={p.onDeaf}>{p.deaf ? <VolumeX size={19} /> : <Headphones size={19} />}</button>;
+  const micButton = <button type="button" className={`vb-btn ${p.mic ? '' : 'off'}`} aria-label={micLabel} title={micLabel} disabled={p.busy || p.pushToTalk} onClick={p.onMic}>{p.mic ? <Mic size={19} /> : <MicOff size={19} />}</button>;
+  const deafButton = <button type="button" className={`vb-btn ${p.deaf ? 'off' : ''}`} aria-label={deafLabel} title={deafLabel} onClick={p.onDeaf}>{p.deaf ? <VolumeX size={19} /> : <Headphones size={19} />}</button>;
   const info = <button type="button" className="vb-info" aria-label={`Abrir a call ${p.name}`} title="Abrir a call" onClick={p.onOpen}>
     <span className={`vb-signal ${p.tone}`}><Wifi size={16} /></span>
     <span className="vb-text"><strong className={p.tone}>{p.status}</strong><small><span className="vb-name">{p.name}</span>{p.duration && <span className="vb-time"> · {p.duration}</span>}</small></span>
@@ -90,8 +90,8 @@ export function VoiceBar(p: VoiceBarProps) {
     <div className="vb-top">{info}{leave}</div>
     <div className="vb-row">{split('mic', micButton, 'Escolher microfone')}{split('out', deafButton, 'Escolher saída de áudio')}</div>
     <div className="vb-row vb-tools">
-      <button type="button" className={`vb-btn ${p.camera ? 'active' : ''}`} aria-label={p.camera ? 'Desligar câmera' : 'Ligar câmera'} aria-pressed={p.camera} title={p.camera ? 'Desligar câmera' : 'Ligar câmera'} disabled={p.busy} onClick={p.onCamera}>{p.camera ? <Camera size={18} /> : <CameraOff size={18} />}</button>
-      <button type="button" className={`vb-btn ${p.screen ? 'active' : ''}`} aria-label={p.screen ? 'Parar compartilhamento de tela' : 'Compartilhar tela'} aria-pressed={p.screen} title={p.screen ? 'Parar tela' : 'Compartilhar tela'} disabled={p.busy} onClick={p.onScreen}>{p.screen ? <MonitorOff size={18} /> : <MonitorUp size={18} />}</button>
+      <button type="button" className={`vb-btn ${p.camera ? 'active' : ''}`} aria-label={p.camera ? 'Desligar câmera' : 'Ligar câmera'} title={p.camera ? 'Desligar câmera' : 'Ligar câmera'} disabled={p.busy} onClick={p.onCamera}>{p.camera ? <Camera size={18} /> : <CameraOff size={18} />}</button>
+      <button type="button" className={`vb-btn ${p.screen ? 'active' : ''}`} aria-label={p.screen ? 'Parar transmissão de tela' : 'Transmitir tela'} title={p.screen ? 'Parar transmissão de tela' : 'Transmitir tela'} disabled={p.busy} onClick={p.onScreen}>{p.screen ? <MonitorOff size={18} /> : <MonitorUp size={18} />}</button>
       <button type="button" className={`vb-btn ${p.music ? 'active' : ''}`} aria-label="Música da call" aria-expanded={p.music} title="DJ do lobby" onClick={p.onMusic}><Music2 size={18} /></button>
       <button type="button" className={`vb-btn ${p.settings ? 'active' : ''}`} aria-label="Ajustes da call" aria-expanded={p.settings} title="Ajustes da call" onClick={p.onSettings}><Settings2 size={18} /></button>
     </div>

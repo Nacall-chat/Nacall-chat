@@ -18,7 +18,7 @@
 .mic-modal .mic-option.selected{border-color:var(--accent);background:var(--soft)}
 .mic-modal .mic-option input{margin:0;width:18px;height:18px;flex-shrink:0;accent-color:var(--accent)}
 .mic-option span{min-width:0;overflow-wrap:anywhere}
-.mic-meter{height:8px;margin-top:10px;border-radius:4px;background:var(--line);overflow:hidden}
+.mic-meter{height:8px;margin-top:10px;border-radius:4px;background:var(--field-line,var(--line));overflow:hidden}
 .mic-meter i{display:block;height:100%;border-radius:4px;background:var(--accent);transition:width 80ms linear}
 .mic-modal select{min-width:0;flex:1}
 .mic-modal .row button{flex-shrink:0}
