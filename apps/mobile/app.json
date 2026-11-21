@@ -34,6 +34,12 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 120
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O NACALL usa suas fotos para você escolher a foto de perfil e a capa."
+        }
       ]
     ],
     "experiments": {

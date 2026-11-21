@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Compass, Hash, Headphones, LogOut, Settings, Users } from 'lucide-react-native';
+import { Compass, Hash, Headphones, LogOut, Plus, Settings, Users } from 'lucide-react-native';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, GroupIcon } from '@/components/avatar';
@@ -57,6 +57,9 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
               </RailButton>
             );
           })}
+          <RailButton label="Criar ou entrar em uma comunidade" selected={false} onPress={() => go('/servers/new')}>
+            <Plus size={22} color={tokens.accent} />
+          </RailButton>
         </ScrollView>
 
         {/* Lista ao lado: Início ou o servidor escolhido */}
@@ -93,7 +96,7 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
                 <Label>CONEXÕES</Label>
                 <Text style={{ color: tokens.text, fontSize: 20, fontWeight: '800', marginBottom: space.sm }}>Seu ponto de encontro</Text>
                 <Item label="Amigos" icon={<Users size={18} color={tokens.muted} />} badge={pending} onPress={() => go('/')} />
-                <Item label="Comunidades" icon={<Compass size={18} color={tokens.muted} />} meta="Em breve" onPress={() => Alert.alert('Em breve', 'Criar e entrar em comunidades chega ao app numa próxima fase.')} />
+                <Item label="Criar ou entrar em comunidade" icon={<Compass size={18} color={tokens.muted} />} onPress={() => go('/servers/new')} />
                 <Label>MENSAGENS DIRETAS</Label>
                 {dms.length === 0 ? <Text style={{ color: tokens.muted, fontSize: 13 }}>Suas conversas vão aparecer aqui.</Text> : null}
                 {sortDms(dms, items).map((d) => {

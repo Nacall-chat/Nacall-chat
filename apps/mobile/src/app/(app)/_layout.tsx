@@ -1,6 +1,7 @@
 import { Drawer } from 'expo-router/drawer';
 import { useWindowDimensions } from 'react-native';
 import { DrawerPanel } from '@/features/nav/drawer-panel';
+import { NotificationsProvider } from '@/features/notifications/notifications';
 import { ProfileSheetProvider } from '@/features/profile/profile-sheet';
 import { PresenceProvider } from '@/features/social/presence';
 import { RoomsProvider } from '@/features/social/rooms';
@@ -29,7 +30,9 @@ function Providers({ me }: { me: string }) {
       <UnreadProvider me={me} dmIds={dms.map((d) => d.id)}>
         <RoomsProvider voiceChannelIds={channels.filter((c) => c.kind === 'voice').map((c) => c.id)}>
           <ProfileSheetProvider>
-            <Navigation />
+            <NotificationsProvider>
+              <Navigation />
+            </NotificationsProvider>
           </ProfileSheetProvider>
         </RoomsProvider>
       </UnreadProvider>
@@ -54,7 +57,10 @@ function Navigation() {
       <Drawer.Screen name="index" />
       <Drawer.Screen name="dm/[id]" />
       <Drawer.Screen name="channel/[id]" />
-      <Drawer.Screen name="settings" />
+      <Drawer.Screen name="settings/index" />
+      <Drawer.Screen name="settings/profile" />
+      <Drawer.Screen name="settings/security" />
+      <Drawer.Screen name="servers/new" />
     </Drawer>
   );
 }
