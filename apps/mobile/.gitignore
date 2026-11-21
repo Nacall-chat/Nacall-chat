@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.log
+.env*.local
+.DS_Store
+
+# Projetos nativos são gerados (expo prebuild); não vão para o Git
+/android/
+/ios/

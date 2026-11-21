@@ -91,3 +91,10 @@ Na Vercel, abra o projeto `nacall-prd` → Deployments e use **Instant Rollback*
 ## Limites
 
 O repositório é privado no plano Free do GitHub, que não oferece proteção de branch nem aprovação obrigatória de ambientes. O botão evita publicação por engano, mas quem tem acesso de administrador ainda consegue apertá-lo, alterar os workflows ou publicar pela Vercel CLI. Combinem que mudanças em `.github/workflows` e o PR `release` → `main` passam pela revisão do outro. O GitHub Team (US$ 4 por usuário por mês) permitiria exigir revisão aprovada no PR e aprovação obrigatória antes do PRD.
+
+## APK do app Android na landing
+
+O botão "Download Android" da landing baixa `/downloads/nacall-android.apk`. O arquivo **não fica no Git**: antes do deploy (HML e PRD), a Esteira baixa o APK da **pré-release mais recente** cujo nome de tag começa com `mobile-teste-` (gerada pelo workflow "Mobile · APK de teste (Android)") e o copia para `public/downloads/`. Se não houver pré-release, o passo só avisa e o deploy segue normalmente (o botão fica sem arquivo).
+
+- Para atualizar o APK do site: rode o workflow "Mobile · APK de teste" e publique de novo a Esteira (HML por merge na `release`; PRD pelo "Run workflow" na `main`).
+- É um APK de **teste**: aponta para a homologação e é assinado com a chave de depuração. Uma versão assinada para as lojas substitui este fluxo depois.

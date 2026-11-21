@@ -1,0 +1,110 @@
+name: Mobile · APK de teste (Android)
+# Gera um APK instalável do app para testar no celular, sem conta Expo e sem Android Studio.
+# - Disparo manual (Actions > Mobile · APK de teste > Run workflow): compila e publica uma PRÉ-RELEASE com o APK.
+# - Em PR que mexe neste arquivo: só compila e guarda o APK como artefato (confere que o build funciona).
+# O APK é de TESTE: aponta para a HOMOLOGAÇÃO e é assinado com a chave de depuração (não serve para as lojas).
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/mobile-apk.yml'
+permissions:
+  contents: read
+jobs:
+  apk:
+    name: Compilar APK (arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      CI: '1'
+      # Valores PÚBLICOS da homologação (Settings > Secrets and variables > Actions > Variables).
+      # Nunca coloque aqui chave de serviço, LiveKit ou Asaas.
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.MOBILE_SUPABASE_URL || 'https://exemplo.invalid' }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.MOBILE_SUPABASE_ANON_KEY || 'chave-publica-de-teste' }}
+      EXPO_PUBLIC_API_URL: ${{ vars.MOBILE_API_URL || 'https://nacall-hml.vercel.app' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exigir a configuração da homologação no disparo manual
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: .
+        env:
+          URL: ${{ vars.MOBILE_SUPABASE_URL }}
+          KEY: ${{ vars.MOBILE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::Cadastre as variáveis MOBILE_SUPABASE_URL e MOBILE_SUPABASE_ANON_KEY (valores PÚBLICOS da homologação) em Settings > Secrets and variables > Actions > Variables. Opcional: MOBILE_API_URL (padrão https://nacall-hml.vercel.app)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar dependências (somente apps/mobile)
+        run: npm ci --no-audit --no-fund
+
+      - name: Gerar o projeto Android (Expo prebuild)
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Compilar o APK de release (só arm64, que cobre os celulares atuais)
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+
+      - name: Nomear o APK
+        id: name
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          FILE="nacall-mobile-${VERSION}-teste-${GITHUB_RUN_NUMBER}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$FILE"
+          echo "file=apps/mobile/$FILE" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          ls -l "$FILE"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nacall-android-apk
+          path: ${{ steps.name.outputs.file }}
+          retention-days: 14
+          if-no-files-found: error
+    outputs:
+      file: ${{ steps.name.outputs.file }}
+      version: ${{ steps.name.outputs.version }}
+
+  release:
+    name: Publicar pré-release com o APK
+    if: github.event_name == 'workflow_dispatch'
+    needs: apk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nacall-android-apk
+          path: dist
+      - name: Criar a pré-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="mobile-teste-${GITHUB_RUN_NUMBER}"
+          cat > notes.md <<'EOF'
+          **APK de TESTE do NACALL (Android).** Aponta para a **homologação**, é assinado com a chave de depuração e **não é para as lojas**.
+
+          Como instalar no celular:
+          1. Abra esta página no celular, logado no GitHub, e baixe o arquivo `.apk` abaixo.
+          2. Toque no arquivo baixado. Se o Android pedir, permita "instalar apps desta fonte" para o navegador/Arquivos.
+          3. Abra o NACALL e entre com uma conta da homologação.
+
+          Nesta versão há login, cadastro, amigos (com presença), conversas diretas, canais de texto, perfil (com foto e capa), segurança (senha e 2FA), criar e entrar em comunidades por convite e o sino de novidades. A call, os áudios e as figurinhas chegam nas próximas fases.
+          EOF
+          gh release create "$TAG" dist/*.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "NACALL mobile (teste) #${GITHUB_RUN_NUMBER}" --notes-file notes.md

@@ -5,7 +5,7 @@ import {Camera,Pencil,Trash2,X} from 'lucide-react';
 import type {Profile} from '@/lib/types';
 import {coverUrl} from './profile-card';
 import {errorText} from '@/lib/validation';
-import {isAnimatedWebp,sniffImage} from '@/lib/chat-media';
+import {imageSize,isAnimatedWebp,sniffImage,stripWebpMetadata} from '@/lib/chat-media';
 import {coverNotice} from '@/lib/cover-notice';
 export function ProfileCoverEditor({db,profile,reload,report}:{db:SupabaseClient;profile?:Profile;reload:()=>Promise<void>;report:(text:string)=>void}){
  const[busy,setBusy]=useState(false);const[open,setOpen]=useState(false);const tools=useRef<HTMLDivElement>(null);
@@ -16,8 +16,11 @@ export function ProfileCoverEditor({db,profile,reload,report}:{db:SupabaseClient
   const head=new Uint8Array(await file.slice(0,32).arrayBuffer());const kind=sniffImage(head);
   if(!kind||file.size>5*1024*1024)throw new Error('Use GIF, PNG, JPG ou WebP de até 5 MB.');
   let blob:Blob=file;let extension='gif';
-  // GIF e WebP animado sobem como estão; o canvas guardaria só o primeiro quadro e a animação sumiria
-  if(kind.ext!=='gif'&&isAnimatedWebp(head))extension='webp';
+  // GIF e WebP animado sobem sem o canvas (ele guardaria só o primeiro quadro). Por isso o tamanho é limitado aqui
+  // (imagem gigante trava a aba de quem vê o perfil) e o WebP perde os metadados que o canvas limpava (EXIF pode ter GPS).
+  const animated=kind.ext==='gif'||isAnimatedWebp(head);const size=animated?imageSize(head):null;
+  if(animated&&(!size||size.width>2000||size.height>2000))throw new Error('Imagem animada grande demais: use até 2000 × 2000 px.');
+  if(kind.ext!=='gif'&&isAnimatedWebp(head)){extension='webp';blob=new Blob([stripWebpMetadata(new Uint8Array(await file.arrayBuffer())) as Uint8Array<ArrayBuffer>],{type:'image/webp'});}
   else if(kind.ext!=='gif'){extension='webp';const bitmap=await createImageBitmap(file);try{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=400;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Falha ao preparar capa.');const scale=Math.max(1200/bitmap.width,400/bitmap.height);const width=bitmap.width*scale,height=bitmap.height*scale;ctx.drawImage(bitmap,(1200-width)/2,(400-height)/2,width,height);blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falha na conversão da capa.')),'image/webp',.86));}finally{bitmap.close();}}
   const path=`${profile.id}/${crypto.randomUUID()}.${extension}`;const uploaded=await db.storage.from('profile-covers').upload(path,blob,{contentType:extension==='gif'?'image/gif':'image/webp'});if(uploaded.error)throw uploaded.error;
   const updated=await db.from('profiles').update({cover_path:path}).eq('id',profile.id);if(updated.error){await db.storage.from('profile-covers').remove([path]);throw updated.error;}

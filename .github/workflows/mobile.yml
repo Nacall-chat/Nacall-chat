@@ -1,0 +1,48 @@
+name: Mobile · Verificar
+on:
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'src/lib/validation.ts'
+      - 'src/lib/auth-schema.ts'
+      - 'src/app/jacall.css'
+      - '.github/workflows/mobile.yml'
+  push:
+    branches: [release, main]
+    paths:
+      - 'apps/mobile/**'
+      - 'src/lib/validation.ts'
+      - 'src/lib/auth-schema.ts'
+      - 'src/app/jacall.css'
+      - '.github/workflows/mobile.yml'
+permissions:
+  contents: read
+jobs:
+  mobile:
+    name: App mobile (tipos, testes e bundle Android)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Instalar dependências (somente apps/mobile)
+        run: npm ci --no-audit --no-fund
+      - name: Tipos
+        run: npm run typecheck
+      - name: Lint (regras do React e do Expo)
+        run: npm run lint
+      - name: Testes
+        run: npm test
+      - name: Bundle Android (confere que o Metro resolve tudo, inclusive os módulos compartilhados do site)
+        # Valores públicos de mentira: o bundle só precisa deles para existir; nenhum segredo entra aqui.
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://exemplo.invalid
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: chave-publica-de-teste
+          EXPO_PUBLIC_API_URL: https://exemplo.invalid
+        run: npx expo export --platform android --output-dir "$RUNNER_TEMP/mobile-export"

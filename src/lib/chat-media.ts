@@ -33,6 +33,45 @@ export function isAnimatedWebp(bytes: Uint8Array): boolean {
   return bytes.length > 20 && ascii(bytes, 'RIFF', 0) && ascii(bytes, 'WEBP', 8) && ascii(bytes, 'VP8X', 12) && (bytes[20] & 0x02) !== 0;
 }
 
+/** Largura e altura declaradas no cabeçalho de um GIF ou de um WebP com VP8X (o formato dos animados). Lê só os
+ * primeiros 30 bytes. Serve para recusar imagens animadas gigantes, que não passam pelo canvas e travariam a aba. */
+export function imageSize(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length >= 10 && (ascii(bytes, 'GIF87a', 0) || ascii(bytes, 'GIF89a', 0))) return { width: bytes[6] | (bytes[7] << 8), height: bytes[8] | (bytes[9] << 8) };
+  if (bytes.length >= 30 && ascii(bytes, 'RIFF', 0) && ascii(bytes, 'WEBP', 8) && ascii(bytes, 'VP8X', 12)) {
+    return { width: 1 + (bytes[24] | (bytes[25] << 8) | (bytes[26] << 16)), height: 1 + (bytes[27] | (bytes[28] << 8) | (bytes[29] << 16)) };
+  }
+  return null;
+}
+
+/** Remove de um WebP os blocos de metadados (EXIF, que pode ter GPS; XMP; perfil de cor ICCP) e desliga as flags
+ * correspondentes no VP8X. Os quadros da animação ficam intactos. Arquivo inválido volta sem mudança. */
+export function stripWebpMetadata(bytes: Uint8Array): Uint8Array {
+  if (bytes.length < 12 || !ascii(bytes, 'RIFF', 0) || !ascii(bytes, 'WEBP', 8)) return bytes;
+  const drop = new Set(['EXIF', 'XMP ', 'ICCP']);
+  const parts: Uint8Array[] = [];
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const id = String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]);
+    const size = (bytes[offset + 4] | (bytes[offset + 5] << 8) | (bytes[offset + 6] << 16) | (bytes[offset + 7] << 24)) >>> 0;
+    const end = offset + 8 + size + (size % 2);
+    if (end > bytes.length) return bytes;
+    if (!drop.has(id)) {
+      const part = bytes.slice(offset, end);
+      if (id === 'VP8X') part[8] &= ~(0x20 | 0x08 | 0x04);
+      parts.push(part);
+    }
+    offset = end;
+  }
+  const total = 12 + parts.reduce((sum, part) => sum + part.length, 0);
+  const out = new Uint8Array(total);
+  out.set(bytes.subarray(0, 12));
+  const riff = total - 8;
+  out[4] = riff & 255; out[5] = (riff >> 8) & 255; out[6] = (riff >> 16) & 255; out[7] = (riff >>> 24) & 255;
+  let at = 12;
+  for (const part of parts) { out.set(part, at); at += part.length; }
+  return out;
+}
+
 /** Descobre o contêiner de áudio gravado pelo navegador (WebM/Matroska, Ogg ou MP4/M4A). */
 export function sniffAudio(bytes: Uint8Array): { mime: 'audio/webm' | 'audio/ogg' | 'audio/mp4'; ext: AudioExt } | null {
   if (startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3])) return { mime: 'audio/webm', ext: 'webm' };

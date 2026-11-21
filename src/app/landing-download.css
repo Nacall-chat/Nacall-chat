@@ -1,0 +1,8 @@
+/* Landing: botão de download do app Android (versão de teste) e a nota abaixo dos botões. */
+.download-options a.download-ready{display:inline-flex;align-items:center;justify-content:flex-start;gap:15px;min-width:210px;min-height:80px;padding:18px 25px;border-radius:15px;background:#252d39;color:#e8ecf2;border:1px solid #8fe3b0;text-align:left;text-decoration:none;transition:background-color 140ms ease,transform 140ms ease}
+.download-options a.download-ready:hover{background:#2c3644;transform:translateY(-1px)}
+.download-options a.download-ready:focus-visible{outline:3px solid #7fd6e8;outline-offset:4px}
+.download-options a.download-ready svg{color:#8fe3b0}
+.download-note{max-width:460px;margin:0 auto 14px;font-size:12px;line-height:1.5;color:#abb8c9}
+@media(max-width:720px){.download-options a.download-ready{width:100%;min-height:75px}}
+@media(prefers-reduced-motion:reduce){.download-options a.download-ready{transition:none}}

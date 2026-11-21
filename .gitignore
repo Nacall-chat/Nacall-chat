@@ -11,3 +11,6 @@ coverage/
 .DS_Store
 Thumbs.db
 supabase/.temp/
+
+# APK do app Android: a Esteira baixa a pré-release mais recente para cá antes do deploy
+public/downloads/*.apk
