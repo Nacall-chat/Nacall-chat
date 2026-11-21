@@ -1,0 +1,7 @@
+/** Compartilhar tela depende de `getDisplayMedia`, que o Safari do iPhone e o Chrome/Firefox do Android não oferecem.
+ * Sem checar antes, o LiveKit falha com "getDisplayMedia not supported" e a pessoa não entende o que houve. */
+export const SCREEN_UNSUPPORTED_MESSAGE = 'Este celular/navegador não permite compartilhar a tela. Use o computador para transmitir; no celular dá para assistir normalmente.';
+
+export function canShareScreen(nav: Pick<Navigator, 'mediaDevices'> | undefined = typeof navigator === 'undefined' ? undefined : navigator): boolean {
+  return typeof nav?.mediaDevices?.getDisplayMedia === 'function';
+}
