@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import { Compass, Hash, Headphones, LogOut, Plus, Settings, Users } from 'lucide-react-native';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, GroupIcon } from '@/components/avatar';
 import { Brand } from '@/components/ui';
+import { LiveBadge, PersonIcons } from '@/features/call/badges';
+import { useCall } from '@/features/call/call';
 import { peerOf, pendingIncoming, sortDms } from '@/features/social/logic';
 import { usePresence } from '@/features/social/presence';
 import { useRooms } from '@/features/social/rooms';
@@ -13,6 +15,7 @@ import { useSession } from '@/lib/session';
 import { useTheme } from '@/theme/theme';
 import { radius, space } from '@/theme/tokens';
 import { badgeText } from '@nacall/core/unread';
+import { shownFlags } from '@nacall/core/room-people';
 import { durationLabel } from '@nacall/core/room-clock';
 
 const RAIL = 66;
@@ -27,6 +30,7 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
   const { items, total, byDm } = useUnread();
   const { infoOf, mine } = usePresence();
   const { rooms } = useRooms();
+  const { session, live, joining, join } = useCall();
   const { signOut } = useSession();
 
   const server = servers.find((s) => s.id === railId);
@@ -35,12 +39,6 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
     navigation.closeDrawer();
   };
   const pending = pendingIncoming(friends, me);
-  const call = () => {
-    const message = 'Entrar em call chega ao app numa próxima fase. Por enquanto use o site.';
-    if (Platform.OS === 'web') window.alert(message);
-    else Alert.alert('Call em breve', message);
-  };
-
   return (
     <View style={[styles.root, { backgroundColor: tokens.surface, paddingTop: insets.top }]}>
       <View style={styles.columns}>
@@ -78,13 +76,18 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
                 <Label>SALAS DE VOZ</Label>
                 {channels.filter((c) => c.server_id === server.id && c.kind === 'voice').map((c) => {
                   const room = rooms[c.id];
+                  const here = session?.channelId === c.id;
+                  // na sala em que você está, a lista vem direto da call (muda na hora); nas outras, da última consulta
+                  const people = here && live ? live.people.map((p) => ({ id: p.id, name: p.name, flags: p as { sharing: boolean; muted: boolean; deaf: boolean } })) : (room?.participants ?? []).map((p) => ({ id: p.id, name: p.name, flags: shownFlags(p) }));
                   return (
                     <View key={c.id}>
-                      <Item label={c.name} icon={<Headphones size={18} color={tokens.muted} />} meta={room?.count ? durationLabel(room.startedAt) : 'Em breve'} onPress={call} />
-                      {room?.participants.map((p) => (
+                      <Item label={c.name} icon={<Headphones size={18} color={here ? tokens.success : tokens.muted} />} meta={joining === c.id ? 'Entrando…' : here ? 'Você está aqui' : room?.count ? durationLabel(room.startedAt) : 'Entrar na call'} onPress={() => { void join({ id: c.id, name: c.name }); navigation.closeDrawer(); }} />
+                      {people.map((p) => (
                         <View key={p.id} style={styles.person}>
                           <Avatar profile={profiles[p.id]} name={p.name} size={26} />
                           <Text numberOfLines={1} style={{ color: tokens.text, fontSize: 13, flex: 1 }}>{p.name}</Text>
+                          {p.flags.sharing ? <LiveBadge /> : null}
+                          <PersonIcons muted={p.flags.muted} deaf={p.flags.deaf} size={13} />
                         </View>
                       ))}
                     </View>
