@@ -44,6 +44,15 @@ As mesmas regras (`src/lib/auth-schema.ts`) rodam no navegador (feedback imediat
 - **Códigos de recuperação do 2FA:** 10 códigos de 12 caracteres (~59 bits), só o hash SHA-256 fica em `mfa_recovery_codes` (RLS ligado, sem acesso de clientes). Usar um código desfaz o 2FA (o Supabase não tem "aal2 por código de backup") e a pessoa configura de novo. Gerar novos invalida os anteriores.
 - **Sem segredos no código:** a service role só existe no servidor.
 
+## Moderação, contato e limites (no banco)
+
+A chave `anon` do Supabase é pública, então estas regras valem no próprio banco (migration `202611210002_moderacao_e_limites.sql`), não só no app. Ainda **não há tela** para bloquear, sair do grupo e remover/banir: as funções existem e o app novo as usa em um PR de interface.
+
+- **Contato:** `block_user` e `unblock_user`. Bloquear desfaz a amizade; só quem bloqueou enxerga o bloqueio. Mensagem **nova** em DM só entre amigos aceitos e sem bloqueio (o histórico continua legível). No máximo 50 pedidos de amizade pendentes enviados por pessoa.
+- **Grupos:** `leave_server` (o dono e a comunidade oficial não saem), `remove_member` e `unban_member` (exigem o cargo `manage_roles` e posto maior que o do alvo), apagar mensagem alheia em canal (exige `manage_channels` ou ser o dono) e banimento que impede voltar pelo mesmo convite. Na comunidade oficial só o `service_role` (painel do Supabase) modera.
+- **Limites:** 40 mensagens por minuto por pessoa, 10 grupos criados por pessoa, 50 canais por grupo, 50 convites ativos por grupo e 20 arquivos por pessoa em cada bucket `avatars` e `profile-covers`.
+- Todas as funções novas exigem o 2FA confirmado (`require_mfa()`) e as tabelas novas (`user_blocks`, `server_bans`) têm a política restritiva `mfa_aal2_required`.
+
 ## Configuração necessária no Supabase (cada projeto: HML e PRD)
 
 Sem isto o cadastro por código não funciona. Feito no painel, em cada projeto.
@@ -97,7 +106,7 @@ Objetivo: entrar no desktop confirmando num celular já autenticado, sem digitar
 ## Riscos e limites conhecidos
 
 - **Dependência do SMTP:** sem o Gmail configurado nos dois projetos, ninguém recebe o código. O Gmail tem limite diário.
-- **`aal2` só é exigido pelas nossas APIs** (livekit e rotas de segurança). O acesso direto do navegador ao banco via PostgREST usa apenas o RLS por usuário; um token `aal1` de uma conta com 2FA continuaria lendo dados que o RLS permite. Fechar isso pede políticas restritivas com `auth.jwt()->>'aal'` em cada tabela, planejado como evolução.
+- **`aal2` também é exigido no banco** para contas com 2FA verificado: políticas restritivas `mfa_aal2_required` nas tabelas privadas e nos áudios/figurinhas (`202611200001_mfa_aal2_rls.sql`) e a checagem `public.require_mfa()` / `public.mfa_satisfied()` dentro das RPCs `SECURITY DEFINER` chamadas pelo app (`202611210001_mfa_aal2_rpcs.sql`). Um token `aal1` dessas contas não lê nem escreve nada privado, nem pelo PostgREST direto. Ainda sem a checagem: os helpers booleanos usados dentro do RLS (`is_member`, `can_dm`, `has_server_permission`, `member_rank`, `chat_media_*`) e as escritas nos buckets públicos (avatars, profile-covers).
 - **Listagem de dispositivos:** o Supabase não expõe a lista de sessões ao cliente, então só há "sair dos outros" e "sair de todos". Mostrar dispositivos exigiria registrar sessões em tabela própria.
 - **Usar um código de recuperação desativa o 2FA** até a pessoa configurar de novo.
 - **Admins:** 2FA obrigatório para contas administrativas foi avaliado e fica como decisão futura (hoje a conta de dono do grupo é um papel do app, não uma conta administrativa do Supabase).
