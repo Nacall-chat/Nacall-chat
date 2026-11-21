@@ -27,3 +27,18 @@
 
 /* hora e textos secundários dentro do balão da própria pessoa (fundo mais colorido que o do tema) */
 .message.mine .muted,.message.mine time{color:color-mix(in srgb,var(--text) 78%,transparent)}
+
+/* Auditoria de UX (lote 1): erro com cara de erro, contraste no tema claro, zoom do iOS e tela de indisponível */
+.form-feedback.bad{border-color:var(--error);background:color-mix(in srgb,var(--error) 12%,var(--surface))}
+input[aria-invalid=true]{border-color:var(--error)}
+/* âmbar e verde de estado legíveis no claro (os tons claros ficavam em 1,8 a 2,1:1) */
+:root[data-theme=light] .vb-text strong.wait,:root[data-theme=light] .quality-poor{color:#8a5a00}
+:root[data-theme=light] .vb-signal.wait{color:#8a5a00;background:color-mix(in srgb,#8a5a00,transparent 86%)}
+:root[data-theme=light] .status-badge.online{background:#1b8a5a}
+:root[data-theme=light] .status-badge.away{background:#9a6a00}
+/* campos de 16px no celular: abaixo disso o Safari do iOS dá zoom ao focar */
+@media(max-width:720px){.music-panel input[type=url],.call-device-settings select{font-size:16px}}
+/* tela "O lobby está aquecendo" (login indisponível): título com o peso da marca, respiro entre os blocos e link com alvo de toque */
+.setup h1{font-weight:950;margin:28px 0 14px}
+.setup p{margin:0 0 18px}
+.setup a{display:inline-flex;align-items:center;min-height:44px}

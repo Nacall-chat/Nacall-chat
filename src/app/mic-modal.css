@@ -18,9 +18,32 @@
 .mic-modal .mic-option.selected{border-color:var(--accent);background:var(--soft)}
 .mic-modal .mic-option input{margin:0;width:18px;height:18px;flex-shrink:0;accent-color:var(--accent)}
 .mic-option span{min-width:0;overflow-wrap:anywhere}
-.mic-meter{height:8px;margin-top:10px;border-radius:4px;background:var(--line);overflow:hidden}
+.mic-meter{height:8px;margin-top:10px;border-radius:4px;background:var(--field-line,var(--line));overflow:hidden}
 .mic-meter i{display:block;height:100%;border-radius:4px;background:var(--accent);transition:width 80ms linear}
 .mic-modal select{min-width:0;flex:1}
 .mic-modal .row button{flex-shrink:0}
 @media(max-width:720px){.mic-modal select{font-size:16px}.mic-modal-body{padding:16px}}
 @media(prefers-reduced-motion:reduce){.mic-meter i{transition:none}}
+
+/* Janela "Compartilhar tela": opções grandes e fáceis de tocar antes do seletor do navegador. */
+.share-modal h2{display:flex;align-items:center;gap:8px}
+.share-field{margin:14px 0 0;padding:0;border:0;min-width:0}
+.share-field legend{padding:0;margin-bottom:8px;font-size:12px;font-weight:700;color:var(--muted)}
+.share-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.share-choice{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text)}
+.share-choice strong{font-size:14px}
+.share-choice small{font-size:11px;line-height:1.35;color:var(--muted)}
+.share-choice.selected{border-color:var(--accent);background:var(--soft);color:var(--text)!important}
+.share-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.share-toggle strong{display:block;font-size:13px}
+.share-toggle small{display:block;margin-top:2px;font-size:11px;line-height:1.4;color:var(--muted)}
+.share-toggle input{width:20px;height:20px;flex-shrink:0;accent-color:var(--accent)}
+@media(max-width:420px){.share-choices{grid-template-columns:1fr}}
+.share-surfaces{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.share-surface{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;text-align:center;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--text)}
+.share-surface svg{color:var(--accent)}
+.share-surface strong{font-size:13px}
+.share-surface small{font-size:11px;line-height:1.35;color:var(--muted)}
+.share-surface:hover,.share-surface:focus-visible{border-color:var(--accent);background:var(--soft)}
+.share-note{margin:10px 0 0;font-size:11px;line-height:1.5;color:var(--muted)}
+@media(max-width:520px){.share-surfaces{grid-template-columns:1fr}.share-surface{flex-direction:row;text-align:left;gap:12px;padding:10px 12px}.share-surface strong,.share-surface small{display:block}}
