@@ -46,3 +46,10 @@
 .call-dock .call-stage,.main.show-call .voice-panel.expanded .call-stage{justify-content:flex-start}
 .call-stage>.screen-stream:first-child{margin-top:auto}
 .call-stage>.screen-stream:last-child{margin-bottom:auto}
+
+/* Cartão "está transmitindo" e cartões dos participantes ficam no meio da área da call (antes grudavam no topo/à esquerda).
+   Margens automáticas centralizam na vertical só quando sobra espaço e nunca cortam o topo. */
+.call-stage>.stream-cards:first-child,.call-stage>.participants:first-child{margin-top:auto}
+.call-stage>.participants:last-child{margin-bottom:auto}
+.stream-cards{align-items:center}
+.stream-card{width:min(100%,440px);margin-inline:auto}

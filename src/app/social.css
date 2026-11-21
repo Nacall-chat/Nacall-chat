@@ -23,3 +23,13 @@
 .voice-roster{position:relative;border-left:0;margin:2px 0 14px 10px;padding:6px 8px 6px 22px}
 .voice-roster::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:2px;background:var(--primary)}
 .voice-roster-person{justify-content:flex-start;text-align:left}
+
+/* Lista de salas: ao lado do nome ficam o AO VIVO e os ícones de mic/fone fechados (só mostram, não são botões).
+   O nome encolhe com reticências para os selos nunca empurrarem a linha para fora da barra lateral. */
+.voice-roster-person{gap:8px;min-width:0}
+.voice-roster-person .roster-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voice-roster-person .live-badge{padding:1px 6px;font-size:8px;gap:4px}
+.voice-roster-person .live-badge i{width:5px;height:5px}
+.person-state{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;color:var(--error)}
+.person-state>span{display:inline-flex}
+.participant-state>span[role="img"]{display:inline-flex;color:var(--error)}

@@ -56,7 +56,9 @@ test('o volume da transmissão fica entre 0 e 1',()=>{
 
 test('a call mostra AO VIVO, o cartão de assistir e o volume da transmissão',async()=>{
  const voice=await readFile(new URL('../src/components/voice.tsx',import.meta.url),'utf8');
- assert.match(voice,/function LiveBadge/);
+ const badge=await readFile(new URL('../src/components/live-badge.tsx',import.meta.url),'utf8');
+ assert.match(badge,/function LiveBadge/);
+ assert.match(voice,/import \{LiveBadge\} from '\.\/live-badge'/);
  assert.match(voice,/Sair da transmissão/);
  assert.match(voice,/Assistir à transmissão de/);
  assert.match(voice,/Volume da transmissão de/);
