@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import '@livekit/components-styles';
 import '@fontsource-variable/nunito';
@@ -20,6 +20,8 @@ import './theme-fixes.css';
 import { PreferencesProvider } from '@/components/preferences';
 import { MicGateProvider } from '@/components/mic-gate';
 export const metadata: Metadata = { manifest:'/manifest.webmanifest', applicationName:'NACALL', appleWebApp:{capable:true,title:'NACALL',statusBarStyle:'black-translucent'}, title: 'NACALL · A call é sua. A resenha é nossa.', description: 'Junta o squad, abre o mic e vem pra resenha com o mascote JACALL. Voz, vídeo, comunidades e música para sua galera.', icons: { icon:[{url:'/brand/jacall-avatar.webp?v=3',type:'image/webp'}], shortcut:'/brand/jacall-avatar.webp?v=3',apple:'/brand/jacall-avatar.webp?v=3' } };
+// No Chrome do Android o teclado virtual passa a redimensionar a página (como no iOS): o campo de mensagem e os de login ficam acima do teclado.
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, interactiveWidget: 'resizes-content' };
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="pt-BR" suppressHydrationWarning><body><PreferencesProvider><MicGateProvider>{children}</MicGateProvider></PreferencesProvider></body></html>;
 }
