@@ -19,7 +19,7 @@ import {createPortal} from 'react-dom';
 import {JoinSound} from './join-sound';
 import {durationLabel,type RoomSnapshot} from '@/lib/room-clock';
 import type {Profile} from '@/lib/types';
-import {canShareScreen,SCREEN_UNSUPPORTED_MESSAGE} from '@/lib/screen-share';
+import {canShareScreen,SCREEN_UNSUPPORTED_MESSAGE,type ShareSurface} from '@/lib/screen-share';
 export type VoiceSession={token:string;serverUrl:string;name:string;channelId:string;startedAt?:number|null;joinedAt?:number};
 export function Voice({session,leave,report,db,profile,focused=false,bar=null,barVariant='side',snapshot,openCall,clockOffset=0,onSpeaking,onPeople}:{session:VoiceSession;leave:()=>void;report:(s:string)=>void;db:SupabaseClient;profile?:Profile;focused?:boolean;bar?:HTMLElement|null;barVariant?:'side'|'dock';snapshot?:RoomSnapshot;openCall?:()=>void;clockOffset?:number;onSpeaking?:(ids:string[])=>void;onPeople?:(people:Record<string,PersonFlags>)=>void}){
  const{voice}=usePreferences();
@@ -55,7 +55,7 @@ function Controls({session,leave,report,db,profile,focused=false,bar=null,barVar
  const duration=durationLabel(snapshot?.startedAt??session.startedAt??null,now+clockOffset);
  const micOptions={noiseSuppression:voice.noiseSuppression,echoCancellation:voice.echoCancellation,autoGainControl:voice.autoGainControl};
  const toggleMic=()=>void action(()=>localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled,micOptions));
- const startScreen=()=>{setShareOpen(false);void action(()=>localParticipant.setScreenShareEnabled(true,{audio:voice.shareAudio,resolution:{width:voice.screenHeight===1080?1920:1280,height:voice.screenHeight,frameRate:voice.screenFps},selfBrowserSurface:'exclude',surfaceSwitching:'include',systemAudio:'include'},{screenShareEncoding:{maxBitrate:voice.screenHeight===1080?5000000:2500000,maxFramerate:voice.screenFps}}));};
+ const startScreen=(surface:ShareSurface)=>{setShareOpen(false);void action(()=>localParticipant.setScreenShareEnabled(true,{audio:voice.shareAudio,video:{displaySurface:surface},resolution:{width:voice.screenHeight===1080?1920:1280,height:voice.screenHeight,frameRate:voice.screenFps},selfBrowserSurface:'exclude',surfaceSwitching:'include',systemAudio:'include'},{screenShareEncoding:{maxBitrate:voice.screenHeight===1080?5000000:2500000,maxFramerate:voice.screenFps}}));};
  // Parar é direto; começar abre a janela do NACALL (qualidade, fluidez e som) antes do seletor do navegador.
  const toggleScreen=()=>{if(isScreenShareEnabled){void action(()=>localParticipant.setScreenShareEnabled(false));return;}if(!canShareScreen()){report(SCREEN_UNSUPPORTED_MESSAGE);return;}setShareOpen(true);};
  const toggleCamera=()=>void action(()=>localParticipant.setCameraEnabled(!isCameraEnabled,{resolution:{width:1280,height:720,frameRate:30}}));
