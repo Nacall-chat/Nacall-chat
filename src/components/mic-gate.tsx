@@ -133,7 +133,7 @@ function MicModal({onDone}:{onDone:(prefs:MicPrefs|null)=>void}){
    </>}
    {stage==='blocked'&&<>
     <p className="muted"><LockKeyhole size={16} aria-hidden="true"/> O navegador está bloqueando o microfone para o NACALL.</p>
-    <ol className="mic-steps"><li>Clique no cadeado (ou no ícone de microfone) ao lado do endereço.</li><li>Ative <strong>Microfone</strong> para este site.</li><li>Volte aqui e toque em <strong>Tentar de novo</strong>.</li></ol>
+    <ol className="mic-steps"><li>Abra as configurações do site: toque no cadeado (ou no ícone de microfone) ao lado do endereço. No iPhone, use o botão <strong>aA</strong>, depois <strong>Ajustes do site</strong>.</li><li>Ative <strong>Microfone</strong> para este site.</li><li>Volte aqui e toque em <strong>Tentar de novo</strong>.</li></ol>
    </>}
    {stage==='choose'&&<>
     <p className="muted small">Fale alguma coisa: a barra mexe quando o microfone está captando. Essa escolha fica salva e vale para as calls e para os áudios.</p>
