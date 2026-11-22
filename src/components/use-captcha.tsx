@@ -32,7 +32,7 @@ export function useCaptcha():{slot:ReactElement|null;token:()=>Promise<string|un
   if(!siteKey)return undefined;
   const turnstile=await loadTurnstile();
   if(!box.current)throw new Error('Verificação anti-robô indisponível nesta tela.');
-  if(!widget.current)widget.current=turnstile.render(box.current,{sitekey:siteKey,execution:'execute',appearance:'interaction-only',language:'pt-br',
+  if(!widget.current)widget.current=turnstile.render(box.current,{sitekey:siteKey,execution:'execute',appearance:'interaction-only',size:window.matchMedia('(max-width:720px)').matches?'compact':'normal',language:'pt-br',
    callback:(t:string)=>{pending.current?.resolve(t);pending.current=null;},
    'error-callback':()=>{pending.current?.reject(new Error('A verificação anti-robô falhou. Tente de novo.'));pending.current=null;},
    'expired-callback':()=>{if(widget.current)turnstile.reset(widget.current);}});
