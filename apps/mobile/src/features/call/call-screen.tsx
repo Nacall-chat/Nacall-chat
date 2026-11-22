@@ -1,15 +1,15 @@
 import { VideoTrack } from '@livekit/react-native';
-import { Eye, LogOut, Minus, MonitorUp, Plus, Volume2 } from 'lucide-react-native';
+import { Eye, LogOut, Minus, MonitorUp, Plus, SwitchCamera, Volume2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { Header } from '@/components/header';
 import { Body, Eyebrow } from '@/components/ui';
-import { useCall, type LiveStream } from '@/features/call/call';
+import { useCall, type LivePerson, type LiveStream } from '@/features/call/call';
 import { LiveBadge, PersonIcons } from '@/features/call/badges';
 import { CallControls } from '@/features/call/call-controls';
-import { volumeLabel } from '@/features/call/logic';
+import { facingLabel, otherFacing, volumeLabel } from '@/features/call/logic';
 import { useSocial } from '@/features/social/social';
 import { useTheme } from '@/theme/theme';
 import { radius, space } from '@/theme/tokens';
@@ -19,8 +19,8 @@ import { durationLabel } from '@nacall/core/room-clock';
 export function CallScreen() {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { session, live } = useCall();
-  const { profiles } = useSocial();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -38,6 +38,8 @@ export function CallScreen() {
     );
   }
 
+  // cinco botões (mic, fone, câmera, tela e sair) cabem inclusive em telas estreitas de 320 dp
+  const controlSize = Math.max(40, Math.min(54, Math.floor((width - space.lg * 2 - space.md * 4) / 5)));
   const connected = live?.connection === 'connected';
   const subtitle = connected ? `Voz conectada · ${durationLabel(session.startedAt ?? session.joinedAt, now)}` : 'Conectando…';
   return (
@@ -48,20 +50,59 @@ export function CallScreen() {
 
         <View style={{ gap: space.sm }}>
           <Eyebrow>{`NA CALL · ${live?.people.length ?? 0}`}</Eyebrow>
-          {(live?.people ?? []).map((person) => (
-            <View key={person.id} style={[styles.person, { backgroundColor: tokens.surface, borderColor: person.speaking ? tokens.success : tokens.line }]}>
-              <Avatar profile={profiles[person.id]} name={person.name} size={40} />
-              <View style={styles.personText}>
-                <Text numberOfLines={1} style={{ color: tokens.text, fontWeight: '700', fontSize: 15 }}>{person.name}{person.isLocal ? ' (você)' : ''}</Text>
-              </View>
-              {person.sharing ? <LiveBadge /> : null}
-              <PersonIcons muted={person.muted} deaf={person.deaf} size={16} />
-            </View>
-          ))}
+          {(live?.people ?? []).map((person) => <PersonCard key={person.id} person={person} />)}
         </View>
       </ScrollView>
       <View style={[styles.controls, { backgroundColor: tokens.surface, borderTopColor: tokens.line, paddingBottom: Math.max(insets.bottom, space.md) }]}>
-        <CallControls size={54} />
+        <CallControls size={controlSize} />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Uma pessoa na sala: com a câmera ligada vira um cartão com o vídeo (o seu ganha o botão de virar a câmera);
+ * com a câmera desligada fica a linha com a foto de perfil.
+ */
+function PersonCard({ person }: { person: LivePerson }) {
+  const { tokens } = useTheme();
+  const { live } = useCall();
+  const { profiles } = useSocial();
+  const border = person.speaking ? tokens.success : tokens.line;
+  const track = live?.cameras[person.id];
+  const label = `${person.name}${person.isLocal ? ' (você)' : ''}`;
+
+  if (!live || !track) {
+    return (
+      <View style={[styles.person, { backgroundColor: tokens.surface, borderColor: border }]}>
+        <Avatar profile={profiles[person.id]} name={person.name} size={40} />
+        <View style={styles.personText}>
+          <Text numberOfLines={1} style={{ color: tokens.text, fontWeight: '700', fontSize: 15 }}>{label}</Text>
+        </View>
+        {person.sharing ? <LiveBadge /> : null}
+        <PersonIcons muted={person.muted} deaf={person.deaf} size={16} />
+      </View>
+    );
+  }
+
+  const next = otherFacing(live.facing);
+  return (
+    <View accessibilityLabel={`Câmera de ${label}`} style={[styles.cameraCard, { backgroundColor: tokens.surface, borderColor: border }]}>
+      {/* a própria câmera frontal aparece espelhada, como num espelho; quem assiste vê o vídeo normal */}
+      <VideoTrack trackRef={track} objectFit="cover" mirror={person.isLocal && live.facing === 'user'} style={styles.cameraVideo} />
+      <View style={styles.cameraFoot}>
+        <Text numberOfLines={1} style={{ color: tokens.text, fontWeight: '700', fontSize: 15, flex: 1 }}>{label}</Text>
+        {person.sharing ? <LiveBadge /> : null}
+        <PersonIcons muted={person.muted} deaf={person.deaf} size={16} />
+        {person.isLocal ? (
+          <SmallButton
+            icon={<SwitchCamera size={14} color={tokens.text} />}
+            label="Virar"
+            accessibilityLabel={`Virar para a câmera ${facingLabel(next)}`}
+            disabled={live.cameraBusy}
+            onPress={() => live.flipCamera()}
+          />
+        ) : null}
       </View>
     </View>
   );
@@ -128,10 +169,10 @@ function StreamBlock({ stream }: { stream: LiveStream }) {
   );
 }
 
-function SmallButton({ label, onPress, primary, icon, accessibilityLabel }: { label: string; onPress: () => void; primary?: boolean; icon?: React.ReactNode; accessibilityLabel?: string }) {
+function SmallButton({ label, onPress, primary, icon, accessibilityLabel, disabled }: { label: string; onPress: () => void; primary?: boolean; icon?: React.ReactNode; accessibilityLabel?: string; disabled?: boolean }) {
   const { tokens } = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} onPress={onPress} style={[styles.small, { backgroundColor: primary ? tokens.primary : tokens.raised }]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={[styles.small, { backgroundColor: primary ? tokens.primary : tokens.raised, opacity: disabled ? 0.5 : 1 }]}>
       {icon}
       <Text style={{ color: primary ? tokens.onPrimary : tokens.text, fontSize: 12, fontWeight: '800' }}>{label}</Text>
     </Pressable>
@@ -152,6 +193,9 @@ const styles = StyleSheet.create({
   person: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, borderWidth: 1 },
   personText: { flex: 1, minWidth: 0 },
   card: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, borderWidth: 1 },
+  cameraCard: { borderRadius: radius.md, borderWidth: 1, overflow: 'hidden' },
+  cameraVideo: { width: '100%', aspectRatio: 4 / 3, backgroundColor: '#080a0e' },
+  cameraFoot: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md },
   stream: { borderRadius: radius.md, borderWidth: 1, overflow: 'hidden' },
   streamHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md },
   streamFoot: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md },

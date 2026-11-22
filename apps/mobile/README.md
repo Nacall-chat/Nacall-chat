@@ -14,6 +14,13 @@ npx expo start                 # w = navegador, a = Android
 - **Expo Go** serve para as telas desta fase. A **call** (LiveKit) exige um _development build_ (`expo-dev-client`), e o **iPhone** só compila na nuvem (EAS Build) e testa em aparelho físico.
 - Sem `.env.local`, o app mostra a tela "O app ainda não foi configurado" (nunca exibe valores).
 
+## Câmera na call
+- O botão de câmera fica na barra da call e na tela da call (a tela da call mostra o vídeo de quem está com a câmera ligada no cartão da pessoa; sem câmera, o cartão é a linha com a foto de perfil). No cartão da própria câmera há o botão **Virar** (frontal ⇄ traseira); a frontal aparece espelhada só para você.
+- Ao ligar, o Android pede a permissão de câmera e o iPhone mostra o texto de uso do `app.json`. Permissão negada, sem câmera, câmera ocupada e falha ao virar têm mensagem em português (`src/features/call/logic.ts`); na permissão negada o aviso oferece abrir os ajustes do celular.
+- Android: com a câmera ligada o serviço em primeiro plano da call (`modules/nacall-call-service`) passa a ser do tipo microfone + câmera, para a câmera não ser cortada ao minimizar o app. Sem a permissão de câmera ou sem o app à vista, o serviço continua só com o microfone (a call não cai).
+- iPhone: o sistema pausa a câmera quando o app vai para segundo plano (o áudio continua); a câmera em segundo plano no iPhone exige o iOS 18 e um ajuste nativo que não está neste app.
+- Só dá para testar em aparelho real com um _development build_ ou o APK de teste: o emulador não serve para a câmera do iPhone e o do Android usa uma câmera virtual.
+
 ## Verificar
 ```
 npm run typecheck && npm test

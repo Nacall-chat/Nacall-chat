@@ -38,7 +38,7 @@ export function CallBar() {
           </Text>
         </View>
       </Pressable>
-      <CallControls size={40} />
+      <CallControls size={40} gap={space.xs + 2} />
     </View>
   );
 }
