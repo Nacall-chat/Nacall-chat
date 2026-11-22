@@ -69,6 +69,7 @@ input[aria-invalid=true]{border-color:var(--error)}
 .captcha-slot{display:flex;justify-content:center;margin:8px 0}
 .captcha-slot:empty{display:none}
 
+
 /* Auditoria de UX do site no celular (lote 4): a coluna de membros só existe a partir de 1301px. Abaixo disso (celular, tablet, notebook pequeno) os membros aparecem no fim da gaveta, com a mesma linha e o mesmo toque no avatar para abrir o perfil. */
 .side-members{margin-top:8px;padding-bottom:12px}
 .side-members .member{min-height:48px;padding:6px 0}
@@ -76,3 +77,38 @@ input[aria-invalid=true]{border-color:var(--error)}
 .side-members .member small{font-size:11px}
 .side-members .member .avatar{width:34px;height:34px;font-size:11px}
 @media(min-width:1301px){.side-members{display:none}}
+
+
+/* Auditoria de UX do site no celular (lote 3): arrastar para baixo na barra do topo ou no palco da call recarregava a página no Chrome do Android (e derrubava a call). As listas continuam rolando (já têm overscroll-behavior próprio). */
+@media(max-width:720px){html,body{overscroll-behavior-y:none}}
+
+
+/* Auditoria de UX do site no celular (lote 2): 2FA e celular deitado. */
+/* no celular a faixa de 2FA ocupava ~175px de toda conversa: fica só com o título e os botões (a explicação completa está em Ajustes > Segurança) */
+@media(max-width:720px){
+ .two-factor-prompt{padding:10px 12px;margin:8px 12px 0;gap:8px 10px}
+ .two-factor-prompt p{display:none}
+ .two-factor-prompt .row button{min-height:40px}
+}
+/* celular deitado (altura até 480px): a faixa de 2FA, o aviso e o topo empurravam o campo de digitar para fora da tela. A faixa volta com o celular em pé */
+@media(max-height:480px) and (orientation:landscape){
+ .two-factor-prompt{display:none}
+ .main>.topbar{min-height:52px}
+ .sidebar>header{min-height:64px}
+ .account{min-height:60px}
+ .notice{margin:6px 12px 0}
+}
+/* ativar o 2FA no celular: chave em destaque e QR como segunda opção */
+.mfa-key{margin:10px 0}
+.mfa-key .recovery-code{display:block;word-break:break-all}
+.qr-alt summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px}
+.qr-alt[open] summary{margin-bottom:8px}
+
+/* Auditoria de UX do site no celular (lote 1): com a call aberta no celular o <main> inteiro fica escondido, e o aviso que mora dentro dele (ex.: "este celular não permite compartilhar a tela") nunca aparecia. Esta cópia, irmã do <main>, mostra o mesmo aviso por cima da call. */
+.shell>.notice-call{display:none}
+@media(max-width:720px){
+ .shell.call-focus>.notice-call{display:flex;position:fixed;z-index:60;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;margin:0;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+}
+
+
+
