@@ -96,7 +96,18 @@ O repositório é privado no plano Free do GitHub, que não oferece proteção d
 
 ## APK do app Android na landing
 
-O botão "Download Android" da landing baixa `/downloads/nacall-android.apk`. O arquivo **não fica no Git**: antes do deploy (HML e PRD), a Esteira baixa o APK da **pré-release mais recente** cujo nome de tag começa com `mobile-teste-` (gerada pelo workflow "Mobile · APK de teste (Android)") e o copia para `public/downloads/`. Se não houver pré-release, o passo só avisa e o deploy segue normalmente (o botão fica sem arquivo).
+O botão "Download Android" da landing baixa `/downloads/nacall-android.apk`. O arquivo **não fica no Git**: antes do deploy (HML e PRD), a Esteira baixa o APK da **pré-release mais recente gerada de um commit que já está na branch publicada** (`release` no HML, `main` no PRD) cujo nome de tag começa com `mobile-teste-`. APK gerado em branch que ainda não entrou é ignorado (achado da auditoria Cloudflare: antes ia o mais novo de qualquer branch) (gerada pelo workflow "Mobile · APK de teste (Android)") e o copia para `public/downloads/`. Se não houver pré-release, o passo só avisa e o deploy segue normalmente (o botão fica sem arquivo).
 
 - Para atualizar o APK do site: rode o workflow "Mobile · APK de teste" e publique de novo a Esteira (HML por merge na `release`; PRD pelo "Run workflow" na `main`).
 - É um APK de **teste**: aponta para a homologação e é assinado com a chave de depuração. Uma versão assinada para as lojas substitui este fluxo depois.
+
+## Segurança da esteira (ações no GitHub, fora do código)
+
+Achados da auditoria Cloudflare que dependem de configuração, não de código:
+
+1. **Secrets de produção presos à `main`.** O job PRD usa `environment: production`. Para valer de verdade:
+   - GitHub → Settings → Environments → `production`: **Required reviewers** (quem aprova a produção) e **Deployment branches** = só `main`.
+   - Mova `PRD_VERCEL_TOKEN`, `PRD_VERCEL_ORG_ID` e `PRD_VERCEL_PROJECT_ID` de *Repository secrets* para os secrets **do ambiente** `production` e apague os do repositório.
+   - Sem isso, qualquer workflow de qualquer branch do repositório consegue ler o token de produção (a checagem `refs/heads/main` dentro do próprio workflow pode ser apagada numa branch).
+2. **APK assinado com chave própria.** O `mobile-apk.yml` assina o APK com a chave de depuração do template (pública). Antes de distribuir para usuários reais, gere uma keystore de release, guarde-a como secret e configure a assinatura no build. Nunca coloque a keystore no Git.
+3. **Supabase Auth:** confira em Authentication → Providers → Email se **Secure email change** está como a equipe decidiu (hoje `docs/AUTH.md` pede desligado) e se o projeto usa **Confirm email** ligado no HML; esses dois pontos ficaram como "precisa validação" na auditoria.

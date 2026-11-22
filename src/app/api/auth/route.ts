@@ -49,19 +49,24 @@ export async function POST(request: Request) {
         return reply({ ok: true, email: input.email });
       }
       case 'verify': {
+        // Checagem de código de 6 dígitos: o limite fica por email (de propósito). Por IP, quem tem muitos IPs poderia chutar o código.
         if (!(await allow(admin, env.secret, 'verify', input.email, 6, 600))) return reply({ error: tooMany }, 429);
         const { error } = await anonClient(env).auth.verifyOtp({ email: input.email, token: input.code, type: 'signup' });
         if (error) return reply({ error: 'Código inválido ou expirado. Confira os 6 dígitos ou peça um novo.' }, 400);
         return reply({ ok: true });
       }
       case 'resend': {
-        if (!(await allow(admin, env.secret, 'resend', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'resend-ip', `${ip}|${input.email}`, 3, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'resend', input.email, 10, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
         const { error } = await anonClient(env).auth.resend({ type: 'signup', email: input.email });
         if (error) return mailFailure('resend', error, 'Não foi possível reenviar o código agora. Tente novamente em instantes.');
         return reply({ ok: true });
       }
       case 'login': {
-        if (!(await allow(admin, env.secret, 'login', input.identifier, 10, 600))) return reply({ error: tooMany }, 429);
+        // Auditoria (login travado por terceiros): o limite apertado é por IP + usuário, então quem erra trava só a si mesmo.
+        // O teto por conta é alto e só recebe quem passou do primeiro limite: travar a conta de alguém exige ~10 IPs, não 11 pedidos.
+        if (!(await allow(admin, env.secret, 'login-ip', `${ip}|${input.identifier}`, 10, 600))) return reply({ error: tooMany }, 429);
+        if (!(await allow(admin, env.secret, 'login', input.identifier, 100, 600))) return reply({ error: tooMany }, 429);
         const email = await resolveEmail(admin, input.identifier);
         if (!email) return reply({ error: wrong }, 401);
         const { data, error } = await anonClient(env).auth.signInWithPassword({ email, password: input.password });
@@ -79,7 +84,8 @@ export async function POST(request: Request) {
         });
       }
       case 'recover': {
-        if (!(await allow(admin, env.secret, 'recover', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'recover-ip', `${ip}|${input.email}`, 3, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'recover', input.email, 10, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
         // Só envia o código se existe conta com o email; senão avisa (decisão de produto: revelar, ver docs/AUTH.md).
         if ((await emailStatus(admin, input.email)) === 'none') return reply({ error: 'Não existe uma conta com esse email.', code: 'email_not_found' }, 404);
         // Uma falha de envio (SMTP recusado, limite) não pode virar "enviado".
