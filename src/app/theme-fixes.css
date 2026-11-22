@@ -68,3 +68,24 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* CAPTCHA (Turnstile): invisível na maior parte das vezes; quando o Cloudflare pede interação, o desafio aparece aqui. */
 .captcha-slot{display:flex;justify-content:center;margin:8px 0}
 .captcha-slot:empty{display:none}
+
+/* Auditoria de UX do site no celular (lote 2): 2FA e celular deitado. */
+/* no celular a faixa de 2FA ocupava ~175px de toda conversa: fica só com o título e os botões (a explicação completa está em Ajustes > Segurança) */
+@media(max-width:720px){
+ .two-factor-prompt{padding:10px 12px;margin:8px 12px 0;gap:8px 10px}
+ .two-factor-prompt p{display:none}
+ .two-factor-prompt .row button{min-height:40px}
+}
+/* celular deitado (altura até 480px): a faixa de 2FA, o aviso e o topo empurravam o campo de digitar para fora da tela. A faixa volta com o celular em pé */
+@media(max-height:480px) and (orientation:landscape){
+ .two-factor-prompt{display:none}
+ .main>.topbar{min-height:52px}
+ .sidebar>header{min-height:64px}
+ .account{min-height:60px}
+ .notice{margin:6px 12px 0}
+}
+/* ativar o 2FA no celular: chave em destaque e QR como segunda opção */
+.mfa-key{margin:10px 0}
+.mfa-key .recovery-code{display:block;word-break:break-all}
+.qr-alt summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px}
+.qr-alt[open] summary{margin-bottom:8px}
