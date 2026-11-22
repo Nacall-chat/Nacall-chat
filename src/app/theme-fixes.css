@@ -68,3 +68,24 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* CAPTCHA (Turnstile): invisível na maior parte das vezes; quando o Cloudflare pede interação, o desafio aparece aqui. */
 .captcha-slot{display:flex;justify-content:center;margin:8px 0}
 .captcha-slot:empty{display:none}
+
+/* Auditoria de UX do site no celular (lote 5): legibilidade, toque e login. */
+@media(max-width:720px){
+ /* login: o mascote cobria o título e o texto; passa para baixo do conteúdo, em fluxo normal, e os textos miúdos ganham tamanho de leitura */
+ .auth-story{padding-bottom:48px}
+ .auth-story .mascot-hero{position:relative;right:auto;bottom:auto;width:100%;height:auto;margin:4px 0 12px;opacity:1}
+ .auth-story .mascot-hero img{max-height:190px;border-radius:22px}
+ .auth-story .mascot-hero span{font-size:11px;margin-top:8px}
+ .auth-story>p{font-size:14px}
+ .story-features{margin-bottom:20px}
+ .story-features span{font-size:11px}
+ .auth-links .link{display:inline-flex;align-items:center;min-height:44px;font-size:13px}
+ /* alvos de toque de 44px onde estavam abaixo disso */
+ dialog .icon-button{width:44px;min-height:44px}
+ .message .link{font-size:12px;min-height:40px;padding:5px 8px}
+ input[type=range]{height:32px}
+ .whatsnew-dots button{position:relative}
+ .whatsnew-dots button::after{content:"";position:absolute;inset:-17px -6px}
+ /* "Entrar na call" na gaveta: 8px e espremido em duas linhas */
+ .nav-item .tiny{font-size:10px;max-width:72px}
+}
