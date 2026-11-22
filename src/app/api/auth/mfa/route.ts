@@ -45,7 +45,8 @@ export async function POST(request: Request) {
         if (!session.mfa) return reply({ ok: true });
         if (needsSecondFactor(session)) return reply({ error: 'Confirme o código do app autenticador primeiro.' }, 403);
         if (!(await allow(admin, env.secret, 'mfa-disable', uid, 5, 600))) return reply({ error: 'Muitas tentativas. Aguarde alguns minutos.' }, 429);
-        const check = await anonClient(env).auth.signInWithPassword({ email: session.user.email ?? '', password: input.password });
+        const check = await anonClient(env).auth.signInWithPassword({ email: session.user.email ?? '', password: input.password, options: { captchaToken: input.captchaToken } });
+        if (check.error?.code === 'captcha_failed') return reply({ error: 'Confirme que você não é um robô e tente de novo.', code: 'captcha_failed' }, 400);
         if (check.error) return reply({ error: 'Senha incorreta.' }, 401);
         await removeFactors();
         return reply({ ok: true });

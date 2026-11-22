@@ -18,7 +18,8 @@ export async function POST(request: Request) {
   try {
     if (input.action === 'request') {
       if (!(await allow(admin, env.secret, 'email-change', session.user.id, 4, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
-      const failure = sameEmail ? (await anonClient(env).auth.signInWithOtp({ email: input.email, options: { shouldCreateUser: false } })).error : await changeEmail(env, session.token, input.email);
+      const failure = sameEmail ? (await anonClient(env).auth.signInWithOtp({ email: input.email, options: { shouldCreateUser: false, captchaToken: input.captchaToken } })).error : await changeEmail(env, session.token, input.email);
+      if (failure?.code === 'captcha_failed') return reply({ error: 'Confirme que você não é um robô e tente de novo.', code: 'captcha_failed' }, 400);
       if (failure) {
         logAuthFailure('email-change', failure);
         const kind = classifyMailError(failure);
