@@ -68,3 +68,11 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* CAPTCHA (Turnstile): invisível na maior parte das vezes; quando o Cloudflare pede interação, o desafio aparece aqui. */
 .captcha-slot{display:flex;justify-content:center;margin:8px 0}
 .captcha-slot:empty{display:none}
+
+/* Auditoria de UX do site no celular (lote 4): a coluna de membros só existe a partir de 1301px. Abaixo disso (celular, tablet, notebook pequeno) os membros aparecem no fim da gaveta, com a mesma linha e o mesmo toque no avatar para abrir o perfil. */
+.side-members{margin-top:8px;padding-bottom:12px}
+.side-members .member{min-height:48px;padding:6px 0}
+.side-members .member strong{font-size:13px}
+.side-members .member small{font-size:11px}
+.side-members .member .avatar{width:34px;height:34px;font-size:11px}
+@media(min-width:1301px){.side-members{display:none}}
