@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
+import {useCaptcha} from './use-captcha';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import type {SupabaseClient} from '@supabase/supabase-js';
@@ -24,6 +25,7 @@ export function Auth({db}:{db:SupabaseClient}){
  const[identifier,setIdentifier]=useState('');const[username,setUsername]=useState('');const[name,setName]=useState('');const[email,setEmail]=useState('');
  const[password,setPassword]=useState('');const[confirm,setConfirm]=useState('');const[code,setCode]=useState('');
  const[busy,setBusy]=useState(false);const[feedback,setFeedback]=useState('');const[themeOpen,setThemeOpen]=useState(false);const[cooldown,setCooldown]=useState(0);const[existing,setExisting]=useState(false);const[taken,setTaken]=useState<{username?:boolean;email?:boolean}>({});const[missing,setMissing]=useState(false);
+ const captcha=useCaptcha();// CAPTCHA (Turnstile) nas ações com senha ou email; sem NEXT_PUBLIC_TURNSTILE_SITE_KEY não faz nada
  useEffect(()=>{if(cooldown<=0)return;const timer=setTimeout(()=>setCooldown(cooldown-1),1000);return()=>clearTimeout(timer);},[cooldown]);
  // Aviso ao vivo no cadastro: usuário e email já em uso (consulta o servidor depois de uma pausa na digitação).
  useEffect(()=>{
@@ -46,10 +48,10 @@ export function Auth({db}:{db:SupabaseClient}){
  async function submit(e:FormEvent){
   e.preventDefault();setBusy(true);setFeedback('');setFeedbackBad(false);setExisting(false);setMissing(false);
   try{
-   if(mode==='login'){const result=await postJson<{session:Credentials}>('/api/auth',validated({action:'login',identifier,password}));await enter(result.session);return;}
-   if(mode==='signup'){await postJson('/api/auth',validated({action:'signup',username,displayName:name,email,password,confirmPassword:confirm}));go('verify',`Enviamos um código para ${email}. Confira também o spam.`);setCooldown(60);return;}
+   if(mode==='login'){const result=await postJson<{session:Credentials}>('/api/auth',validated({action:'login',identifier,password,captchaToken:await captcha.token()}));await enter(result.session);return;}
+   if(mode==='signup'){await postJson('/api/auth',validated({action:'signup',username,displayName:name,email,password,confirmPassword:confirm,captchaToken:await captcha.token()}));go('verify',`Enviamos um código para ${email}. Confira também o spam.`);setCooldown(60);return;}
    if(mode==='verify'){await postJson('/api/auth',validated({action:'verify',email,code}));window.dispatchEvent(new Event('nacall-signup'));go('login','Email confirmado! Agora é só entrar.');setIdentifier(username||email);return;}
-   if(mode==='recover'){await postJson('/api/auth',validated({action:'recover',email}));go('recover-confirm','Enviamos o código para o seu email. Confira também o spam.');return;}
+   if(mode==='recover'){await postJson('/api/auth',validated({action:'recover',email,captchaToken:await captcha.token()}));go('recover-confirm','Enviamos o código para o seu email. Confira também o spam.');return;}
    await postJson('/api/auth',validated({action:'recover-confirm',email,code,password,confirmPassword:confirm}));go('login','Senha atualizada. Entre com a nova senha.');setIdentifier(email);
   }catch(error){
    const failure=error as ApiError;
@@ -57,7 +59,7 @@ export function Auth({db}:{db:SupabaseClient}){
    else{setFeedback(errorText(error));setFeedbackBad(true);setExisting(failure.data?.code==='email_exists');setMissing(failure.data?.code==='email_not_found');}
   }finally{setBusy(false);}
  }
- async function resend(){if(cooldown>0||busy)return;setBusy(true);setFeedback('');setFeedbackBad(false);try{await postJson('/api/auth',validated({action:'resend',email}));setFeedback('Código reenviado. Pode levar um minutinho.');setCooldown(60);}catch(error){setFeedback(errorText(error));setFeedbackBad(true);}finally{setBusy(false);}}
+ async function resend(){if(cooldown>0||busy)return;setBusy(true);setFeedback('');setFeedbackBad(false);try{await postJson('/api/auth',validated({action:'resend',email,captchaToken:await captcha.token()}));setFeedback('Código reenviado. Pode levar um minutinho.');setCooldown(60);}catch(error){setFeedback(errorText(error));setFeedbackBad(true);}finally{setBusy(false);}}
  const text=copy[mode];
  const label=busy?'Conectando o lobby…':{login:'Bora NACALL',signup:'Criar minha conta',verify:'Confirmar email','recover':'Enviar código','recover-confirm':'Trocar senha'}[mode];
  return <main className="auth-page jacall-auth"><header className="landing-nav"><Link href="/" aria-label="Voltar para o início"><Brand/></Link><span className="landing-note"><span className="status-dot"/>Jacaré, pode chegar.</span><button className="icon-button" aria-label="Escolher tema" aria-expanded={themeOpen} onClick={()=>setThemeOpen(!themeOpen)}><SunMoon size={20}/></button></header>{themeOpen&&<div className="landing-theme"><ThemeSelector/></div>}
@@ -75,7 +77,7 @@ export function Auth({db}:{db:SupabaseClient}){
   {mode!=='recover'&&mode!=='verify'&&<PasswordField label={mode==='recover-confirm'?'Nova senha':'Senha'} value={password} onChange={setPassword} autoComplete={newPassword?'new-password':'current-password'} placeholder={newPassword?'Pelo menos 12 caracteres':'Sua senha'} hint={passwordHint} invalid={!!passwordHint} minLength={mode==='login'?1:undefined}/>}
   {newPassword&&<PasswordField label="Confirmar senha" value={confirm} onChange={setConfirm} autoComplete="new-password" placeholder="Repita a senha" hint={mismatch} invalid={!!mismatch}/>}
   <button className="primary" disabled={busy||!!passwordHint||!!mismatch||(mode==='signup'&&!!(taken.username||taken.email))}>{label}<ArrowRight size={17}/></button>
- </form>
+ {captcha.slot}</form>
  {mode==='verify'&&<div className="auth-links"><button className="link" disabled={cooldown>0||busy} onClick={()=>void resend()}>{cooldown>0?`Reenviar código em ${cooldown}s`:'Reenviar código'}</button><button className="link" onClick={()=>go('signup')}>Corrigir meus dados</button></div>}
  {mode!=='verify'&&<div className="auth-links"><button className="link" onClick={()=>go(mode==='signup'?'login':'signup')}>{mode==='signup'?'Já sou da casa. Entrar':'Primeira call? Crie sua conta'}</button><button className="link" onClick={()=>go(mode==='recover'||mode==='recover-confirm'?'login':'recover')}>{mode==='recover'||mode==='recover-confirm'?'Voltar ao login':'Esqueci a senha'}</button></div>}
  {feedback&&<p className={feedbackBad?'form-feedback bad':'form-feedback'} role={feedbackBad?'alert':'status'}>{feedback}</p>}

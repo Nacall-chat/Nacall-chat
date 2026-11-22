@@ -13,7 +13,8 @@ export async function POST(request: Request) {
   const admin = adminClient(env);
   try {
     if (!(await allow(admin, env.secret, 'pw-change', session.user.id, 5, 600))) return reply({ error: 'Muitas tentativas. Aguarde alguns minutos.' }, 429);
-    const check = await anonClient(env).auth.signInWithPassword({ email: session.user.email ?? '', password: parsed.data.current });
+    const check = await anonClient(env).auth.signInWithPassword({ email: session.user.email ?? '', password: parsed.data.current, options: { captchaToken: parsed.data.captchaToken } });
+    if (check.error?.code === 'captcha_failed') return reply({ error: 'Confirme que você não é um robô e tente de novo.', code: 'captcha_failed' }, 400);
     if (check.error) return reply({ error: 'A senha atual não confere.' }, 401);
     const updated = await admin.auth.admin.updateUserById(session.user.id, { password: parsed.data.password });
     if (updated.error) return reply({ error: updated.error.code === 'weak_password' ? 'Essa senha é fraca demais. Escolha outra.' : 'Não foi possível atualizar a senha.' }, 400);
