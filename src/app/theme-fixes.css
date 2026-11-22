@@ -68,3 +68,9 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* CAPTCHA (Turnstile): invisível na maior parte das vezes; quando o Cloudflare pede interação, o desafio aparece aqui. */
 .captcha-slot{display:flex;justify-content:center;margin:8px 0}
 .captcha-slot:empty{display:none}
+
+/* Auditoria de UX do site no celular (lote 1): com a call aberta no celular o <main> inteiro fica escondido, e o aviso que mora dentro dele (ex.: "este celular não permite compartilhar a tela") nunca aparecia. Esta cópia, irmã do <main>, mostra o mesmo aviso por cima da call. */
+.shell>.notice-call{display:none}
+@media(max-width:720px){
+ .shell.call-focus>.notice-call{display:flex;position:fixed;z-index:60;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;margin:0;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+}

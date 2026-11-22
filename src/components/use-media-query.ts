@@ -13,3 +13,8 @@ export function useMediaQuery(query:string){
  },[query]);
  return matches;
 }
+
+/** `true` em aparelho só de toque (celular, tablet sem teclado): não dá para segurar tecla, então "apertar para falar" não vale. */
+export function useNoKeyboard(){
+ return useMediaQuery('(hover: none) and (pointer: coarse)');
+}
