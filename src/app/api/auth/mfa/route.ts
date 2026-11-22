@@ -13,6 +13,9 @@ export async function POST(request: Request) {
   const removeFactors = async () => {
     for (const factor of session.user.factors ?? []) { const r = await admin.auth.admin.mfa.deleteFactor({ id: factor.id, userId: uid }); if (r.error) throw r.error; }
     const gone = await admin.from('mfa_recovery_codes').delete().eq('user_id', uid); if (gone.error) throw gone.error;
+    // Sem 2FA, uma sessão aberta só com a senha (aal1) em outro aparelho passaria a ter acesso total. Derruba as outras sessões
+    // (a desta pessoa continua: o app renova a sessão logo em seguida). Achado do teste de segurança no HML.
+    const others = await admin.auth.admin.signOut(session.token, 'others'); if (others.error) console.error('mfa: falha ao encerrar as outras sessões', others.error.message);
   };
   try {
     switch (input.action) {
