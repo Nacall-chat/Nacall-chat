@@ -33,3 +33,21 @@ test('a documentação diz como subir o HML à mão',async()=>{
  assert.match(doc,/Como subir o HML à mão/);
  assert.match(doc,/escolha \*\*`release`\*\*/);
 });
+
+// Auditoria Cloudflare (run-1), CI: o site servia o APK mobile-teste-* mais novo de qualquer branch, e os secrets de
+// produção ficavam ao alcance de qualquer workflow do repositório.
+test('o APK do site só vem de um commit que já está na branch publicada (HML e PRD)',async()=>{
+ const yaml=await read('.github/workflows/esteira.yml');
+ for(const name of ['homologacao','producao']){
+  const j=job(yaml,name);
+  assert.match(j,/fetch-depth: 0/,`${name}: histórico completo para conferir o commit do APK`);
+  assert.match(j,/git merge-base --is-ancestor "\$SHA" HEAD/,`${name}: confere se o commit do APK está na branch`);
+  assert.doesNotMatch(j,/\]\[0\]\.tagName/,`${name}: não pega mais o mobile-teste-* mais novo às cegas`);
+ }
+});
+
+test('o job de produção usa o ambiente "production" (para os secrets de PRD ficarem presos à main com aprovação)',async()=>{
+ const prd=job(await read('.github/workflows/esteira.yml'),'producao');
+ assert.match(prd,/\n    environment: production\n/);
+ assert.doesNotMatch(job(await read('.github/workflows/esteira.yml'),'homologacao'),/environment: production/,'o HML não usa o ambiente de produção');
+});

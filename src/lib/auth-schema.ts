@@ -13,28 +13,31 @@ export function passwordIssue(password: string): string | null {
 }
 export const newPasswordSchema = z.string().superRefine((value, ctx) => { const message = passwordIssue(value); if (message) ctx.addIssue({ code: 'custom', message }); });
 export const codeSchema = z.string().trim().regex(/^\d{6}$/, 'O código tem 6 dígitos.');
+/** Token do Cloudflare Turnstile (CAPTCHA). Opcional: só existe quando o site tem NEXT_PUBLIC_TURNSTILE_SITE_KEY. O Supabase Auth
+ * confere o token quando o CAPTCHA está ligado no projeto; aqui o servidor só repassa. */
+export const captchaToken = z.string().max(4096).optional();
 const same = (d: { password: string; confirmPassword: string }) => d.password === d.confirmPassword;
 const mismatch = { message: 'As senhas não conferem.', path: ['confirmPassword'] };
 export const authSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('login'), identifier: z.string().trim().toLowerCase().min(3, 'Informe seu usuário ou email.').max(254), password: z.string().min(1, 'Informe a senha.').max(128) }),
-  z.object({ action: z.literal('signup'), username: usernameSchema, displayName: nameSchema, email: emailSchema, password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch),
+  z.object({ action: z.literal('login'), identifier: z.string().trim().toLowerCase().min(3, 'Informe seu usuário ou email.').max(254), password: z.string().min(1, 'Informe a senha.').max(128), captchaToken }),
+  z.object({ action: z.literal('signup'), username: usernameSchema, displayName: nameSchema, email: emailSchema, password: newPasswordSchema, confirmPassword: z.string(), captchaToken }).refine(same, mismatch),
   z.object({ action: z.literal('verify'), email: emailSchema, code: codeSchema }),
-  z.object({ action: z.literal('resend'), email: emailSchema }),
+  z.object({ action: z.literal('resend'), email: emailSchema, captchaToken }),
   z.object({ action: z.literal('check'), username: usernameSchema.optional(), email: emailSchema.optional() }).refine(d => d.username !== undefined || d.email !== undefined, { message: 'Informe o usuário ou o email.' }),
-  z.object({ action: z.literal('recover'), email: emailSchema }),
+  z.object({ action: z.literal('recover'), email: emailSchema, captchaToken }),
   z.object({ action: z.literal('recover-confirm'), email: emailSchema, code: codeSchema, password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch),
 ]);
 /** Contas do modelo antigo confirmam (ou trocam) o email por um código enviado ao endereço informado. */
 export const emailChangeSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('request'), email: emailSchema }),
+  z.object({ action: z.literal('request'), email: emailSchema, captchaToken }),
   z.object({ action: z.literal('confirm'), email: emailSchema, code: codeSchema }),
 ]);
-export const passwordChangeSchema = z.object({ current: z.string().min(1, 'Informe a senha atual.').max(128), password: newPasswordSchema, confirmPassword: z.string() }).refine(same, mismatch);
+export const passwordChangeSchema = z.object({ current: z.string().min(1, 'Informe a senha atual.').max(128), password: newPasswordSchema, confirmPassword: z.string(), captchaToken }).refine(same, mismatch);
 export const mfaSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }),
   z.object({ action: z.literal('generate-codes') }),
   z.object({ action: z.literal('use-code'), code: z.string().trim().min(8).max(40) }),
-  z.object({ action: z.literal('disable'), password: z.string().min(1, 'Informe a senha.').max(128) }),
+  z.object({ action: z.literal('disable'), password: z.string().min(1, 'Informe a senha.').max(128), captchaToken }),
 ]);
 /** Email (contém @) ou username. O nick nunca contém @ (ver usernamePattern em validation.ts). */
 export function isEmailIdentifier(identifier: string) { return identifier.includes('@'); }

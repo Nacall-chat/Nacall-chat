@@ -28,13 +28,24 @@ jobs:
             if [ -z "${!n}" ]; then echo "::error::Secret HML_$n não cadastrado em Settings > Secrets and variables > Actions."; exit 1; fi
           done
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo: a conferência do APK precisa saber se o commit dele está nesta branch
       - name: Baixar o APK de teste mais recente para o site (não derruba o deploy se faltar)
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 30 --json tagName -q '[.[] | select(.tagName | startswith("mobile-teste-"))][0].tagName')
-          if [ -z "$TAG" ]; then echo "Nenhuma pré-release mobile-teste-* encontrada: o botão de download fica sem arquivo."; exit 0; fi
+          # Auditoria (procedência do APK): só serve um APK gerado de um commit que já está nesta branch. Antes ia o
+          # mobile-teste-* mais novo de qualquer branch, inclusive de código que nunca passou por PR.
+          TAG=""
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 30 --json tagName -q '.[] | select(.tagName | startswith("mobile-teste-")) | .tagName'); do
+            REF=$(gh release view "$t" --repo "$GITHUB_REPOSITORY" --json targetCommitish -q .targetCommitish)
+            SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/$REF" -q .sha 2>/dev/null || true)
+            if [ -n "$SHA" ] && git merge-base --is-ancestor "$SHA" HEAD 2>/dev/null; then TAG="$t"; break; fi
+            echo "Ignorando $t: o APK foi gerado de um commit ($REF) que não está nesta branch."
+          done
+          if [ -z "$TAG" ]; then echo "Nenhuma pré-release mobile-teste-* gerada de um commit desta branch: o botão de download fica sem arquivo."; exit 0; fi
+          echo "APK do site: $TAG"
           mkdir -p public/downloads
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --output public/downloads/nacall-android.apk --clobber
           ls -l public/downloads/nacall-android.apk
@@ -54,6 +65,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: verificar
     runs-on: ubuntu-latest
+    # Auditoria (token de PRD): o ambiente "production" permite guardar os PRD_VERCEL_* como secrets do ambiente, liberados só
+    # para a branch main e com aprovação obrigatória (configuração no GitHub, ver docs/DEPLOY.md). Sem isso, qualquer workflow
+    # de qualquer branch deste repositório consegue ler os secrets de produção.
+    environment: production
     env:
       VERCEL_TOKEN: ${{ secrets.PRD_VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.PRD_VERCEL_ORG_ID }}
@@ -68,13 +83,24 @@ jobs:
           if [ "$VERCEL_PROJECT_ID" != "prj_kJhez0IKGKvTGrsrwxH6rL2ZIQMT" ]; then echo "::error::Projeto PRD_VERCEL_PROJECT_ID não corresponde ao NACALL PRD. Publicação cancelada."; exit 1; fi
           if [ "$VERCEL_ORG_ID" != "team_0m3biijv5SSsYVljvDPNFAfM" ]; then echo "::error::PRD_VERCEL_ORG_ID não corresponde à equipe NACALL. Publicação cancelada."; exit 1; fi
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo: a conferência do APK precisa saber se o commit dele está nesta branch
       - name: Baixar o APK de teste mais recente para o site (não derruba o deploy se faltar)
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 30 --json tagName -q '[.[] | select(.tagName | startswith("mobile-teste-"))][0].tagName')
-          if [ -z "$TAG" ]; then echo "Nenhuma pré-release mobile-teste-* encontrada: o botão de download fica sem arquivo."; exit 0; fi
+          # Auditoria (procedência do APK): só serve um APK gerado de um commit que já está nesta branch. Antes ia o
+          # mobile-teste-* mais novo de qualquer branch, inclusive de código que nunca passou por PR.
+          TAG=""
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 30 --json tagName -q '.[] | select(.tagName | startswith("mobile-teste-")) | .tagName'); do
+            REF=$(gh release view "$t" --repo "$GITHUB_REPOSITORY" --json targetCommitish -q .targetCommitish)
+            SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/$REF" -q .sha 2>/dev/null || true)
+            if [ -n "$SHA" ] && git merge-base --is-ancestor "$SHA" HEAD 2>/dev/null; then TAG="$t"; break; fi
+            echo "Ignorando $t: o APK foi gerado de um commit ($REF) que não está nesta branch."
+          done
+          if [ -z "$TAG" ]; then echo "Nenhuma pré-release mobile-teste-* gerada de um commit desta branch: o botão de download fica sem arquivo."; exit 0; fi
+          echo "APK do site: $TAG"
           mkdir -p public/downloads
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --output public/downloads/nacall-android.apk --clobber
           ls -l public/downloads/nacall-android.apk

@@ -64,3 +64,7 @@ input[aria-invalid=true]{border-color:var(--error)}
  .call-dock .call-toolbar{padding:8px 6px calc(8px + env(safe-area-inset-bottom));gap:4px}
  .call-dock .call-controls{gap:2px}
 }
+
+/* CAPTCHA (Turnstile): invisível na maior parte das vezes; quando o Cloudflare pede interação, o desafio aparece aqui. */
+.captcha-slot{display:flex;justify-content:center;margin:8px 0}
+.captcha-slot:empty{display:none}

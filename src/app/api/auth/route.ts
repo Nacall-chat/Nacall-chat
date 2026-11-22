@@ -5,9 +5,12 @@ export const runtime = 'nodejs';
 const wrong = 'Usuário/email ou senha não conferem.';
 const tooMany = 'Muitas tentativas. Dá uma pausa de alguns minutos e tenta de novo.';
 const emailExists = 'Esse email já tem uma conta. Entre com ela ou recupere a senha.';
+/** O Supabase recusou o CAPTCHA (token ausente, vencido ou reutilizado). */
+const captchaFailed = 'Confirme que você não é um robô e tente de novo.';
 const mailDown = 'Não conseguimos enviar o email agora. Tente de novo em alguns minutos; se continuar, avise a equipe.';
 /** Falha do Supabase ao disparar um email. O motivo vai para o log do servidor; a pessoa nunca fica com um "enviado" falso. */
 function mailFailure(action: string, error: { status?: number; code?: string }, other: string) {
+  if (error.code === 'captcha_failed') return reply({ error: captchaFailed, code: 'captcha_failed' }, 400);
   logAuthFailure(action, error);
   const kind = classifyMailError(error);
   if (kind === 'rate') return reply({ error: 'Aguarde um minuto antes de pedir outro código.', code: 'rate_limited' }, 429);
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
           // Cadastro pendente do mesmo email e usuário: refazer o cadastro reenvia o código em vez de travar a pessoa.
         }
         // O Supabase cria a conta e envia o código. Com a confirmação ligada, um email que já tem conta volta como usuário sem identidades.
-        const { data, error } = await anonClient(env).auth.signUp({ email: input.email, password: input.password, options: { data: { username: input.username, display_name: input.displayName } } });
+        const { data, error } = await anonClient(env).auth.signUp({ email: input.email, password: input.password, options: { data: { username: input.username, display_name: input.displayName }, captchaToken: input.captchaToken } });
         if (error) {
           if (error.code === 'weak_password') return reply({ error: 'Essa senha é fraca demais. Escolha outra.' }, 400);
           return mailFailure('signup', error, 'Não foi possível criar a conta agora. Tente novamente em instantes.');
@@ -49,22 +52,28 @@ export async function POST(request: Request) {
         return reply({ ok: true, email: input.email });
       }
       case 'verify': {
+        // Checagem de código de 6 dígitos: o limite fica por email (de propósito). Por IP, quem tem muitos IPs poderia chutar o código.
         if (!(await allow(admin, env.secret, 'verify', input.email, 6, 600))) return reply({ error: tooMany }, 429);
         const { error } = await anonClient(env).auth.verifyOtp({ email: input.email, token: input.code, type: 'signup' });
         if (error) return reply({ error: 'Código inválido ou expirado. Confira os 6 dígitos ou peça um novo.' }, 400);
         return reply({ ok: true });
       }
       case 'resend': {
-        if (!(await allow(admin, env.secret, 'resend', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
-        const { error } = await anonClient(env).auth.resend({ type: 'signup', email: input.email });
+        if (!(await allow(admin, env.secret, 'resend-ip', `${ip}|${input.email}`, 3, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'resend', input.email, 10, 600))) return reply({ error: 'Muitos pedidos de código. Aguarde alguns minutos.' }, 429);
+        const { error } = await anonClient(env).auth.resend({ type: 'signup', email: input.email, options: { captchaToken: input.captchaToken } });
         if (error) return mailFailure('resend', error, 'Não foi possível reenviar o código agora. Tente novamente em instantes.');
         return reply({ ok: true });
       }
       case 'login': {
-        if (!(await allow(admin, env.secret, 'login', input.identifier, 10, 600))) return reply({ error: tooMany }, 429);
+        // Auditoria (login travado por terceiros): o limite apertado é por IP + usuário, então quem erra trava só a si mesmo.
+        // O teto por conta é alto e só recebe quem passou do primeiro limite: travar a conta de alguém exige ~10 IPs, não 11 pedidos.
+        if (!(await allow(admin, env.secret, 'login-ip', `${ip}|${input.identifier}`, 10, 600))) return reply({ error: tooMany }, 429);
+        if (!(await allow(admin, env.secret, 'login', input.identifier, 100, 600))) return reply({ error: tooMany }, 429);
         const email = await resolveEmail(admin, input.identifier);
         if (!email) return reply({ error: wrong }, 401);
-        const { data, error } = await anonClient(env).auth.signInWithPassword({ email, password: input.password });
+        const { data, error } = await anonClient(env).auth.signInWithPassword({ email, password: input.password, options: { captchaToken: input.captchaToken } });
+        if (error?.code === 'captcha_failed') return reply({ error: captchaFailed, code: 'captcha_failed' }, 400);
         // email_not_confirmed só aparece com a senha correta, então não revela contas a quem não tem a senha.
         if (error?.code === 'email_not_confirmed') return reply({ error: 'Falta confirmar seu email com o código que enviamos.', needsVerification: true, email }, 403);
         if (error || !data.session) return reply({ error: wrong }, 401);
@@ -79,11 +88,12 @@ export async function POST(request: Request) {
         });
       }
       case 'recover': {
-        if (!(await allow(admin, env.secret, 'recover', input.email, 3, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'recover-ip', `${ip}|${input.email}`, 3, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
+        if (!(await allow(admin, env.secret, 'recover', input.email, 10, 600))) return reply({ error: 'Muitos pedidos de recuperação. Aguarde alguns minutos.' }, 429);
         // Só envia o código se existe conta com o email; senão avisa (decisão de produto: revelar, ver docs/AUTH.md).
         if ((await emailStatus(admin, input.email)) === 'none') return reply({ error: 'Não existe uma conta com esse email.', code: 'email_not_found' }, 404);
         // Uma falha de envio (SMTP recusado, limite) não pode virar "enviado".
-        const { error } = await anonClient(env).auth.resetPasswordForEmail(input.email);
+        const { error } = await anonClient(env).auth.resetPasswordForEmail(input.email, { captchaToken: input.captchaToken });
         if (error) return mailFailure('recover', error, 'Não foi possível enviar o código agora. Tente novamente em instantes.');
         return reply({ ok: true });
       }

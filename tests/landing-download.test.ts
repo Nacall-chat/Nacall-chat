@@ -18,7 +18,7 @@ test('esteira: HML e PRD baixam o APK mais recente antes do deploy, sem derrubar
  const steps=esteira.split('Baixar o APK de teste mais recente para o site');
  assert.equal(steps.length-1,2,'um passo no job de HML e outro no de PRD');
  for(const after of steps.slice(1)){
-  const block=after.slice(0,900);
+  const block=after.slice(0,2000);// o passo cresceu com a conferência de procedência do APK
   assert.match(block,/continue-on-error: true/,'falha no download nunca bloqueia a publicação');
   assert.match(block,/mobile-teste-/);
   assert.match(block,/public\/downloads\/nacall-android\.apk/);
