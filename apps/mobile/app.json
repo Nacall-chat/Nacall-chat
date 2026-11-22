@@ -27,11 +27,13 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
         "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.FOREGROUND_SERVICE_CAMERA",
         "android.permission.POST_NOTIFICATIONS"
       ]
     },
@@ -52,7 +54,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "O NACALL usa suas fotos para você escolher a foto de perfil e a capa."
+          "photosPermission": "O NACALL usa suas fotos para você escolher a foto de perfil e a capa.",
+          "cameraPermission": "O NACALL usa a câmera só se você ligá-la na call.",
+          "microphonePermission": "O NACALL usa o microfone para você falar nas calls."
         }
       ],
       [

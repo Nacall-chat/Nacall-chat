@@ -1,6 +1,24 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { effectiveVolume, IOS_SCREEN_SHARE_MESSAGE, screenShareSupport, stepVolume, volumeLabel } from '@/features/call/logic';
+import {
+  CAMERA_CAPTURE,
+  CAMERA_FAILED_MESSAGE,
+  CAMERA_FLIP_FAILED_MESSAGE,
+  CAMERA_IN_USE_MESSAGE,
+  CAMERA_UNAVAILABLE_MESSAGE,
+  cameraDeniedMessage,
+  cameraProblem,
+  cameraProblemMessage,
+  effectiveVolume,
+  facingLabel,
+  flipProblemMessage,
+  IOS_SCREEN_SHARE_MESSAGE,
+  otherFacing,
+  screenShareSupport,
+  stepVolume,
+  volumeLabel,
+} from '@/features/call/logic';
+import { liveCamera } from '@nacall/core/camera';
 import { isCurrentCall } from '@nacall/core/call-session';
 import { DEAF_ATTRIBUTE, liveFlags } from '@nacall/core/room-people';
 import { isWatching, reconcileScreenSubscriptions, setWatching } from '@nacall/core/stream';
@@ -57,6 +75,57 @@ describe('regras compartilhadas com o site', () => {
   });
 });
 
+describe('câmera do celular na call', () => {
+  it('vira entre a frontal e a traseira', () => {
+    expect(otherFacing('user')).toBe('environment');
+    expect(otherFacing('environment')).toBe('user');
+    expect(facingLabel('user')).toBe('frontal');
+    expect(facingLabel('environment')).toBe('traseira');
+  });
+
+  it('reconhece permissão negada, câmera inexistente, câmera ocupada e o resto (o WebRTC rejeita com objeto simples, não com Error)', () => {
+    expect(cameraProblem({ name: 'SecurityError', message: 'Permission denied.' })).toBe('denied');
+    expect(cameraProblem(new DOMException('x', 'NotAllowedError'))).toBe('denied');
+    expect(cameraProblem({ name: 'NotFoundError', message: 'Requested device not found' })).toBe('unavailable');
+    expect(cameraProblem(new Error('OverconstrainedError: facingMode'))).toBe('unavailable');
+    expect(cameraProblem({ name: 'NotReadableError', message: 'Could not start video source' })).toBe('in-use');
+    expect(cameraProblem({ name: 'AbortError' })).toBe('in-use');
+    expect(cameraProblem(new Error('algo inesperado'))).toBe('failed');
+    expect(cameraProblem(undefined)).toBe('failed');
+    expect(cameraProblem('Permission denied')).toBe('denied');
+  });
+
+  it('mostra a mensagem em português de cada problema, com o caminho certo nos ajustes de cada sistema', () => {
+    expect(cameraProblemMessage('unavailable', 'android')).toBe(CAMERA_UNAVAILABLE_MESSAGE);
+    expect(cameraProblemMessage('in-use', 'android')).toBe(CAMERA_IN_USE_MESSAGE);
+    expect(cameraProblemMessage('failed', 'android')).toBe(CAMERA_FAILED_MESSAGE);
+    expect(cameraProblemMessage('denied', 'android')).toBe(cameraDeniedMessage('android'));
+    expect(cameraDeniedMessage('android')).toMatch(/Ajustes do celular > Apps > NACALL > Permissões > Câmera/);
+    expect(cameraDeniedMessage('ios')).toMatch(/Ajustes do iPhone > NACALL > Câmera/);
+  });
+
+  it('ao virar a câmera, "indisponível" diz qual câmera falta', () => {
+    expect(flipProblemMessage('unavailable', 'environment', 'android')).toBe('Este aparelho não tem uma câmera traseira disponível.');
+    expect(flipProblemMessage('unavailable', 'user', 'ios')).toBe('Este aparelho não tem uma câmera frontal disponível.');
+    expect(flipProblemMessage('failed', 'user', 'android')).toBe(CAMERA_FLIP_FAILED_MESSAGE);
+    expect(flipProblemMessage('denied', 'user', 'ios')).toBe(cameraDeniedMessage('ios'));
+  });
+
+  it('captura leve (o celular esquenta e o plano de dados é curto)', () => {
+    expect(CAMERA_CAPTURE.width * CAMERA_CAPTURE.height).toBeLessThanOrEqual(1280 * 720);
+    expect(CAMERA_CAPTURE.frameRate).toBeLessThanOrEqual(30);
+  });
+
+  it('só conta como câmera ligada a faixa que não está muda (a mesma regra do site)', () => {
+    const on = { participant: { identity: 'ana' }, publication: { isMuted: false } };
+    const off = { participant: { identity: 'bia' }, publication: { isMuted: true } };
+    const placeholder = { participant: { identity: 'caio' } };
+    expect(liveCamera([on, off, placeholder], 'ana')).toBe(on);
+    expect(liveCamera([on, off, placeholder], 'bia')).toBeUndefined();
+    expect(liveCamera([on, off, placeholder], 'caio')).toBeUndefined();
+  });
+});
+
 describe('configuração do app', () => {
   const app = JSON.parse(read('app.json')).expo;
   it('pede microfone e o serviço de captura de tela no Android', () => {
@@ -87,15 +156,57 @@ describe('configuração do app', () => {
 
   it('a call continua em segundo plano: serviço em primeiro plano do tipo microfone, ligado e desligado com a call', () => {
     const manifest = read('modules/nacall-call-service/android/src/main/AndroidManifest.xml');
-    expect(manifest).toMatch(/foregroundServiceType="microphone"/);
+    expect(manifest).toMatch(/foregroundServiceType="microphone(\|camera)?"/);
     expect(manifest).toMatch(/FOREGROUND_SERVICE_MICROPHONE/);
     const service = read('modules/nacall-call-service/android/src/main/java/app/nacall/callservice/CallForegroundService.kt');
     expect(service).toMatch(/FOREGROUND_SERVICE_TYPE_MICROPHONE/);
     expect(service).toMatch(/onTaskRemoved/);
     const call = read('src/features/call/call.tsx');
-    expect(call).toMatch(/startCallService\(session\.name\)/);
+    expect(call).toMatch(/startCallService\(session\.name, cameraOn\)/);
     expect(call).toMatch(/return \(\) => stopCallService\(\)/);
     expect(JSON.parse(read('app.json')).expo.ios.infoPlist.UIBackgroundModes).toContain('audio');
     expect(read('../../.github/workflows/mobile-apk.yml')).toMatch(/apps\/mobile\/modules\/\*\*/);
+  });
+
+  it('a câmera: permissão e serviço em primeiro plano do tipo câmera no Android, texto de uso no iPhone', () => {
+    expect(app.android.permissions).toEqual(expect.arrayContaining([
+      'android.permission.CAMERA',
+      'android.permission.FOREGROUND_SERVICE_CAMERA',
+    ]));
+    const plugins = app.plugins as (string | [string, Record<string, string>])[];
+    const options = (name: string) => (plugins.find((p) => Array.isArray(p) && p[0] === name) as [string, Record<string, string>])[1];
+    // o iPhone só abre a câmera com o texto de uso: o mesmo texto nos dois plugins que escrevem a chave, sem cair no padrão em inglês
+    expect(options('@config-plugins/react-native-webrtc').cameraPermission).toMatch(/câmera/);
+    expect(options('expo-image-picker').cameraPermission).toBe(options('@config-plugins/react-native-webrtc').cameraPermission);
+
+    const manifest = read('modules/nacall-call-service/android/src/main/AndroidManifest.xml');
+    expect(manifest).toMatch(/foregroundServiceType="microphone\|camera"/);
+    expect(manifest).toMatch(/FOREGROUND_SERVICE_CAMERA/);
+    const service = read('modules/nacall-call-service/android/src/main/java/app/nacall/callservice/CallForegroundService.kt');
+    expect(service).toMatch(/FOREGROUND_SERVICE_TYPE_CAMERA/);
+    // o tipo câmera exige a permissão já liberada, e se falhar a call segue só com o microfone
+    expect(service).toMatch(/checkSelfPermission\(Manifest\.permission\.CAMERA\)/);
+    expect(service).toMatch(/catch \(e: Exception\)/);
+    expect(read('modules/nacall-call-service/android/src/main/java/app/nacall/callservice/NacallCallServiceModule.kt')).toMatch(/camera: Boolean/);
+  });
+
+  it('a câmera na call: botão na barra, liga/desliga e vira pelo LiveKit, vídeo nos cartões e avatar sem câmera', () => {
+    const call = read('src/features/call/call.tsx');
+    expect(call).toMatch(/setCameraEnabled\(true, \{ facingMode: facing, resolution: CAMERA_CAPTURE \}\)/);
+    expect(call).toMatch(/setCameraEnabled\(false\)/);
+    expect(call).toMatch(/restartTrack\(\{ facingMode: next/);
+    expect(call).toMatch(/PermissionsAndroid\.PERMISSIONS\.CAMERA/);
+    expect(call).toMatch(/Linking\.openSettings/);
+    expect(call).toMatch(/startCallService\(session\.name, cameraOn\)/);
+    // trocar o tipo do serviço não pode parar e religar o serviço: parar só ao sair da call
+    expect(call).toMatch(/useEffect\(\(\) => \{\s*if \(!session\) return;\s*return \(\) => stopCallService\(\);\s*\}, \[session\]\)/);
+    const controls = read('src/features/call/call-controls.tsx');
+    expect(controls).toMatch(/Desligar a câmera/);
+    expect(controls).toMatch(/Ligar a câmera/);
+    expect(controls).toMatch(/live\?\.toggleCamera\(\)/);
+    const screen = read('src/features/call/call-screen.tsx');
+    expect(screen).toMatch(/<VideoTrack trackRef=\{track\}/);
+    expect(screen).toMatch(/live\.flipCamera\(\)/);
+    expect(screen).toMatch(/<Avatar profile=\{profiles\[person\.id\]\}/);
   });
 });
