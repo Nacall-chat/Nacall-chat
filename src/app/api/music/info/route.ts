@@ -1,5 +1,10 @@
 import {NextResponse} from 'next/server';
+import {adminClient,allow,clientIp,serverEnv} from '@/lib/auth-server';
+// Só o título e o autor de um vídeo do YouTube para o player da sala. Limite por IP: antes qualquer um usava o servidor
+// como proxy do oEmbed do YouTube, sem login e sem limite (achado do teste de segurança no HML).
 export async function GET(request:Request){
+ const env=serverEnv();
+ if(env&&!(await allow(adminClient(env),env.secret,'music-info',clientIp(request),60,300).catch(()=>false)))return NextResponse.json({error:'Muitos pedidos. Tente de novo em instantes.'},{status:429});
  const id=new URL(request.url).searchParams.get('id');
  if(!id||! /^[A-Za-z0-9_-]{11}$/.test(id))return NextResponse.json({error:'Vídeo inválido'},{status:400});
  try{
