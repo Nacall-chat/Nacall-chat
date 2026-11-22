@@ -46,6 +46,10 @@
 .call-dock .call-stage,.main.show-call .voice-panel.expanded .call-stage{justify-content:flex-start}
 .call-stage>.screen-stream:first-child{margin-top:auto}
 .call-stage>.screen-stream:last-child{margin-bottom:auto}
+/* Faixas pretas nas laterais da transmissão: o vídeo já se ajusta à proporção da tela compartilhada (Mac 16:10,
+   celular em pé…), mas o cartão ocupava a largura toda do palco e o fundo preto dele aparecia dos lados.
+   Agora o cartão tem a largura do vídeo (mínimo de 360 px para o cabeçalho caber). Tela cheia não muda. */
+.call-stage>.screen-stream:not(:fullscreen){width:fit-content;min-width:min(100%,360px);max-width:100%;align-self:center}
 
 /* Os cartões dos participantes (e os das transmissões) ficam no meio da área da call (antes grudavam no topo/à esquerda).
    Margens automáticas centralizam na vertical só quando sobra espaço e nunca cortam o topo. */
