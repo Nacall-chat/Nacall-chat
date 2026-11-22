@@ -13,6 +13,24 @@ export function setWatching(state: WatchState, trackSid: string, watching: boole
   return { ...state, [trackSid]: watching };
 }
 
+/** Igual ao Discord: só uma transmissão aberta por vez. Escolher uma fecha as outras (inclusive a sua prévia), que
+ * voltam a ser cards com prévia na grade. Duas ou mais telas empilhadas ficavam confusas e cortadas. */
+export function focusStream(state: WatchState, trackSid: string, watching: boolean, allSids: string[]): WatchState {
+  if (!watching) return setWatching(state, trackSid, false);
+  const next: WatchState = { ...state };
+  for (const sid of allSids) if (sid !== trackSid) next[sid] = false;
+  next[trackSid] = true;
+  return next;
+}
+
+/** Qual transmissão fica aberta na área da call (no máximo uma): a escolhida pela pessoa ou, se ela não escolheu
+ * nenhuma, a própria prévia de quem está transmitindo. */
+export function openStreamSid(state: WatchState, streams: { sid: string; isLocal: boolean }[]): string | null {
+  const chosen = streams.find(s => state[s.sid] === true);
+  if (chosen) return chosen.sid;
+  return streams.find(s => s.isLocal && state[s.sid] === undefined)?.sid ?? null;
+}
+
 type Pub = { isSubscribed: boolean; setSubscribed: (subscribed: boolean) => void };
 type SharingParticipant = { screen?: (Pub & { trackSid: string }) | undefined; audio?: Pub | undefined };
 
