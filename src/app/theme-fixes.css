@@ -70,6 +70,7 @@ input[aria-invalid=true]{border-color:var(--error)}
 .captcha-slot:empty{display:none}
 
 
+
 /* Auditoria de UX do site no celular (lote 6): polimento. */
 /* links "A resenha" e "Downloads" do menu da landing tinham 22px de altura (abaixo dos 24px da WCAG 2.5.8) */
 .jacall-nav>nav a{display:inline-flex;align-items:center;min-height:24px}
@@ -77,6 +78,8 @@ input[aria-invalid=true]{border-color:var(--error)}
 @media(max-width:360px){
  .group-settings .settings-layout>nav button{font-size:10px;overflow-wrap:anywhere;padding-inline:3px}
 }
+
+
 
 
 /* Auditoria de UX do site no celular (lote 5): legibilidade, toque e login. */
@@ -140,6 +143,9 @@ input[aria-invalid=true]{border-color:var(--error)}
 @media(max-width:720px){
  .shell.call-focus>.notice-call{display:flex;position:fixed;z-index:60;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;margin:0;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 }
+
+
+
 
 
 
