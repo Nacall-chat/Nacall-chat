@@ -8,7 +8,7 @@ description: Fluxo de entrega do projeto Nacall-chat. Use quando for criar uma f
 Repositório: `Nacall-chat/Nacall-chat` (privado). Ambientes: **HML** (`release`, https://nacall-hml.vercel.app) e **PRD** (`main`, https://nacall.vercel.app). Detalhes da esteira em `docs/DEPLOY.md` e da infraestrutura em `docs/MIGRACAO.md`.
 
 ```
-feat/* → PR para release → CI + Preview → merge → Esteira publica em HML → teste
+feat/* → PR para release → CI + Preview → merge → Esteira publica em HML (ou Run workflow na release, para repetir) → teste
 PR release → main (merge commit) → revisão → merge (nada é publicado) → Actions > Site · Esteira (HML e PRD) > Run workflow (main) → PRD
 ```
 

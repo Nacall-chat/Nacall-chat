@@ -17,3 +17,14 @@ test('as telas continuam empilhadas: lado a lado ficaria estreito demais na colu
  const c=await css();
  assert.doesNotMatch(c,/\.call-stage:has\(>\.screen-stream\+\.screen-stream\)/);
 });
+
+// Mac (16:10), celular em pé ou janela estreita: o vídeo já se ajustava à proporção, mas o cartão ocupava a largura
+// toda do palco e o fundo preto dele virava faixas pretas dos lados. O cartão precisa ter a largura do vídeo.
+test('o cartão da transmissão tem a largura do vídeo (sem faixas pretas dos lados), menos em tela cheia',async()=>{
+ const c=await css();
+ const rule=c.match(/\.call-stage>\.screen-stream:not\(:fullscreen\)\{([^}]*)\}/);
+ assert.ok(rule,'regra do cartão fora da tela cheia');
+ assert.match(rule[1],/width:fit-content/,'acompanha a largura do vídeo');
+ assert.match(rule[1],/max-width:100%/,'nunca passa da largura do palco');
+ assert.match(rule[1],/min-width:min\(100%,360px\)/,'cabeçalho continua cabendo');
+});

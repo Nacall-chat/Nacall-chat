@@ -14,6 +14,8 @@ export type VoiceBarProps = {
   mic: boolean;
   deaf: boolean;
   pushToTalk: boolean;
+  /** Nome da tecla escolhida para o apertar para falar (ex.: V). */
+  pushToTalkKey: string;
   screen: boolean;
   camera: boolean;
   music: boolean;
@@ -73,7 +75,7 @@ export function VoiceBar(p: VoiceBarProps) {
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
   }, [menu]);
 
-  const micLabel = p.pushToTalk ? 'Apertar para falar ativo: segure V' : p.mic ? 'Desligar microfone' : 'Ligar microfone';
+  const micLabel = p.pushToTalk ? `Apertar para falar ativo: segure ${p.pushToTalkKey}` : p.mic ? 'Desligar microfone' : 'Ligar microfone';
   const deafLabel = p.deaf ? 'Voltar a ouvir a call' : 'Silenciar áudio da call';
   const micButton = <button type="button" className={`vb-btn ${p.mic ? '' : 'off'}`} aria-label={micLabel} title={micLabel} disabled={p.busy || p.pushToTalk} onClick={p.onMic}>{p.mic ? <Mic size={19} /> : <MicOff size={19} />}</button>;
   const deafButton = <button type="button" className={`vb-btn ${p.deaf ? 'off' : ''}`} aria-label={deafLabel} title={deafLabel} onClick={p.onDeaf}>{p.deaf ? <VolumeX size={19} /> : <Headphones size={19} />}</button>;

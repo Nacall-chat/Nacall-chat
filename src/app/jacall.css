@@ -53,13 +53,6 @@
 @keyframes live-pulse{50%{opacity:.35}}
 @media(prefers-reduced-motion:reduce){.live-badge i{animation:none}}
 .participant-label .live-badge{margin-left:6px;vertical-align:middle}
-.stream-cards{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
-.stream-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
-.stream-card-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--surface);color:var(--accent);flex-shrink:0}
-.stream-card-text{display:flex;flex-direction:column;min-width:0;flex:1}
-.stream-card-text strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.stream-card-text small{color:var(--muted);font-size:11px}
-.stream-card button{min-height:34px;padding:6px 12px;font-size:12px;flex-shrink:0}
 .screen-stream>header{flex-wrap:wrap}
 .screen-stream .stream-leave{min-height:28px;padding:3px 9px;font-size:10px;gap:5px;color:#f2f2f2;background:#292021;border-color:#514047;border-radius:8px}
 .screen-stream .stream-leave:hover{border-color:#8a6c78}
