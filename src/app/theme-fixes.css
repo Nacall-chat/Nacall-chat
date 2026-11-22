@@ -68,3 +68,6 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* CAPTCHA (Turnstile): invisível na maior parte das vezes; quando o Cloudflare pede interação, o desafio aparece aqui. */
 .captcha-slot{display:flex;justify-content:center;margin:8px 0}
 .captcha-slot:empty{display:none}
+
+/* Auditoria de UX do site no celular (lote 3): arrastar para baixo na barra do topo ou no palco da call recarregava a página no Chrome do Android (e derrubava a call). As listas continuam rolando (já têm overscroll-behavior próprio). */
+@media(max-width:720px){html,body{overscroll-behavior-y:none}}

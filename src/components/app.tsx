@@ -23,6 +23,7 @@ import { NotificationBell } from './notification-bell';
 import { badgeText, unreadTotal } from '@/lib/unread';
 import { shellCallClass } from '@/lib/nav';
 import { useDrawerSwipe } from '@/lib/use-drawer-swipe';
+import { useBackButton } from '@/lib/use-back-button';
 import type { ProfileCall } from '@/lib/profile-info';
 import { installPointerAnchor } from '@/lib/pointer-anchor';
 import { MessageContent } from './message-content';
@@ -293,6 +294,8 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
     await act(async () => { const { data, error } = await db.from('messages').select('*').eq(selected.type === 'channel' ? 'channel_id' : 'dm_id', selected.id).lt('created_at', messages[0].created_at).order('created_at', { ascending: false }).limit(50); if (error) throw error; if (activeTarget.current?.id !== selected.id) return; followMessages.current = false; historyLimit.current += data?.length ?? 0; setMessages(prev => [...(data ?? []).reverse(), ...prev]); setOlder(data?.length === 50); });
   }
   const inCallView = Boolean(voice) && callView && !target;
+  // Celular: Voltar fecha a gaveta, depois a conversa ou o painel da call (a call segue conectada), em vez de sair do site e derrubar a call.
+  useBackButton(compactBar && (mobileNavOpen || Boolean(target) || inCallView), () => { if (mobileNavOpen) setMobileNavOpen(false); else if (target) setTarget(null); else setCallView(false); });
   function openCallView() { setTarget(null); const c = channels.find(c => c.id === voice?.channelId); if (c) setServerId(c.server_id); setCallView(true); setMobileNavOpen(false); }
   // Sair da call (botão, queda ou troca de sala): quem avisa é a call de uma sala; se já há outra no lugar dela, o aviso é ignorado.
   function leaveCall(channelId: string) { if (!isCurrentCall(voiceRef.current, channelId)) return; setVoice(null); setCallView(false); window.dispatchEvent(new Event('nacall-room-refresh')); }
