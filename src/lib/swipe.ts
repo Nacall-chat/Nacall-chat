@@ -17,7 +17,7 @@ export function swipeIntent({ dx, dy, ms }: { dx: number; dy: number; ms: number
 /** O dedo começou num lugar que já usa o gesto horizontal (campo de texto, controle deslizante, lista que rola de lado)? */
 export function ownsHorizontalGesture(el: Element | null): boolean {
   for (let node: Element | null = el; node && node !== document.body; node = node.parentElement) {
-    if (node.matches('input,textarea,select,video,audio,[contenteditable="true"],[role="slider"]')) return true;
+    if (node.matches('input,textarea,select,video,audio,canvas,[contenteditable="true"],[role="slider"]')) return true;
     const overflowX = getComputedStyle(node).overflowX;
     if ((overflowX === 'auto' || overflowX === 'scroll') && node.scrollWidth > node.clientWidth + 1) return true;
   }
