@@ -2,13 +2,14 @@
 import {createContext,useContext,useEffect,useState,type ReactNode} from 'react';
 import {Moon,Sun,Monitor} from 'lucide-react';
 import {DEFAULT_PTT_KEY,parsePttKey,type PttKey} from '@/lib/ptt-key';
+import {parseOptionalKey} from '@/lib/voice-binds';
 type Theme='dark'|'light'|'system';
-type Preferences={noiseSuppression:boolean;echoCancellation:boolean;autoGainControl:boolean;pushToTalk:boolean;pushToTalkKey:PttKey;shareAudio:boolean;joinSound:boolean;screenFps:15|30;screenHeight:720|1080};
-export const voiceDefaults:Preferences={noiseSuppression:true,echoCancellation:true,autoGainControl:true,pushToTalk:false,pushToTalkKey:{...DEFAULT_PTT_KEY},shareAudio:true,joinSound:true,screenFps:30,screenHeight:720};
+type Preferences={noiseSuppression:boolean;echoCancellation:boolean;autoGainControl:boolean;pushToTalk:boolean;pushToTalkKey:PttKey;muteKey:PttKey|null;deafenKey:PttKey|null;shareAudio:boolean;joinSound:boolean;screenFps:15|30;screenHeight:720|1080};
+export const voiceDefaults:Preferences={noiseSuppression:true,echoCancellation:true,autoGainControl:true,pushToTalk:false,pushToTalkKey:{...DEFAULT_PTT_KEY},muteKey:null,deafenKey:null,shareAudio:true,joinSound:true,screenFps:30,screenHeight:720};
 const Context=createContext({theme:'dark' as Theme,setTheme:(_t:Theme)=>{},voice:voiceDefaults,setVoice:(_p:Partial<Preferences>)=>{}});
 export function PreferencesProvider({children}:{children:ReactNode}){
  const[theme,setTheme]=useState<Theme>('dark');const[voice,setVoiceState]=useState(voiceDefaults);const[loaded,setLoaded]=useState(false);
- useEffect(()=>{try{const t=localStorage.getItem('nacall-theme');if(t==='dark'||t==='light'||t==='system')setTheme(t);const raw=JSON.parse(localStorage.getItem('nacall-voice')??'{}');const next={...voiceDefaults};for(const key of ['noiseSuppression','echoCancellation','autoGainControl','pushToTalk','shareAudio','joinSound'] as const)if(typeof raw[key]==='boolean')next[key]=raw[key];next.pushToTalkKey=parsePttKey(raw.pushToTalkKey);if(raw.screenFps===15||raw.screenFps===30)next.screenFps=raw.screenFps;if(raw.screenHeight===720||raw.screenHeight===1080)next.screenHeight=raw.screenHeight;setVoiceState(next);}catch{}setLoaded(true);},[]);
+ useEffect(()=>{try{const t=localStorage.getItem('nacall-theme');if(t==='dark'||t==='light'||t==='system')setTheme(t);const raw=JSON.parse(localStorage.getItem('nacall-voice')??'{}');const next={...voiceDefaults};for(const key of ['noiseSuppression','echoCancellation','autoGainControl','pushToTalk','shareAudio','joinSound'] as const)if(typeof raw[key]==='boolean')next[key]=raw[key];next.pushToTalkKey=parsePttKey(raw.pushToTalkKey);next.muteKey=parseOptionalKey(raw.muteKey);next.deafenKey=parseOptionalKey(raw.deafenKey);if(raw.screenFps===15||raw.screenFps===30)next.screenFps=raw.screenFps;if(raw.screenHeight===720||raw.screenHeight===1080)next.screenHeight=raw.screenHeight;setVoiceState(next);}catch{}setLoaded(true);},[]);
  useEffect(()=>{if(!loaded)return;const media=window.matchMedia('(prefers-color-scheme: dark)');const apply=()=>{document.documentElement.dataset.theme=theme==='system'?(media.matches?'dark':'light'):theme;};apply();media.addEventListener('change',apply);try{localStorage.setItem('nacall-theme',theme);localStorage.setItem('nacall-voice',JSON.stringify(voice));}catch{}return()=>media.removeEventListener('change',apply);},[theme,voice,loaded]);
  return <Context.Provider value={{theme,setTheme,voice,setVoice:p=>setVoiceState(v=>({...v,...p}))}}>{children}</Context.Provider>;
 }

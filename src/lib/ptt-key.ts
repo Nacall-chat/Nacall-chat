@@ -14,9 +14,12 @@ const REFUSED: Record<string, string> = {
   Enter: 'O Enter aciona o botão que estiver em foco.',
   NumpadEnter: 'O Enter aciona o botão que estiver em foco.',
   Space: 'O Espaço rola a página e aciona o botão que estiver em foco.',
-  F5: 'O navegador usa o F5 para recarregar a página.',
-  F11: 'O navegador usa o F11 para a tela cheia.',
-  F12: 'O navegador usa o F12 para as ferramentas de desenvolvedor.',
+};
+/** Teclas F que o navegador usa para algo importante: valem como atalho, com o aviso do que acontece. */
+const F_KEY_WARNINGS: Record<string, string> = {
+  F5: 'No navegador o F5 recarrega a página. Como atalho, o NACALL bloqueia a recarga (a call não cai).',
+  F11: 'No navegador o F11 também pode abrir a tela cheia (o navegador não deixa o site bloquear). No app do NACALL para PC funciona normal.',
+  F12: 'No navegador o F12 também pode abrir as ferramentas de desenvolvedor (o navegador não deixa o site bloquear). No app do NACALL para PC funciona normal.',
 };
 const REFUSED_MODIFIER = 'Ctrl, Shift e Alt sozinhos abririam o microfone em qualquer atalho (Ctrl+C, Alt+Tab…). Escolha outra tecla.';
 const REFUSED_SYSTEM = 'Essa é uma tecla do sistema e o navegador nem sempre a entrega ao site.';
@@ -68,6 +71,9 @@ export function validatePttKey(input: KeyInput): PttKeyCheck {
   const shortcut = APP_SHORTCUTS[code];
   if (shortcut) return { ok: true, key, warning: `O NACALL usa esta tecla para ${shortcut}. Enquanto você a segura, ela também rola a página.` };
   if (/^Arrow|^Page(Up|Down)$|^(Home|End)$/.test(code)) return { ok: true, key, warning: 'Esta tecla também rola a página. Enquanto você a segura, ela deixa de rolar.' };
+  // F1 a F24 valem todas (pedido do usuário, 24/11/2026). F5, F11 e F12 eram recusadas; agora só avisam o que acontece no navegador.
+  const fKey = F_KEY_WARNINGS[code];
+  if (fKey) return { ok: true, key, warning: fKey };
   if (/^F([1-9]|10)$/.test(code)) return { ok: true, key, warning: 'O navegador usa as teclas F para ajuda, busca e menus. O NACALL bloqueia essas funções enquanto você segura a tecla.' };
   return { ok: true, key };
 }

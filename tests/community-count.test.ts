@@ -9,14 +9,14 @@ test('contador público entrega só o total, sem registros nem erros internos',a
  try{
   process.env.NEXT_PUBLIC_SUPABASE_URL='https://qa.example.invalid';
   process.env.SUPABASE_SERVICE_ROLE_KEY='qa-not-a-real-secret';
-  await t.test('consulta somente cabeçalho e devolve agregado sem cache',async()=>{
+  await t.test('consulta somente cabeçalho e devolve agregado com cache curto na CDN (60 s)',async()=>{
    globalThis.fetch=async(input,options)=>{
     assert.match(String(input),/\/rest\/v1\/profiles\?select=id$/);
     assert.equal(options?.method,'HEAD');
     return new Response(null,{status:200,headers:{'content-range':'*/42'}});
    };
    const response=await GET();
-   assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+   assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'public, max-age=0, s-maxage=60, stale-while-revalidate=300','a CDN guarda 60 s: o banco não é consultado a cada visita');
    assert.deepEqual(await response.json(),{count:42});
   });
   await t.test('falha não divulga erro interno nem inventa zero cadastros',async()=>{

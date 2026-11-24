@@ -1,13 +1,14 @@
 import { useRouter } from 'expo-router';
 import { AndroidAudioTypePresets, AudioSession, LiveKitRoom, isTrackReference, registerGlobals, useConnectionState, useParticipants, useRoomContext, useSpeakingParticipants, useTracks, type TrackReference } from '@livekit/react-native';
-import { ConnectionState, RoomEvent, Track } from 'livekit-client';
-import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
-import { Alert, PermissionsAndroid, Platform } from 'react-native';
+import { ConnectionState, LocalVideoTrack, RoomEvent, Track } from 'livekit-client';
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
+import { Alert, Linking, PermissionsAndroid, Platform } from 'react-native';
 import { postJson } from '@/lib/api';
 import { friendlyError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { effectiveVolume, MIC_DENIED_MESSAGE, screenShareSupport, stepVolume, type StreamItem } from '@/features/call/logic';
+import { CAMERA_CAPTURE, cameraProblem, cameraProblemMessage, effectiveVolume, flipProblemMessage, MIC_DENIED_MESSAGE, otherFacing, screenShareSupport, stepVolume, type CameraProblem, type Facing, type StreamItem } from '@/features/call/logic';
 import { askNotificationPermission, startCallService, stopCallService } from '@/features/call/service';
+import { liveCamera } from '@nacall/core/camera';
 import { isCurrentCall } from '@nacall/core/call-session';
 import { DEAF_ATTRIBUTE, liveFlags, type PersonFlags } from '@nacall/core/room-people';
 import { isWatching, reconcileScreenSubscriptions, setWatching, type WatchState } from '@nacall/core/stream';
@@ -16,7 +17,7 @@ import { isWatching, reconcileScreenSubscriptions, setWatching, type WatchState 
 registerGlobals();
 
 type CallSession = { token: string; serverUrl: string; channelId: string; name: string; startedAt: number | null; joinedAt: number };
-export type LivePerson = PersonFlags & { id: string; name: string; isLocal: boolean; speaking: boolean };
+export type LivePerson = PersonFlags & { id: string; name: string; isLocal: boolean; speaking: boolean; camera: boolean };
 export type LiveStream = StreamItem & { track?: TrackReference };
 export type Live = {
   connection: ConnectionState;
@@ -25,10 +26,20 @@ export type Live = {
   deaf: boolean;
   muted: boolean;
   sharing: boolean;
+  /** Minha câmera está ligada. */
+  camera: boolean;
+  /** Ligando, desligando ou virando a câmera (o botão espera a vez). */
+  cameraBusy: boolean;
+  /** Câmera em uso: frontal ("user") ou traseira ("environment"). */
+  facing: Facing;
+  /** Vídeo da câmera de quem está com ela ligada, por id da pessoa (de quem está sem câmera não há entrada). */
+  cameras: Record<string, TrackReference>;
   volumes: Record<string, number>;
   toggleMic: () => void;
   toggleDeaf: () => void;
   toggleScreen: () => void;
+  toggleCamera: () => void;
+  flipCamera: () => void;
   watch: (sid: string, on: boolean) => void;
   changeVolume: (personId: string, direction: 1 | -1) => void;
 };
@@ -44,6 +55,21 @@ type CallValue = {
 const CallContext = createContext<CallValue | null>(null);
 
 type TokenResponse = { token: string; serverUrl: string; startedAt?: number | null };
+
+async function ensureCameraPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true; // no iPhone o sistema pergunta ao abrir a câmera
+  const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+  return result === PermissionsAndroid.RESULTS.GRANTED;
+}
+
+/** Aviso claro em português; quando a permissão foi negada, oferece abrir os ajustes do celular. */
+function reportCameraProblem(problem: CameraProblem, message = cameraProblemMessage(problem, Platform.OS)): void {
+  if (problem !== 'denied') { Alert.alert('Câmera', message); return; }
+  Alert.alert('Câmera', message, [
+    { text: 'Agora não', style: 'cancel' },
+    { text: 'Abrir ajustes', onPress: () => { void Linking.openSettings().catch(() => {}); } },
+  ]);
+}
 
 async function ensureMicPermission(): Promise<boolean> {
   if (Platform.OS !== 'android') return true; // no iOS o sistema pergunta ao abrir o microfone
@@ -87,11 +113,16 @@ export function CallProvider({ children }: PropsWithChildren) {
   const report = useCallback((message: string) => Alert.alert('Call', message), []);
 
   // Segundo plano (Android): serviço em primeiro plano com o aviso "Em call", para o microfone não parar ao minimizar o app.
+  // Com a câmera ligada o serviço também vira do tipo câmera (chamar de novo só troca o tipo, sem derrubar a call).
+  const cameraOn = Boolean(session && live?.camera);
   useEffect(() => {
     if (!session) return;
-    startCallService(session.name);
     return () => stopCallService();
   }, [session]);
+  useEffect(() => {
+    if (!session) return;
+    startCallService(session.name, cameraOn);
+  }, [session, cameraOn]);
 
   // Áudio do celular: fone/bluetooth primeiro, depois alto-falante (como numa call de grupo).
   useEffect(() => {
@@ -143,7 +174,11 @@ function LiveBridge({ onLive, report }: { onLive: (live: Live) => void; report: 
   const speaking = useSpeakingParticipants();
   const connection = useConnectionState();
   const screens = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
+  const cameraRefs = useTracks([Track.Source.Camera], { onlySubscribed: true });
   const [deaf, setDeaf] = useState(false);
+  const [facing, setFacing] = useState<Facing>('user');
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const cameraBusyRef = useRef(false);
   const [watch, setWatch] = useState<WatchState>({});
   const [volumes, setVolumes] = useState<Record<string, number>>({});
   const [, setTick] = useState(0);
@@ -190,7 +225,13 @@ function LiveBridge({ onLive, report }: { onLive: (live: Live) => void; report: 
   }, [room, deaf, volumes]);
 
   const speakingIds = new Set(speaking.map((s) => s.identity));
-  const people: LivePerson[] = participants.map((p) => ({ id: p.identity, name: p.name || 'Jogador', isLocal: p.isLocal, speaking: speakingIds.has(p.identity), ...liveFlags(p, p.isLocal ? deaf : undefined) }));
+  // desligar a câmera deixa a faixa muda (ela não sai da sala): só faixa que não está muda conta como câmera ligada
+  const cameras: Record<string, TrackReference> = {};
+  for (const p of participants) {
+    const ref = liveCamera(cameraRefs, p.identity);
+    if (ref && isTrackReference(ref)) cameras[p.identity] = ref;
+  }
+  const people: LivePerson[] = participants.map((p) => ({ id: p.identity, name: p.name || 'Jogador', isLocal: p.isLocal, speaking: speakingIds.has(p.identity), camera: p.identity in cameras, ...liveFlags(p, p.isLocal ? deaf : undefined) }));
   const streams: LiveStream[] = screens.flatMap((ref) => {
     const pub = ref.publication;
     if (!pub) return [];
@@ -207,7 +248,7 @@ function LiveBridge({ onLive, report }: { onLive: (live: Live) => void; report: 
     }];
   });
   const me = people.find((p) => p.isLocal);
-  const signature = JSON.stringify({ connection, people, streams: streams.map((s) => [s.sid, s.watching, s.hasAudio, Boolean(s.track)]), deaf, volumes });
+  const signature = JSON.stringify({ connection, people, streams: streams.map((s) => [s.sid, s.watching, s.hasAudio, Boolean(s.track)]), cameras: Object.entries(cameras).map(([id, ref]) => [id, ref.publication.trackSid, Boolean(ref.publication.track)]), deaf, volumes, facing, cameraBusy });
 
   const toggleMic = useCallback(() => {
     const lp = room.localParticipant;
@@ -220,12 +261,53 @@ function LiveBridge({ onLive, report }: { onLive: (live: Live) => void; report: 
     if (!support.ok) { report(support.message); return; }
     void lp.setScreenShareEnabled(true, { audio: false }).catch(() => report('Não deu para transmitir a tela. Se o Android perguntou, toque em "Iniciar agora" para liberar.'));
   }, [room, report]);
+  // Uma ação de câmera por vez: toque duplo não abre a câmera duas vezes.
+  const withCamera = useCallback(async (action: () => Promise<void>, onError: (error: unknown) => void) => {
+    if (cameraBusyRef.current) return;
+    cameraBusyRef.current = true;
+    setCameraBusy(true);
+    try {
+      await action();
+    } catch (error) {
+      onError(error);
+    } finally {
+      cameraBusyRef.current = false;
+      setCameraBusy(false);
+    }
+  }, []);
+  const toggleCamera = useCallback(() => {
+    const lp = room.localParticipant;
+    void withCamera(async () => {
+      if (lp.isCameraEnabled) { await lp.setCameraEnabled(false); return; }
+      if (!(await ensureCameraPermission())) { reportCameraProblem('denied'); return; }
+      await lp.setCameraEnabled(true, { facingMode: facing, resolution: CAMERA_CAPTURE });
+    }, (error) => reportCameraProblem(cameraProblem(error)));
+  }, [room, facing, withCamera]);
+  // Vira entre a câmera frontal e a traseira sem desligar: a faixa publicada é reiniciada com a outra câmera.
+  const flipCamera = useCallback(() => {
+    const track = room.localParticipant.getTrackPublication(Track.Source.Camera)?.track;
+    if (!(track instanceof LocalVideoTrack) || !room.localParticipant.isCameraEnabled) return;
+    const next = otherFacing(facing);
+    void withCamera(async () => {
+      try {
+        await track.restartTrack({ facingMode: next, resolution: CAMERA_CAPTURE });
+        setFacing(next);
+      } catch (error) {
+        // a faixa antiga já foi parada para abrir a nova: volta para a câmera de antes para o vídeo não ficar congelado
+        await track.restartTrack({ facingMode: facing, resolution: CAMERA_CAPTURE }).catch(() => {});
+        throw error;
+      }
+    }, (error) => {
+      const problem = cameraProblem(error);
+      reportCameraProblem(problem, flipProblemMessage(problem, next, Platform.OS));
+    });
+  }, [room, facing, withCamera]);
   const toggleDeaf = useCallback(() => setDeaf((d) => !d), []);
   const watchStream = useCallback((sid: string, on: boolean) => setWatch((prev) => setWatching(prev, sid, on)), []);
   const changeVolume = useCallback((personId: string, direction: 1 | -1) => setVolumes((prev) => ({ ...prev, [personId]: stepVolume(prev[personId] ?? 1, direction) })), []);
 
   useEffect(() => {
-    onLive({ connection, people, streams, deaf, muted: me?.muted ?? false, sharing: me?.sharing ?? false, volumes, toggleMic, toggleDeaf, toggleScreen, watch: watchStream, changeVolume });
+    onLive({ connection, people, streams, deaf, muted: me?.muted ?? false, sharing: me?.sharing ?? false, camera: me?.camera ?? false, cameraBusy, facing, cameras, volumes, toggleMic, toggleDeaf, toggleScreen, toggleCamera, flipCamera, watch: watchStream, changeVolume });
     // só republica quando algo que a tela mostra mudou
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature]);

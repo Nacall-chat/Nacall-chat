@@ -17,6 +17,8 @@ export const CSP_REPORT_ONLY = [
   "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
+  // Os avisos vão para /api/csp-report (log da Vercel), para ver o que a política bloquearia antes de aplicá-la.
+  'report-uri /api/csp-report', 'report-to csp',
 ].join('; ');
 
 const config: NextConfig = {
@@ -29,6 +31,7 @@ const config: NextConfig = {
       { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), display-capture=(self)' },
       { key: 'Content-Security-Policy', value: CSP_ENFORCED },
       { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
+      { key: 'Reporting-Endpoints', value: 'csp="/api/csp-report"' },
     ] }];
   },
 };

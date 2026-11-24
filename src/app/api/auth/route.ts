@@ -68,9 +68,12 @@ export async function POST(request: Request) {
       case 'login': {
         // Auditoria (login travado por terceiros): o limite apertado é por IP + usuário, então quem erra trava só a si mesmo.
         // O teto por conta é alto e só recebe quem passou do primeiro limite: travar a conta de alguém exige ~10 IPs, não 11 pedidos.
-        if (!(await allow(admin, env.secret, 'login-ip', `${ip}|${input.identifier}`, 10, 600))) return reply({ error: tooMany }, 429);
-        if (!(await allow(admin, env.secret, 'login', input.identifier, 100, 600))) return reply({ error: tooMany }, 429);
+        // A conta é contada uma vez só: entrar com o email ou com o nick soma no mesmo limite (antes eram dois, e o teto real
+        // por conta ficava em 200). O limite geral por IP (60 a cada 5 min, acima) já barra quem tenta muito antes desta consulta.
         const email = await resolveEmail(admin, input.identifier);
+        const account = email ?? input.identifier;
+        if (!(await allow(admin, env.secret, 'login-ip', `${ip}|${account}`, 10, 600))) return reply({ error: tooMany }, 429);
+        if (!(await allow(admin, env.secret, 'login', account, 100, 600))) return reply({ error: tooMany }, 429);
         if (!email) return reply({ error: wrong }, 401);
         const { data, error } = await anonClient(env).auth.signInWithPassword({ email, password: input.password, options: { captchaToken: input.captchaToken } });
         if (error?.code === 'captcha_failed') return reply({ error: captchaFailed, code: 'captcha_failed' }, 400);

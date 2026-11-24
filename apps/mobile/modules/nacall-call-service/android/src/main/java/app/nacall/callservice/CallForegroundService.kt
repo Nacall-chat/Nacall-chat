@@ -1,5 +1,6 @@
 package app.nacall.callservice
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,6 +8,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -14,7 +16,7 @@ import android.os.PowerManager
 
 /**
  * Serviço em primeiro plano da call: enquanto ele existe, o Android não congela o app em segundo plano e o microfone
- * continua captando. Mostra um aviso fixo ("Em call") que, ao tocar, volta para o NACALL.
+ * (e, com a câmera ligada, a câmera) continua captando. Mostra um aviso fixo ("Em call") que, ao tocar, volta para o NACALL.
  */
 class CallForegroundService : Service() {
   private var wakeLock: PowerManager.WakeLock? = null
@@ -24,16 +26,41 @@ class CallForegroundService : Service() {
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     val title = intent?.getStringExtra(EXTRA_TITLE) ?: "NACALL"
     val message = intent?.getStringExtra(EXTRA_MESSAGE) ?: "Call em andamento"
+    val camera = intent?.getBooleanExtra(EXTRA_CAMERA, false) == true
     createChannel()
     val notification = buildNotification(title, message)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
-    } else {
-      startForeground(NOTIFICATION_ID, notification)
-    }
+    startInForeground(notification, camera)
     acquireWakeLock()
     return START_NOT_STICKY
   }
+
+  // Chamado de novo quando a câmera liga ou desliga: o aviso é o mesmo, só muda o tipo do serviço.
+  private fun startInForeground(notification: Notification, camera: Boolean) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+      startForeground(NOTIFICATION_ID, notification)
+      return
+    }
+    // Com a câmera ligada o Android só deixa o app continuar captando em segundo plano se o serviço também for do tipo câmera.
+    // Esse tipo exige a permissão de câmera já liberada (Android 14+ derruba o app sem ela) e o app à vista; se algo disso
+    // falhar, a call segue só com o microfone em vez de cair.
+    if (camera && canUseCameraType()) {
+      try {
+        startForeground(
+          NOTIFICATION_ID,
+          notification,
+          ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA,
+        )
+        return
+      } catch (e: Exception) {
+        // cai para o serviço só de microfone
+      }
+    }
+    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+  }
+
+  private fun canUseCameraType(): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+      checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 
   // O app foi fechado na lista de recentes: a call acaba junto, então o aviso também.
   override fun onTaskRemoved(rootIntent: Intent?) {
@@ -84,6 +111,7 @@ class CallForegroundService : Service() {
   companion object {
     const val EXTRA_TITLE = "title"
     const val EXTRA_MESSAGE = "message"
+    const val EXTRA_CAMERA = "camera"
     private const val CHANNEL_ID = "nacall-call"
     private const val NOTIFICATION_ID = 4417
   }

@@ -9,7 +9,8 @@ export function useDrawerSwipe({open,setOpen}:{open:boolean;setOpen:(v:boolean)=
   const phone=window.matchMedia('(max-width:720px)');
   let start:{x:number;y:number;t:number;skip:boolean}|null=null;
   const down=(e:TouchEvent)=>{
-   if(!phone.matches||e.touches.length!==1){start=null;return;}
+   // janela aberta (Ajustes, Novidades, criador de figurinha...): o arrasto é dela, a gaveta não abre por baixo
+   if(!phone.matches||e.touches.length!==1||document.querySelector('dialog[open]')){start=null;return;}
    const t=e.touches[0];
    const inDrawer=Boolean((e.target as Element|null)?.closest?.('.sidebar,.rail'));
    // aberta: arrastar fecha de qualquer lugar; fechada: não disputa o gesto com campos e listas que rolam de lado

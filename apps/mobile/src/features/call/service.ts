@@ -1,12 +1,15 @@
 import { requireOptionalNativeModule } from 'expo';
 import { PermissionsAndroid, Platform } from 'react-native';
 
-type CallServiceModule = { start: (title: string, message: string) => void; stop: () => void };
+type CallServiceModule = { start: (title: string, message: string, camera: boolean) => void; stop: () => void };
 
 /**
  * Mantém a call viva com o app em segundo plano (Android): liga um serviço em primeiro plano com um aviso fixo
  * "Em call". Sem o módulo nativo (web, testes, iPhone) não faz nada; no iPhone o modo de áudio em segundo plano
  * do app.json cuida disso.
+ *
+ * Com a câmera ligada o serviço passa a ser também do tipo câmera: sem isso o Android corta a câmera assim que o app
+ * vai para segundo plano. Chamar de novo com outro `camera` só troca o tipo (o aviso continua o mesmo).
  */
 function nativeService(): CallServiceModule | null {
   if (Platform.OS !== 'android') return null;
@@ -17,9 +20,9 @@ function nativeService(): CallServiceModule | null {
   }
 }
 
-export function startCallService(roomName: string): void {
+export function startCallService(roomName: string, camera = false): void {
   try {
-    nativeService()?.start('NACALL · Em call', roomName);
+    nativeService()?.start('NACALL · Em call', roomName, camera);
   } catch {
     // sem o serviço a call funciona com o app aberto; em segundo plano o Android pode pausá-la
   }
