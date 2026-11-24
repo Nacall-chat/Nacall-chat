@@ -1,4 +1,7 @@
 import { z } from 'zod';
+// Sem eval/new Function no zod (modo "jitless"): a CSP do site não permite 'unsafe-eval' e o zod testava eval em toda página
+// (aviso no relatório da CSP). A validação fica igual, só um pouco mais lenta em objetos enormes, que o app não usa.
+z.config({ jitless: true });
 /** Nick: 3–24 caracteres, com maiúsculas e estes símbolos: _ . - ! # $ * + = ~ ^ ? (sem espaços, sem @, para não confundir com email). O mesmo padrão vale no banco (profiles_username_check). */
 export const usernamePattern = /^[A-Za-z0-9_.\-!#$*+=~^?]{3,24}$/;
 export const usernameHint = '3 a 24 caracteres: letras, números ou _ . - ! # $ * + = ~ ^ ?, sem espaços.';
