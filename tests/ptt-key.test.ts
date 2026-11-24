@@ -30,7 +30,7 @@ test('teclas comuns são aceitas sem aviso',()=>{
 });
 
 test('teclas que atrapalham a página são recusadas com o motivo',()=>{
- for(const code of ['Tab','Enter','NumpadEnter','Space','Escape','F5','F11','F12']){
+ for(const code of ['Tab','Enter','NumpadEnter','Space','Escape']){
   const r=press(code);
   assert.equal(r.ok,false,`${code} deveria ser recusada`);
   if(!r.ok)assert.ok(r.reason.length>10,`${code} precisa de um motivo`);
@@ -72,6 +72,11 @@ test('as setas conflitam com os atalhos do app e rolam a página: aceitas, mas c
  for(const code of ['PageUp','PageDown','Home','End']){const r=press(code);assert.ok(r.ok&&r.warning,`${code} avisa que rola a página`);}
 });
 
+test('F1 a F24 valem todas; F5, F11 e F12 com o aviso do que o navegador faz',()=>{
+ for(let i=1;i<=24;i++)assert.equal(press(`F${i}`).ok,true,`F${i} aceita`);
+ const f5=press('F5');assert.ok(f5.ok&&/recarga/.test(f5.warning??''),'F5: o NACALL bloqueia a recarga');
+ for(const code of ['F11','F12']){const r=press(code);assert.ok(r.ok&&/app do NACALL para PC/.test(r.warning??''),`${code} avisa que no navegador pode abrir junto`);}
+});
 test('teclas F que o navegador também usa são aceitas com aviso; F13 em diante não precisa',()=>{
  for(const code of ['F1','F3','F8','F10']){const r=press(code);assert.ok(r.ok&&r.warning&&/navegador/.test(r.warning),`${code} avisa`);}
  const f13=press('F13');
