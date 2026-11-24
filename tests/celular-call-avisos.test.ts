@@ -25,7 +25,7 @@ test('UXA-002: sem teclado, "apertar para falar" não vale e não trava o microf
  assert.match(voice,/disabled=\{busy\|\|pttOn\}/,'o botão de microfone só trava quando a tecla realmente vale');
  assert.match(voice,/pushToTalk=\{pttOn\}/,'a barra de voz também recebe o valor efetivo');
  assert.doesNotMatch(voice,/disabled=\{busy\|\|voice\.pushToTalk\}/);
- assert.match(voice,/\{!noKeyboard&&<><label className="toggle-setting"><div><strong>Apertar para falar<\/strong>[\s\S]*<PttKeyField\/><\/>\}/,'o interruptor e o campo de tecla somem nos ajustes da call');
+ assert.match(voice,/\{!noKeyboard&&<><label className="toggle-setting"><div><strong>Apertar para falar<\/strong>[\s\S]*<PttKeyField\/>(<VoiceShortcuts\/>)?<\/>\}/,'o interruptor, o campo de tecla e os atalhos de microfone/fone somem nos ajustes da call');
  const profile=await read('src/components/profile-settings.tsx');
  assert.match(profile,/\.filter\(\(\[key\]\)=>!\(noKeyboard&&key==='pushToTalk'\)\)/,'e nos ajustes de voz do perfil');
 });
