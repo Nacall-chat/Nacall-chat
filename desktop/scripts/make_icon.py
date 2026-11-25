@@ -1,4 +1,4 @@
-"""Generate the official NACALL Windows icon from the existing Jacall mascot asset.
+"""Generate the official NACALL Windows (.ico) and macOS (.png) icons from the existing Jacall mascot asset.
 
 Source stays in the web brand folder, so the desktop and web share one identity.
 Requires Pillow; run during the Windows GitHub Actions build.
@@ -19,3 +19,9 @@ with Image.open(source) as original:
         sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
     )
 print(f"NACALL Windows icon ready: {destination}")
+
+# macOS: o electron-builder gera o .icns a partir de um PNG de 1024 px (o mascote é ampliado).
+mac_icon = destination.with_name("icon.png")
+with Image.open(source) as original:
+    original.convert("RGBA").resize((1024, 1024), Image.Resampling.LANCZOS).save(mac_icon, format="PNG")
+print(f"NACALL macOS icon ready: {mac_icon}")

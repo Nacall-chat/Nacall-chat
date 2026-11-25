@@ -25,7 +25,8 @@ import {VoiceBar} from './voice-bar';
 import {useLocalSpeaking} from './use-local-speaking';
 import {createPortal} from 'react-dom';
 import {JoinSound} from './join-sound';
-import {durationLabel,type RoomSnapshot} from '@/lib/room-clock';
+import {type RoomSnapshot} from '@/lib/room-clock';
+import {RoomTimer} from './room-timer';
 import type {Profile} from '@/lib/types';
 import {canShareScreen,SCREEN_UNSUPPORTED_MESSAGE,type ShareSurface} from '@/lib/screen-share';
 export type VoiceSession={token:string;serverUrl:string;name:string;channelId:string;startedAt?:number|null;joinedAt?:number};
@@ -42,7 +43,7 @@ export function Voice({session,leave,report,db,profile,focused=false,bar=null,ba
 }
 function Controls({session,leave,report,db,profile,focused=false,bar=null,barVariant='side',snapshot,openCall,clockOffset=0,onSpeaking,onPeople}:{session:VoiceSession;leave:()=>void;report:(s:string)=>void;db:SupabaseClient;profile?:Profile;focused?:boolean;bar?:HTMLElement|null;barVariant?:'side'|'dock';snapshot?:RoomSnapshot;openCall?:()=>void;clockOffset?:number;onSpeaking?:(ids:string[])=>void;onPeople?:(people:Record<string,PersonFlags>)=>void}){
  const room=useRoomContext();const participants=useParticipants();const speaking=useSpeakingParticipants();const{localParticipant,isMicrophoneEnabled,isScreenShareEnabled,isCameraEnabled,microphoneTrack}=useLocalParticipant();const connection=useConnectionState();const{voice,setVoice}=usePreferences();const noKeyboard=useNoKeyboard();const pttOn=voice.pushToTalk&&!noKeyboard;
- const[watch,setWatch]=useState<WatchState>({});const[streamVolume,setStreamVolume]=useState<Record<string,number>>({});const[deaf,setDeaf]=useState(false);const micBeforeDeaf=useRef(false);const deafRef=useRef(false);deafRef.current=deaf;const[devices,setDevices]=useState(false);const[music,setMusic]=useState(false);const[shareOpen,setShareOpen]=useState(false);const[fullscreenSid,setFullscreenSid]=useState('');const[,setTick]=useState(0);const[busy,setBusy]=useState(false);const[now,setNow]=useState(Date.now());const[noiseSupported,setNoiseSupported]=useState(true);
+ const[watch,setWatch]=useState<WatchState>({});const[streamVolume,setStreamVolume]=useState<Record<string,number>>({});const[deaf,setDeaf]=useState(false);const micBeforeDeaf=useRef(false);const deafRef=useRef(false);deafRef.current=deaf;const[devices,setDevices]=useState(false);const[music,setMusic]=useState(false);const[shareOpen,setShareOpen]=useState(false);const[fullscreenSid,setFullscreenSid]=useState('');const[,setTick]=useState(0);const[busy,setBusy]=useState(false);const[noiseSupported,setNoiseSupported]=useState(true);
  // Todas as transmissões ao vivo da sala, inclusive as que você ainda não abriu (só assiste quem clica em "Assistir").
  const screens=useTracks([Track.Source.ScreenShare],{onlySubscribed:false});const cameras=useTracks([Track.Source.Camera],{onlySubscribed:true});
  // Funções estáveis para as listas de aparelhos: o LiveKit refaz a lista (e pede o microfone) sempre que o onError muda, e uma função nova a cada render fazia o painel de ajustes piscar sem parar.
@@ -55,13 +56,13 @@ function Controls({session,leave,report,db,profile,focused=false,bar=null,barVar
  const speakingKey=[...new Set([...speaking.map(s=>s.identity),...(localSpeaking?[localParticipant.identity]:[])])].sort().join(',');
  useEffect(()=>{onSpeaking?.(speakingKey?speakingKey.split(','):[]);},[speakingKey,onSpeaking]);
  useEffect(()=>()=>{onSpeaking?.([]);},[onSpeaking]);
- useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);setNoiseSupported(Boolean(navigator.mediaDevices?.getSupportedConstraints().noiseSuppression));return()=>clearInterval(timer);},[]);
+ useEffect(()=>{setNoiseSupported(Boolean(navigator.mediaDevices?.getSupportedConstraints().noiseSuppression));},[]);
  useEffect(()=>{if(!profile)return;void localParticipant.setName(profile.display_name).catch(()=>{});void localParticipant.setMetadata(JSON.stringify({avatar:avatarUrl(profile.avatar_path)})).catch(()=>{});},[profile?.display_name,profile?.avatar_path,localParticipant]);
  useEffect(()=>{const track=localParticipant.getTrackPublication(Track.Source.Microphone)?.audioTrack;if(!track)return;void track.restartTrack({noiseSuppression:voice.noiseSuppression,echoCancellation:voice.echoCancellation,autoGainControl:voice.autoGainControl}).catch(e=>report(`Não foi possível aplicar o ajuste de voz: ${e.message}`));},[voice.noiseSuppression,voice.echoCancellation,voice.autoGainControl,localParticipant]);
  useEffect(()=>{if(!pttOn)return;void localParticipant.setMicrophoneEnabled(false);let held=false;const key=voice.pushToTalkKey;const down=(e:KeyboardEvent)=>{if(!pttShouldOpen(e,key)||deafRef.current)return;e.preventDefault();held=true;void localParticipant.setMicrophoneEnabled(true,{noiseSuppression:voice.noiseSuppression,echoCancellation:voice.echoCancellation,autoGainControl:voice.autoGainControl}).then(()=>{if(!held)void localParticipant.setMicrophoneEnabled(false);}).catch(e=>report(e.message));};const release=()=>{held=false;void localParticipant.setMicrophoneEnabled(false);};const up=(e:KeyboardEvent)=>{if(e.code===key.code)release();};window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',release);return()=>{release();window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',release);};},[pttOn,voice.pushToTalkKey,voice.noiseSuppression,voice.echoCancellation,voice.autoGainControl,localParticipant]);
  async function action(task:()=>Promise<unknown>){setBusy(true);try{await task();}catch(e){report(e instanceof Error?e.message:'Não foi possível concluir na call.');}finally{setBusy(false);}}
  const stateLabel:Record<string,string>={[ConnectionState.Connecting]:'Conectando…',[ConnectionState.Connected]:'Conectado',[ConnectionState.Reconnecting]:'Reconectando…',[ConnectionState.Disconnected]:'Desconectado',[ConnectionState.SignalReconnecting]:'Reconectando sinal…'};
- const duration=durationLabel(snapshot?.startedAt??session.startedAt??null,now+clockOffset);
+ const durationStart=snapshot?.startedAt??session.startedAt??null;const duration=durationStart?<RoomTimer start={durationStart} offset={clockOffset}/>:null;
  const micOptions={noiseSuppression:voice.noiseSuppression,echoCancellation:voice.echoCancellation,autoGainControl:voice.autoGainControl};
  // Fone e microfone andam juntos, como no Discord: desligar o fone fecha o microfone (antes dava para não ouvir a call e
  // continuar falando sem perceber); religar devolve o microfone como estava; abrir o microfone religa o fone.

@@ -1,6 +1,6 @@
-# NACALL Desktop v0.1.0 — Windows
+# NACALL Desktop v0.1.0 — Windows e macOS
 
-Primeiro aplicativo nativo para Windows, desenvolvido com **Electron 45**, mantendo o NACALL web como interface e backend. **É online**: usa `https://nacall.vercel.app` com a mesma conta e comunidades.
+Aplicativo para Windows e macOS, desenvolvido com **Electron 45**, mantendo o NACALL web como interface e backend. **É online**: usa `https://nacall.vercel.app` com a mesma conta e comunidades.
 
 ## O que esta versão entrega
 - Janela independente, ícone oficial Jacall na barra de tarefas e instalador, inicialização de instância única, atualizar com Ctrl+R e tela cheia com F11.
@@ -25,6 +25,24 @@ npm run dist:win
 ```
 
 Arquivos saem em `desktop/dist`.
+
+## Leve para jogar
+O app foi ajustado para gastar o mínimo de RAM, CPU e GPU enquanto a pessoa joga (`performance.cjs`):
+- Sem o processo "reserva" do Chromium, sem buscas em segundo plano, sem corretor ortográfico e sem capturar as teclas de mídia.
+- Com a janela escondida ou minimizada, a página é estrangulada (timers e desenho quase param); a call continua normal.
+- O site não redesenha mais a tela inteira a cada segundo por causa do cronômetro da call, e a detecção de fala lê o microfone 20 vezes por segundo em vez de a cada quadro (antes eram 144 ou 240 vezes por segundo num monitor gamer).
+- **Modo leve para jogos** (menu NACALL, ou Janela no Mac): deixa a placa de vídeo só para o jogo e tira animações e desfoques. Pede para reiniciar. Se a call ou o vídeo travar num PC fraco de CPU, desligue.
+- Se a página cair (falta de memória, driver de vídeo), ela recarrega sozinha.
+
+## macOS (para testar)
+O workflow `Desktop · Build macOS` gera dois `.dmg`: `NACALL-0.1.0-arm64.dmg` (Apple Silicon: M1, M2, M3, M4) e `NACALL-0.1.0-x64.dmg` (Mac com Intel). No Mac, veja em menu Apple > Sobre este Mac qual é o seu.
+
+1. GitHub: **Actions → Desktop · Build macOS → Run workflow** (ou abra a execução do PR) e baixe o artefato `NACALL-macOS-v0.1.0`.
+2. Abra o `.dmg` e arraste o NACALL para Aplicativos.
+3. Primeira vez: o app não tem certificado da Apple, então o macOS bloqueia. Clique com o botão direito no NACALL → **Abrir** → Abrir. No macOS 15 (Sequoia) ou mais novo: tente abrir, depois vá em Ajustes do Sistema → Privacidade e Segurança → **Abrir Mesmo Assim**.
+4. Ao entrar numa call o macOS pede o microfone (e a câmera, se ligar o vídeo). Para transmitir a tela, libere o NACALL em Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e reabra o app.
+
+O build também abre o app por 25 s no runner do GitHub e mostra no log quanta RAM ele usou.
 
 ## Limites e próximos passos
 - **Build sem assinatura digital:** Windows SmartScreen pode exibir aviso de editor desconhecido. Não desative o antivírus nem ignore avisos de procedência de arquivos de terceiros; baixe apenas dos Actions oficiais. Distribuição pública exige certificado e assinatura.

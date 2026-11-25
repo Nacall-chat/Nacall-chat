@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMediaDeviceSelect } from '@livekit/components-react';
 import { Camera, CameraOff, Check, ChevronUp, Headphones, Mic, MicOff, MonitorOff, MonitorUp, Music2, PhoneOff, Settings2, VolumeX, Wifi } from 'lucide-react';
 import { buildDeviceList, outputSelectionSupported, pickDevice, saveMicPrefs } from '@/lib/mic';
@@ -10,7 +10,8 @@ export type VoiceBarProps = {
   name: string;
   status: string;
   tone: 'ok' | 'wait' | 'bad';
-  duration: string;
+  /** Cronômetro da call (componente que se atualiza sozinho), ou nada antes de começar. */
+  duration: ReactNode;
   mic: boolean;
   deaf: boolean;
   pushToTalk: boolean;

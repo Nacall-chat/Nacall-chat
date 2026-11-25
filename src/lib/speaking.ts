@@ -1,6 +1,8 @@
 /** Detecção local de fala (medida no próprio microfone), para o indicador verde acender na hora, sem esperar o servidor. */
 export const SPEAK_THRESHOLD = 0.015;
 export const SPEAK_HOLD_MS = 350;
+/** Intervalo entre leituras do microfone (ms): rápido o bastante para o indicador, leve para quem joga. */
+export const SPEAK_SAMPLE_MS = 50;
 export type SpeakingState = { on: boolean; lastLoud: number };
 
 /** Volume (RMS, 0 a 1) de uma amostra de bytes no domínio do tempo (128 é o silêncio). */

@@ -3,14 +3,15 @@
   "productName": "NACALL",
   "version": "0.1.0",
   "private": true,
-  "description": "Aplicativo NACALL para Windows",
+  "description": "Aplicativo NACALL para Windows e macOS",
   "main": "main.cjs",
   "author": "NACALL",
   "license": "UNLICENSED",
   "scripts": {
     "start": "electron .",
     "check": "node --check main.cjs && node --test tests/*.test.cjs",
-    "dist:win": "electron-builder --win nsis portable --x64 --publish never"
+    "dist:win": "electron-builder --win nsis portable --x64 --publish never",
+    "dist:mac": "electron-builder --mac dir --arm64 --x64 --publish never"
   },
   "devDependencies": {
     "electron": "45.0.0",
@@ -26,6 +27,7 @@
     "files": [
       "main.cjs",
       "security.cjs",
+      "performance.cjs",
       "package.json"
     ],
     "win": {
@@ -44,6 +46,18 @@
         }
       ],
       "icon": "build/icon.ico"
+    },
+    "mac": {
+      "category": "public.app-category.social-networking",
+      "icon": "build/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "darkModeSupport": true,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "O NACALL usa o microfone para você falar nas calls.",
+        "NSCameraUsageDescription": "O NACALL usa a câmera quando você liga o vídeo na call.",
+        "LSApplicationCategoryType": "public.app-category.social-networking"
+      }
     },
     "nsis": {
       "oneClick": false,
