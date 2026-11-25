@@ -43,3 +43,44 @@ jobs:
           path: desktop/dist/*.exe
           if-no-files-found: error
           retention-days: 14
+
+  publicar:
+    name: Publicar instalador no repositório de downloads
+    # Só da main: o app abre o site de produção. Publica no repositório PÚBLICO Nacall-chat/nacall-downloads (o do código é
+    # privado), de onde sai o botão "Download Windows" do site. Precisa do secret DOWNLOADS_TOKEN: um token com permissão de
+    # escrita só naquele repositório (docs/DEPLOY.md). Sem ele, só avisa e não falha.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: windows-exe
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          sparse-checkout: desktop/package.json
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: NACALL-Windows-x64-v0.1.0
+          path: dist
+      - name: Publicar a versão nova
+        env:
+          GH_TOKEN: ${{ secrets.DOWNLOADS_TOKEN }}
+          DOWNLOADS_REPO: Nacall-chat/nacall-downloads
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "::warning::Secret DOWNLOADS_TOKEN não cadastrado: o instalador NÃO foi publicado (ver docs/DEPLOY.md)."; exit 0; fi
+          SETUP=$(ls dist/NACALL-Setup-*.exe | head -1)
+          if [ -z "$SETUP" ]; then echo "::error::Instalador não encontrado no artefato."; exit 1; fi
+          # Nome fixo: o link .../releases/latest/download/NACALL-Setup-x64.exe do site sempre pega a versão mais nova.
+          cp "$SETUP" dist/NACALL-Setup-x64.exe
+          (cd dist && sha256sum NACALL-Setup-x64.exe > NACALL-Setup-x64.exe.sha256)
+          VERSION=$(jq -r .version desktop/package.json)
+          TAG="desktop-v${VERSION}-${GITHUB_RUN_NUMBER}"
+          {
+            echo "NACALL para Windows ${VERSION} (build ${GITHUB_RUN_NUMBER}, commit ${GITHUB_SHA::7})."
+            echo
+            echo "Instalador de teste, ainda sem assinatura digital: o Windows pode mostrar \"O Windows protegeu o computador\"."
+            echo "Clique em \"Mais informações\" e depois em \"Executar assim mesmo\"."
+            echo
+            echo "SHA-256: $(cut -d' ' -f1 dist/NACALL-Setup-x64.exe.sha256)"
+          } > notes.md
+          gh release create "$TAG" dist/NACALL-Setup-x64.exe dist/NACALL-Setup-x64.exe.sha256 --repo "$DOWNLOADS_REPO" --title "NACALL para Windows ${VERSION}" --notes-file notes.md --latest
+          echo "Publicado: https://github.com/${DOWNLOADS_REPO}/releases/tag/${TAG}"
