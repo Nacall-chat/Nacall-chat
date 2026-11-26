@@ -192,3 +192,13 @@ input[aria-invalid=true]{border-color:var(--error)}
 
 
 
+
+/* Auditoria /ux-audit (lote 2): tela Comunidades com cabeçalho próprio e a lista das comunidades em que a pessoa está */
+.communities-head{padding:4px 0 18px}
+.communities-head h1{margin:10px 0 6px;font-size:clamp(26px,4vw,34px);line-height:1.15}
+.communities-head p{margin:0}
+.community-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
+.main .community-row{width:100%;justify-content:flex-start;gap:12px;min-height:56px;padding:6px 10px;background:transparent;border-color:transparent;border-radius:12px;text-align:left}
+.main .community-row:hover{background:var(--raised);border-color:var(--line)}
+.main .community-row strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main .community-row>svg{color:var(--muted);flex-shrink:0}
