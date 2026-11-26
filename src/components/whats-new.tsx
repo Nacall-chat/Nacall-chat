@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState,type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {ArrowLeft,ArrowRight,Clock,Flag,Hand,Heart,ImagePlus,Lightbulb,Mic,Pause,PawPrint,Pencil,Play,Plane,RotateCw,Search,Smile,Star,Trash2,Trophy,Upload,Utensils,X} from 'lucide-react';
-import {clampSlide,nextLabel,whatsNewKey,whatsNewSlides,type WhatsNewSlide} from '@/lib/novidades';
+import {UPDATE_ID,clampSlide,nextLabel,whatsNewKey,whatsNewSlides,type WhatsNewSlide} from '@/lib/novidades';
 
 const seenNow=new Set<string>(); // se o navegador não guarda dados, vale ao menos até recarregar
 function alreadySeen(key:string){try{return localStorage.getItem(key)==='1'||seenNow.has(key);}catch{return seenNow.has(key);}}
@@ -37,15 +37,22 @@ function Visual({id}:{id:WhatsNewSlide['id']}){
    <div className="wn-seg"><span>Quadrado</span><span>Arredondado</span><span className="selected">Círculo</span></div><span className="wn-check"><i/> Remover fundo liso</span></div></div></div>;
 }
 
-/** Janela de novidades: carrossel com X no topo, Voltar e Próximo (que vira Fechar no último passo). Aparece uma vez por conta. */
-export function WhatsNew({userId}:{userId:string}){
+/** Janela de novidades: carrossel com X no topo, Voltar e Próximo (que vira Fechar no último passo). Aparece uma vez por conta.
+ * Contas criadas depois do pacote atual (UPDATE_ID) não veem os slides, porque falam de coisas "renovadas" que nunca viram antes: marcamos como visto na hora. */
+export function WhatsNew({userId,accountCreatedAt}:{userId:string;accountCreatedAt?:string}){
  const key=whatsNewKey(userId);
  const[open,setOpen]=useState(false);
  const[index,setIndex]=useState(0);
  const dialog=useRef<HTMLDivElement>(null);
  const total=whatsNewSlides.length;
  const last=index===total-1;
- useEffect(()=>{if(!alreadySeen(key))setOpen(true);},[key]);
+ useEffect(()=>{
+  if(alreadySeen(key))return;
+  const cutoff=new Date(UPDATE_ID.slice(0,10));
+  const created=accountCreatedAt?new Date(accountCreatedAt):null;
+  if(created&&!Number.isNaN(created.getTime())&&created>=cutoff){markSeen(key);return;}
+  setOpen(true);
+ },[key,accountCreatedAt]);
  useEffect(()=>{const reopen=()=>{setIndex(0);setOpen(true);};window.addEventListener('nacall-open-novidades',reopen);return()=>window.removeEventListener('nacall-open-novidades',reopen);},[]); // botão "Ver novidades" do sino
  const close=()=>{markSeen(key);setOpen(false);};
  const go=(to:number)=>setIndex(clampSlide(to,total));

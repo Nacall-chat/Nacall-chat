@@ -11,6 +11,8 @@
 
 /* botões de cor cheia: o texto escuro só funciona sobre o verde-menta; no tema claro o --accent é um verde escuro */
 .social-add,.avatar-edit-btn{background:var(--primary);color:var(--on-primary)}
+/* hover do primário: sem esta regra, button:hover (que troca o background para --raised) vence e deixa o texto escuro ilegível sobre cinza. */
+.social-add:hover,.avatar-edit-btn:hover{background:var(--primary-hover);border-color:transparent;color:var(--on-primary)}
 
 /* transmissão de tela */
 .screen-stream>header{background:var(--surface)}
@@ -142,6 +144,44 @@ input[aria-invalid=true]{border-color:var(--error)}
 .shell>.notice-call{display:none}
 @media(max-width:720px){
  .shell.call-focus>.notice-call{display:flex;position:fixed;z-index:60;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;margin:0;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+}
+
+
+/* ============ Auditoria /ux-audit (lote 1 de recomendações, 2026-11-25) ============ */
+
+/* UXA-03: no desktop/laptop/wide a faixa de 2FA ocupava ~100 px em TODAS as telas. Mantém o título e os botões, oculta o parágrafo (que já está em Ajustes > Segurança). */
+@media(min-width:721px){
+ .two-factor-prompt{padding:10px 20px;margin:12px 20px 0;gap:10px}
+ .two-factor-prompt p{display:none}
+ .two-factor-prompt>div:not(.row){min-width:120px}
+}
+
+/* UXA-04: quando a barra de voz na lateral está ativa, ela empurra "Convidar amigos", "Configurações do grupo" e MEMBROS para fora da dobra. Compactamos padding e altura dos botões (ganha ~20 px) e dá à .side-content um padding inferior pequeno para encaixar sem corte. */
+@media(min-width:721px){
+ .shell.has-voice .voice-bar-slot{padding:4px 6px 0}
+ .shell.has-voice .voice-bar.side{padding:6px;gap:4px;border-radius:10px}
+ .shell.has-voice .voice-bar.side .vb-btn{height:30px}
+ .shell.has-voice .voice-bar.side .vb-chev{height:30px}
+ .shell.has-voice .voice-bar.side .vb-leave{flex:0 0 28px;width:28px;height:28px}
+ .shell.has-voice .voice-bar.side .vb-signal{width:24px;height:24px}
+ .shell.has-voice .voice-bar.side .vb-text strong{font-size:11.5px}
+ .shell.has-voice .voice-bar.side .vb-text small{font-size:10px}
+}
+
+/* UXA-06: os cinco indicadores do modal "Novidades" são <button> 9×9, sem alvo mínimo. O ponto visual segue pequeno; o alvo clicável sobe para ≥24×24 por meio de ::before (sem mexer no visual). */
+.whatsnew-dots button{position:relative}
+.whatsnew-dots button::before{content:"";position:absolute;inset:-9px -5px;border-radius:14px}
+
+/* UXA-07: no 320×568 o modal "Novidades" cortava o último bullet contra a barra de botões. O slide passa a rolar quando precisa, a imagem encolhe e o rodapé fica colado embaixo com segurança. */
+@media(max-width:360px),(max-height:620px){
+ .whatsnew{max-height:calc(100dvh - 12px)}
+ .whatsnew-slide{min-height:0;padding:6px 18px 10px;overflow:auto}
+ .whatsnew-slide h2{font-size:19px;margin:10px 0 6px}
+ .whatsnew-slide>p{font-size:13px;margin-bottom:8px}
+ .whatsnew-slide ul{font-size:12px}
+ .whatsnew-visual{height:140px;padding:10px}
+ .whatsnew-foot{padding:10px 14px calc(10px + env(safe-area-inset-bottom));gap:8px}
+ .whatsnew-foot>button{min-width:84px;padding:8px 10px;font-size:13px}
 }
 
 
