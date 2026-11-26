@@ -48,9 +48,10 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* Auditoria de UX (lote 2): layout. */
 /* Entre 1001 e 1300px o painel de membros já fica escondido (globals.css), mas a regra de 4 colunas do jacall.css vencia a de 3 e deixava uma faixa vazia de 224px à direita */
 @media(min-width:1001px) and (max-width:1300px){.shell:not(.call-focus):not(.call-chat){grid-template-columns:72px 266px minmax(0,1fr)}}
-/* telas grandes: mensagens, Amigos e Loja num miolo legível em vez de esticados até as bordas */
+/* telas grandes: Amigos e Loja num miolo legível em vez de esticados até as bordas */
 @media(min-width:1700px){
- .message-list{padding-inline:max(27px,calc((100% - 960px)/2))}
+ /* o chat usa quase toda a largura (só um respiro das bordas) em vez de centralizar em 960 px e deixar faixas vazias dos lados; as bolhas já têm max-width próprio (chat-bubbles.css) */
+ .message-list{padding-inline:clamp(27px,2vw,48px)}
  .social-page,.store-page{padding-inline:max(24px,calc((100% - 1000px)/2))}
 }
 @media(max-width:720px){
