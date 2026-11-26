@@ -118,3 +118,16 @@ Achados da auditoria Cloudflare que dependem de configuração, não de código:
    - **Atenção, app mobile:** ele ainda não mostra CAPTCHA e aponta para o HML. Ligue o passo 3 **só no `nacall-prd`** até o mobile ganhar suporte (precisa de `react-native-webview` e de um APK novo); no Supabase de HML o login pelo celular pararia.
    - Também em Authentication → **Rate Limits**: reduzir "Sign-ups and sign-ins" por IP. **Leaked password protection** (planos pagos) recusa senhas vazadas.
 5. **Content-Security-Policy.** `next.config.ts` aplica só as regras que não quebram nada (`object-src`, `base-uri`, `form-action`, `frame-ancestors`) e manda a política completa em `Content-Security-Policy-Report-Only`. Abra o console do navegador no `.app` usando call, música, figurinhas e pagamento: se não aparecer nenhum aviso "Content Security Policy" por alguns dias, troque o report-only pela política aplicada.
+
+## App do Windows na landing
+
+O instalador (~110 MB) fica no repositório **público** `Nacall-chat/nacall-downloads`, só de downloads: o repositório do código é privado e servir o `.exe` pela Vercel gastaria a cota de banda. O workflow "Desktop · Build Windows" compila e, **a partir da `main`**, publica uma release lá com `NACALL-Setup-x64.exe` (nome fixo) e o `.sha256`. O botão "Download Windows" usa o link `https://github.com/Nacall-chat/nacall-downloads/releases/latest/download/NACALL-Setup-x64.exe`, que sempre pega a versão mais nova.
+
+Para ligar (uma vez só, nesta ordem):
+1. GitHub → **New repository** em `Nacall-chat`: nome `nacall-downloads`, **Public**, marcando *Add a README* (a release precisa de pelo menos um commit).
+2. GitHub → Settings (da sua conta) → Developer settings → **Fine-grained tokens** → *Generate new token*: Resource owner `Nacall-chat`, *Only select repositories* → `nacall-downloads`, Permissions → **Contents: Read and write**. Copie o token.
+3. Repositório do código → Settings → Environments → `production` → *Add secret*: nome **`DOWNLOADS_TOKEN`**, valor = o token. (Nunca cole o token em chat, issue ou commit.)
+4. Actions → **Desktop · Build Windows** → *Run workflow* na branch **`main`**. Ao terminar, confira a release em `https://github.com/Nacall-chat/nacall-downloads/releases`.
+5. Vercel → projeto de produção (e de HML, se quiser testar lá) → Environment Variables: **`NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL`** = `https://github.com/Nacall-chat/nacall-downloads/releases/latest/download/NACALL-Setup-x64.exe`. Publique de novo (Run workflow da Esteira): o botão sai de "Em breve" e passa a baixar.
+
+Depois disso, cada mudança em `desktop/` que chega na `main` publica uma versão nova sozinha. O instalador ainda **não tem assinatura digital**: o Windows mostra "O Windows protegeu o computador" (a landing explica como continuar). Para tirar o aviso é preciso um certificado de assinatura de código (EV ou OV), cadastrado como secret.
