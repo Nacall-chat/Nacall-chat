@@ -20,7 +20,7 @@ import { useMediaQuery } from './use-media-query';
 import { useUnread } from './use-unread';
 import { usePresence } from './use-presence';
 import { PresenceAvatar, ProfileHover, StatusMenu } from './presence-ui';
-import { offlineInfo } from '@/lib/presence';
+import { memberState, offlineInfo } from '@/lib/presence';
 import { NotificationBell } from './notification-bell';
 import { badgeText, unreadTotal } from '@/lib/unread';
 import { shellCallClass } from '@/lib/nav';
@@ -134,8 +134,8 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const lastIncoming = [...messages].reverse().find(m => m.author_id !== me)?.id;
   const unread = useUnread({ db, me, dmIds: dms.map(d => d.id), openDm: target?.type === 'dm' ? target.id : null, lastIncoming });
   const acceptedIds = friends.filter(f => f.status === 'accepted').map(f => f.sender_id === me ? f.receiver_id : f.sender_id);
-  // Presença: online só com o NACALL aberto; vale só entre amigos (quem não é amigo não mostra status).
-  const presence = usePresence({ db, me, friendKey: acceptedIds.slice().sort().join(',') });
+  // Presença: online só com o NACALL aberto. Amigos veem tudo (inclusive "visto por último"); no servidor aberto, os membros mostram só online, ausente ou offline.
+  const presence = usePresence({ db, me, friendKey: acceptedIds.slice().sort().join(','), serverId });
   const infoOf = (id: string) => acceptedIds.includes(id) ? (presence.map[id] ?? offlineInfo) : undefined;
   const pendingIn = friends.filter(f => f.receiver_id === me && f.status === 'pending').length;
   const unreadByDm = Object.fromEntries(unread.items.map(u => [u.dm_id, u]));
@@ -292,7 +292,7 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const inCallView = Boolean(voice) && callView && !target;
   const reactions = useReactions(db, messages.map(m => m.id), me, setNotice);
   // Linha de membro: a mesma na coluna da direita (telas largas) e na gaveta (celular e telas até 1300px, onde a coluna some).
-  const memberRow = (id: string) => <div className="member" key={id}><button className="profile-avatar-button" aria-label={`Ver perfil de ${getName(id)}`} onClick={()=>setInspectedProfile(profiles[id])}><Avatar profile={profiles[id]}/></button><div><strong>{getName(id)}</strong><small>{id === server?.owner_id ? 'Proprietário' : id === me ? 'Você' : !server?'Em call':roles.filter(r=>r.server_id===serverId&&assignments.some(a=>a.user_id===id&&a.role_id===r.id)).sort((a,b)=>b.position-a.position)[0]?.name||'Membro'}</small></div></div>;
+  const memberRow = (id: string) => <div className="member" key={id}><button className="profile-avatar-button" aria-label={`Ver perfil de ${getName(id)}`} onClick={()=>setInspectedProfile(profiles[id])}>{server?<PresenceAvatar profile={profiles[id]} state={memberState(id,me,presence.mine,acceptedIds.includes(id)?presence.map:{},presence.serverMap)}/>:<Avatar profile={profiles[id]}/>}</button><div><strong>{getName(id)}</strong><small>{id === server?.owner_id ? 'Proprietário' : id === me ? 'Você' : !server?'Em call':roles.filter(r=>r.server_id===serverId&&assignments.some(a=>a.user_id===id&&a.role_id===r.id)).sort((a,b)=>b.position-a.position)[0]?.name||'Membro'}</small></div></div>;
   // Celular: Voltar fecha a gaveta, depois a conversa ou o painel da call (a call segue conectada), em vez de sair do site e derrubar a call.
   useBackButton(compactBar && (mobileNavOpen || Boolean(target) || inCallView), () => { if (mobileNavOpen) setMobileNavOpen(false); else if (target) setTarget(null); else setCallView(false); });
   function openCallView() { setTarget(null); const c = channels.find(c => c.id === voice?.channelId); if (c) setServerId(c.server_id); setCallView(true); setMobileNavOpen(false); }
