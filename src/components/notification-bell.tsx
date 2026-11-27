@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Bell, RefreshCw, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DM, Profile } from '@/lib/types';
 import { ago, badgeText, previewOf, unreadTotal, type UnreadDm } from '@/lib/unread';
-import { avisos, avisosKey, parseAvisosRead, trackVersion, unreadAvisos, withRead } from '@/lib/avisos';
+import { avisoDate, avisosKey, fetchAvisos, liveAvisos, parseAvisosRead, trackVersion, unreadAvisos, withRead, type Aviso } from '@/lib/avisos';
 import { UPDATE_ID, whatsNewKey } from '@/lib/novidades';
 import { playChime, primeSound, setSoundEnabled, soundEnabled } from '@/lib/notify-sound';
 import { Avatar } from './avatar';
@@ -30,6 +31,21 @@ function useNewVersion() {
   return version.update;
 }
 
+/** Novidades no ar (tabela product_updates): ao entrar, a cada 10 minutos e quando a aba volta ao foco. */
+function useAvisos(db: SupabaseClient) {
+  const [list, setList] = useState<Aviso[]>([]);
+  useEffect(() => {
+    let live = true;
+    const load = async () => { const next = await fetchAvisos(db); if (live) setList(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next)); };
+    const visible = () => { if (document.visibilityState === 'visible') void load(); };
+    void load();
+    const timer = window.setInterval(visible, 600000);
+    document.addEventListener('visibilitychange', visible);
+    return () => { live = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
+  }, [db]);
+  return liveAvisos(list);
+}
+
 function readAvisos(userId: string): string[] {
   try {
     const stored = parseAvisosRead(localStorage.getItem(avisosKey(userId)));
@@ -42,13 +58,14 @@ function readAvisos(userId: string): string[] {
  * Sino: mensagens novas de DMs, avisos de atualização do NACALL e a chave do som de aviso.
  * Abrir o sino marca os avisos como vistos; as mensagens só saem quando a conversa é aberta.
  */
-export function NotificationBell({ userId, me, items, dms, profiles, getName, openConversation }: { userId: string; me: string; items: UnreadDm[]; dms: DM[]; profiles: Record<string, Profile>; getName: (id: string) => string; openConversation: (dmId: string) => void }) {
+export function NotificationBell({ db, userId, me, items, dms, profiles, getName, openConversation }: { db: SupabaseClient; userId: string; me: string; items: UnreadDm[]; dms: DM[]; profiles: Record<string, Profile>; getName: (id: string) => string; openConversation: (dmId: string) => void }) {
   const [open, setOpen] = useState(false);
   const [read, setRead] = useState<string[]>([]);
   const [sound, setSound] = useState(true);
   const fresh = useRef<Set<string>>(new Set());
   const root = useRef<HTMLDivElement>(null);
   const newVersion = useNewVersion();
+  const avisos = useAvisos(db);
 
   useEffect(() => { setRead(readAvisos(userId)); setSound(soundEnabled()); }, [userId]);
   useEffect(() => {
@@ -60,14 +77,14 @@ export function NotificationBell({ userId, me, items, dms, profiles, getName, op
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
   }, [open]);
 
-  const unseen = unreadAvisos(read);
+  const unseen = unreadAvisos(read, avisos);
   const messages = unreadTotal(items);
   const count = messages + unseen.length + (newVersion ? 1 : 0);
 
   function toggle() {
     if (open) { setOpen(false); return; }
     const current = readAvisos(userId);
-    const pending = unreadAvisos(current);
+    const pending = unreadAvisos(current, avisos);
     fresh.current = new Set(pending.map(a => a.id));
     if (pending.length) {
       const next = withRead(current, pending.map(a => a.id));
@@ -105,9 +122,10 @@ export function NotificationBell({ userId, me, items, dms, profiles, getName, op
           </button>;
         })}
         <h3>Novidades do NACALL</h3>
+        {!avisos.length && <p className="bell-empty">Nenhuma novidade nos últimos dias.</p>}
         {avisos.map(aviso => <article className="bell-item bell-aviso" key={aviso.id}>
           <Sparkles size={18} aria-hidden="true" />
-          <div className="bell-text"><strong>{aviso.title}{fresh.current.has(aviso.id) && <i className="bell-new" aria-label="Novo" />}</strong><small>{new Date(`${aviso.date}T12:00:00`).toLocaleDateString('pt-BR')}</small><p>{aviso.text}</p>{aviso.slides && <button type="button" className="link small" onClick={openSlides}>Ver novidades</button>}</div>
+          <div className="bell-text"><strong>{aviso.title}{fresh.current.has(aviso.id) && <i className="bell-new" aria-label="Novo" />}</strong><small>{avisoDate(aviso.date)}</small><p>{aviso.text}</p>{aviso.slides && <button type="button" className="link small" onClick={openSlides}>Ver novidades</button>}</div>
         </article>)}
       </div>
     </div>}
