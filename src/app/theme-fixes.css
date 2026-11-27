@@ -298,3 +298,39 @@ input[aria-invalid=true]{border-color:var(--error)}
 .reply-bar strong{color:var(--text)}
 .reply-bar button{display:inline-flex;align-items:center;justify-content:center;width:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:var(--muted)}
 @media(prefers-reduced-motion:reduce){.reaction-chip{transition:none}.reaction-chip:active{transform:none}}
+
+/* Call: redesenho (site). Cabeçalho com o estado da conexão e o tempo, nomes em pílula sobre a imagem, barra de controles flutuante (também no computador), aviso de reconexão e entrada suave de quem chega. */
+.call-dock .voice-heading{padding-block:12px;background:var(--surface)}
+.call-dock .voice-heading .call-name strong{font-size:15px;font-weight:800}
+.call-dock .voice-heading .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:var(--panel);font-size:12px;font-weight:700;color:var(--muted)}
+.connection-state{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--panel);color:var(--muted)}
+.connection-state.ok{color:var(--success);background:color-mix(in srgb,var(--success),transparent 88%)}
+.connection-state.wait{color:#c98a12;background:color-mix(in srgb,#e0a82e,transparent 86%)}
+.connection-state.bad{color:var(--error);background:color-mix(in srgb,var(--error),transparent 88%)}
+.call-dock .voice-heading time{display:inline;font-family:inherit;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+/* cartões: nome e microfone numa pílula escura sobre a foto ou o vídeo; quem fala ganha o contorno de destaque */
+.call-dock .participant{display:flex;flex-direction:column;border-radius:16px;animation:call-tile-in 180ms ease-out both}
+.call-dock .participant.speaking{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.call-dock .participant-label{position:relative;z-index:2;align-self:flex-start;max-width:calc(100% - 16px);margin:-40px 8px 8px;padding:5px 10px;border-radius:999px;background:rgba(12,15,20,.68);backdrop-filter:blur(6px);gap:8px}
+.call-dock .participant-label strong{font-size:12px;color:#fff}
+.call-dock .participant-label small{font-size:10px;color:#d6dde6}
+.call-dock .participant-state{color:#d6dde6}
+@keyframes call-tile-in{from{opacity:0;transform:scale(.97)}}
+/* estados dos botões: microfone fechado em vermelho, ligado/ativo em destaque, sair em vermelho cheio */
+.call-dock .call-controls .muted-control{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
+.call-dock .call-controls button.selected{background:var(--soft);color:var(--accent)}
+.call-dock .leave-call{background:#d23c4f;color:#fff;border-color:transparent}
+.call-dock .leave-call:hover{background:#b8293c}
+/* computador: a barra de controles volta a aparecer, flutuando centralizada embaixo do palco */
+@media(min-width:721px){
+ .call-dock .call-toolbar{display:flex;grid-column:1;position:sticky;bottom:14px;z-index:4;justify-self:center;justify-content:center;width:max-content;max-width:calc(100% - 24px);margin:10px auto 14px;padding:8px;gap:10px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+ .call-dock .call-controls{flex-wrap:nowrap;gap:6px}
+ .call-dock .call-controls button{width:46px;min-width:46px;height:46px;min-height:46px;padding:0;border-radius:14px;align-items:center;justify-content:center}
+ .call-dock .leave-call{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:14px}
+}
+/* conectando ou reconectando: aviso no topo do palco */
+.call-conn-banner{display:flex;align-items:center;gap:8px;align-self:center;margin:4px auto 10px;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;color:#c98a12;background:color-mix(in srgb,#e0a82e,transparent 85%)}
+.call-conn-banner.bad{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
+.call-conn-dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:call-conn-pulse 1s ease-in-out infinite}
+@keyframes call-conn-pulse{50%{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.call-dock .participant{animation:none}.call-conn-dot{animation:none}}

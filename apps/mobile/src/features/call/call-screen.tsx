@@ -1,5 +1,5 @@
 import { VideoTrack } from '@livekit/react-native';
-import { Eye, LogOut, Minus, MonitorUp, Plus, SwitchCamera, Volume2 } from 'lucide-react-native';
+import { Eye, HeadphoneOff, LogOut, Mic, MicOff, Minus, MonitorUp, Plus, SwitchCamera, Volume2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { Avatar } from '@/components/avatar';
 import { Header } from '@/components/header';
 import { Body, Eyebrow } from '@/components/ui';
 import { useCall, type LivePerson, type LiveStream } from '@/features/call/call';
-import { LiveBadge, PersonIcons } from '@/features/call/badges';
+import { LiveBadge } from '@/features/call/badges';
 import { CallControls } from '@/features/call/call-controls';
 import { facingLabel, otherFacing, volumeLabel } from '@/features/call/logic';
 import { useSocial } from '@/features/social/social';
@@ -39,70 +39,71 @@ export function CallScreen() {
   }
 
   // cinco botões (mic, fone, câmera, tela e sair) cabem inclusive em telas estreitas de 320 dp
-  const controlSize = Math.max(40, Math.min(54, Math.floor((width - space.lg * 2 - space.md * 4) / 5)));
+  const controlSize = Math.max(40, Math.min(54, Math.floor((width - space.lg * 2 - space.md * 2 - space.sm * 4) / 5)));
+  const people = live?.people ?? [];
+  const fullWidth = width - space.lg * 2;
+  const tileWidth = Math.floor((fullWidth - space.sm) / 2);
   const connected = live?.connection === 'connected';
   const subtitle = connected ? `Voz conectada · ${durationLabel(session.startedAt ?? session.joinedAt, now)}` : 'Conectando…';
   return (
     <View style={{ flex: 1, backgroundColor: tokens.bg }}>
       <Header title={session.name} subtitle={subtitle} />
-      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg }}>
+      {live && !connected ? (
+        <View accessibilityRole="alert" style={[styles.banner, { backgroundColor: tokens.panel, borderColor: WARN }]}>
+          <View style={[styles.bannerDot, { backgroundColor: WARN }]} />
+          <Text style={{ color: WARN, fontWeight: '800', fontSize: 13 }}>{live.connection === 'reconnecting' || live.connection === 'signalReconnecting' ? 'Reconectando… a call continua assim que a rede voltar' : 'Conectando…'}</Text>
+        </View>
+      ) : null}
+      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: controlSize + space.xxl + insets.bottom }}>
         {live?.streams.map((stream) => <StreamBlock key={stream.sid} stream={stream} />)}
 
         <View style={{ gap: space.sm }}>
-          <Eyebrow>{`NA CALL · ${live?.people.length ?? 0}`}</Eyebrow>
-          {(live?.people ?? []).map((person) => <PersonCard key={person.id} person={person} />)}
+          <Eyebrow>{`NA CALL · ${people.length}`}</Eyebrow>
+          <View style={styles.grid}>
+            {people.map((person) => <PersonTile key={person.id} person={person} width={people.length === 1 ? fullWidth : tileWidth} solo={people.length === 1} />)}
+          </View>
         </View>
       </ScrollView>
-      <View style={[styles.controls, { backgroundColor: tokens.surface, borderTopColor: tokens.line, paddingBottom: Math.max(insets.bottom, space.md) }]}>
-        <CallControls size={controlSize} />
+      <View pointerEvents="box-none" style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom, space.md) }]}>
+        <View style={[styles.dock, { backgroundColor: tokens.surface, borderColor: tokens.line }]}>
+          <CallControls size={controlSize} gap={space.sm} />
+        </View>
       </View>
     </View>
   );
 }
 
 /**
- * Uma pessoa na sala: com a câmera ligada vira um cartão com o vídeo (o seu ganha o botão de virar a câmera);
- * com a câmera desligada fica a linha com a foto de perfil.
+ * Uma pessoa na sala, em cartão: o vídeo da câmera (ou a foto de perfil) ocupa o cartão, e o nome com o estado do
+ * microfone fica numa pílula por cima. Quem está falando ganha o contorno de destaque; o seu cartão com câmera tem o botão de virar.
  */
-function PersonCard({ person }: { person: LivePerson }) {
+function PersonTile({ person, width, solo }: { person: LivePerson; width: number; solo: boolean }) {
   const { tokens } = useTheme();
   const { live } = useCall();
   const { profiles } = useSocial();
-  const border = person.speaking ? tokens.success : tokens.line;
   const track = live?.cameras[person.id];
   const label = `${person.name}${person.isLocal ? ' (você)' : ''}`;
-
-  if (!live || !track) {
-    return (
-      <View style={[styles.person, { backgroundColor: tokens.surface, borderColor: border }]}>
-        <Avatar profile={profiles[person.id]} name={person.name} size={40} />
-        <View style={styles.personText}>
-          <Text numberOfLines={1} style={{ color: tokens.text, fontWeight: '700', fontSize: 15 }}>{label}</Text>
-        </View>
-        {person.sharing ? <LiveBadge /> : null}
-        <PersonIcons muted={person.muted} deaf={person.deaf} size={16} />
-      </View>
-    );
-  }
-
-  const next = otherFacing(live.facing);
+  const next = live ? otherFacing(live.facing) : 'user';
   return (
-    <View accessibilityLabel={`Câmera de ${label}`} style={[styles.cameraCard, { backgroundColor: tokens.surface, borderColor: border }]}>
-      {/* a própria câmera frontal aparece espelhada, como num espelho; quem assiste vê o vídeo normal */}
-      <VideoTrack trackRef={track} objectFit="cover" mirror={person.isLocal && live.facing === 'user'} style={styles.cameraVideo} />
-      <View style={styles.cameraFoot}>
-        <Text numberOfLines={1} style={{ color: tokens.text, fontWeight: '700', fontSize: 15, flex: 1 }}>{label}</Text>
-        {person.sharing ? <LiveBadge /> : null}
-        <PersonIcons muted={person.muted} deaf={person.deaf} size={16} />
-        {person.isLocal ? (
-          <SmallButton
-            icon={<SwitchCamera size={14} color={tokens.text} />}
-            label="Virar"
-            accessibilityLabel={`Virar para a câmera ${facingLabel(next)}`}
-            disabled={live.cameraBusy}
-            onPress={() => live.flipCamera()}
-          />
-        ) : null}
+    <View accessibilityLabel={`${label}${person.muted ? ', microfone fechado' : ''}${person.speaking ? ', falando' : ''}`}
+      style={[styles.tile, { width, aspectRatio: solo ? 4 / 3 : 3 / 4, backgroundColor: tokens.surface, borderColor: person.speaking ? tokens.accent : tokens.line, borderWidth: person.speaking ? 2 : 1 }]}>
+      {live && track ? (
+        // a própria câmera frontal aparece espelhada, como num espelho; quem assiste vê o vídeo normal
+        <VideoTrack trackRef={track} objectFit="cover" mirror={person.isLocal && live.facing === 'user'} style={StyleSheet.absoluteFill} />
+      ) : (
+        <View style={styles.tileCenter}><Avatar profile={profiles[person.id]} name={person.name} size={solo ? 88 : 64} /></View>
+      )}
+      {person.sharing ? <View style={styles.tileTopLeft}><LiveBadge /></View> : null}
+      {live && track && person.isLocal ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={`Virar para a câmera ${facingLabel(next)}`} disabled={live.cameraBusy} onPress={() => live.flipCamera()} hitSlop={6}
+          style={({ pressed }) => [styles.flip, { opacity: live.cameraBusy ? 0.5 : pressed ? 0.7 : 1 }]}>
+          <SwitchCamera size={16} color="#fff" />
+        </Pressable>
+      ) : null}
+      <View style={styles.pill}>
+        {person.muted ? <MicOff size={13} color="#ff9cab" /> : <Mic size={13} color="#fff" />}
+        {person.deaf ? <HeadphoneOff size={13} color="#ff9cab" /> : null}
+        <Text numberOfLines={1} style={styles.pillText}>{label}</Text>
       </View>
     </View>
   );
@@ -204,5 +205,18 @@ const styles = StyleSheet.create({
   volume: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   step: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   small: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, minHeight: 36, borderRadius: radius.sm },
-  controls: { paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  tile: { borderRadius: radius.lg, overflow: 'hidden', justifyContent: 'flex-end' },
+  tileCenter: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  tileTopLeft: { position: 'absolute', top: space.sm, left: space.sm },
+  flip: { position: 'absolute', top: space.sm, right: space.sm, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(12,15,20,0.68)' },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', maxWidth: '92%', margin: space.sm, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: 'rgba(12,15,20,0.68)' },
+  pillText: { color: '#fff', fontSize: 12, fontWeight: '700', flexShrink: 1 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderWidth: 1, marginHorizontal: space.lg, marginTop: space.sm, paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.pill },
+  bannerDot: { width: 8, height: 8, borderRadius: 4 },
+  dockWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: space.lg },
+  dock: { paddingVertical: space.sm, paddingHorizontal: space.md, borderRadius: 28, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
 });
+
+/** Âmbar de "aguarde" (conectando/reconectando), legível nos dois temas. */
+const WARN = '#c98a12';
