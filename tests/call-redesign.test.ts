@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const read=(p:string)=>readFile(new URL(`../${p}`,import.meta.url),'utf8');
 
-test('site: estado da conexão colorido, aviso de reconexão e barra de controles também no computador',async()=>{
+test('site: estado da conexão colorido, aviso de reconexão e barra do palco só no celular',async()=>{
  const voice=await read('src/components/voice.tsx');
  assert.match(voice,/className=\{`connection-state \$\{tone\}`\}/);
  assert.match(voice,/connection!==ConnectionState\.Connected&&<div className=\{`call-conn-banner \$\{tone\}`\} role="status">/);
  const css=await read('src/app/theme-fixes.css');
- assert.match(css,/@media\(min-width:721px\)\{\s*\.call-dock \.call-toolbar\{display:flex/,'a barra volta no computador');
+ assert.match(css,/@media\(min-width:721px\)\{\.call-dock \.call-toolbar\{display:none\}\}/,'no computador a barra do palco fica escondida (os controles estão no cartão da lateral)');
  assert.match(css,/\.call-dock \.voice-heading time\{display:inline/,'o tempo aparece também no celular');
  assert.match(css,/prefers-reduced-motion:reduce\)\{\.call-dock \.participant\{animation:none\}/);
 });
