@@ -321,13 +321,8 @@ input[aria-invalid=true]{border-color:var(--error)}
 .call-dock .call-controls button.selected{background:var(--soft);color:var(--accent)}
 .call-dock .leave-call{background:#d23c4f;color:#fff;border-color:transparent}
 .call-dock .leave-call:hover{background:#b8293c}
-/* computador: a barra de controles volta a aparecer, flutuando centralizada embaixo do palco */
-@media(min-width:721px){
- .call-dock .call-toolbar{display:flex;grid-column:1;position:sticky;bottom:14px;z-index:4;justify-self:center;justify-content:center;width:max-content;max-width:calc(100% - 24px);margin:10px auto 14px;padding:8px;gap:10px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.35)}
- .call-dock .call-controls{flex-wrap:nowrap;gap:6px}
- .call-dock .call-controls button{width:46px;min-width:46px;height:46px;min-height:46px;padding:0;border-radius:14px;align-items:center;justify-content:center}
- .call-dock .leave-call{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:14px}
-}
+/* computador: os controles ficam no cartão "Voz conectada" da lateral; a barra do palco é só do celular (no computador ela aparecia em coluna no meio da call) */
+@media(min-width:721px){.call-dock .call-toolbar{display:none}}
 /* conectando ou reconectando: aviso no topo do palco */
 .call-conn-banner{display:flex;align-items:center;gap:8px;align-self:center;margin:4px auto 10px;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;color:#c98a12;background:color-mix(in srgb,#e0a82e,transparent 85%)}
 .call-conn-banner.bad{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
