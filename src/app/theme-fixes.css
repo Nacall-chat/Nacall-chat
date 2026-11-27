@@ -267,3 +267,34 @@ input[aria-invalid=true]{border-color:var(--error)}
 
 
 
+
+/* Respostas e reações (site): citação dentro do balão, chips de reação, barra de ações da mensagem e barra "Respondendo a". */
+.main .message{position:relative}
+.reply-quote{display:flex;align-items:center;gap:6px;width:100%;max-width:100%;min-height:0;margin:2px 0 6px;padding:5px 9px;border:0;border-left:3px solid var(--accent);border-radius:6px;background:color-mix(in srgb,var(--text),transparent 94%);color:var(--muted);font-size:12px;text-align:left;cursor:pointer}
+.reply-quote strong{color:var(--accent);font-size:12px;flex-shrink:0}
+.reply-quote span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.reaction-bar{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.reaction-chip{display:inline-flex;align-items:center;gap:5px;min-height:28px;margin:0;padding:2px 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:13px;transition:background-color 110ms ease,border-color 110ms ease,transform 90ms ease}
+.reaction-chip b{font-size:12px;font-weight:700;color:var(--muted)}
+.reaction-chip.mine{border-color:var(--accent);background:var(--soft)}
+.reaction-chip.mine b{color:var(--accent)}
+.reaction-chip:active{transform:scale(.94)}
+.msg-actions{position:absolute;top:-12px;right:6px;z-index:5;display:flex;align-items:center}
+.msg-actions-bar{display:none;gap:2px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.msg-actions-bar button{display:inline-flex;align-items:center;justify-content:center;width:32px;min-height:32px;margin:0;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:17px}
+.msg-actions-bar button:hover{background:var(--panel);color:var(--text)}
+.msg-actions-more{display:none}
+@media(hover:hover){.main .message:hover .msg-actions-bar,.main .message:focus-within .msg-actions-bar{display:flex}}
+@media(hover:none){
+ .msg-actions{position:static;align-self:flex-start;margin-left:2px}
+ .msg-actions-more{display:inline-flex;align-items:center;justify-content:center;width:36px;min-height:36px;margin:0;padding:0;border:0;background:transparent;color:var(--faint)}
+ .msg-actions.open{position:absolute;top:-14px;right:6px}
+ .msg-actions.open .msg-actions-more{display:none}
+ .msg-actions.open .msg-actions-bar{display:flex}
+ .msg-actions-bar button{width:40px;min-height:40px}
+}
+.reply-bar{display:flex;align-items:center;gap:8px;margin:0;padding:8px 14px 8px 18px;border-top:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px}
+.reply-bar span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reply-bar strong{color:var(--text)}
+.reply-bar button{display:inline-flex;align-items:center;justify-content:center;width:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.reaction-chip{transition:none}.reaction-chip:active{transform:none}}
