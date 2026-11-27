@@ -311,10 +311,12 @@ input[aria-invalid=true]{border-color:var(--error)}
 /* cartões: nome e microfone numa pílula escura sobre a foto ou o vídeo; quem fala ganha o contorno de destaque */
 .call-dock .participant{display:flex;flex-direction:column;border-radius:16px;animation:call-tile-in 180ms ease-out both}
 .call-dock .participant.speaking{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.call-dock .participant-label{position:relative;z-index:2;align-self:flex-start;max-width:calc(100% - 16px);margin:-40px 8px 8px;padding:5px 10px;border-radius:999px;background:rgba(12,15,20,.68);backdrop-filter:blur(6px);gap:8px}
-.call-dock .participant-label strong{font-size:12px;color:#fff}
-.call-dock .participant-label small{font-size:10px;color:#d6dde6}
-.call-dock .participant-state{color:#d6dde6}
+.call-dock .participant:not(.stream-tile)>.participant-label{position:relative;z-index:2;align-self:flex-start;max-width:calc(100% - 16px);margin:-40px 8px 8px;padding:5px 10px;border-radius:999px;background:rgba(12,15,20,.68);backdrop-filter:blur(6px);gap:8px}
+.call-dock .participant:not(.stream-tile)>.participant-label strong{font-size:12px;color:#fff}
+.call-dock .participant:not(.stream-tile)>.participant-label small{font-size:10px;color:#d6dde6}
+.call-dock .participant:not(.stream-tile)>.participant-label .participant-state{color:#d6dde6}
+/* o vídeo ao vivo da própria tela, na prévia do seu cartão de transmissão */
+.stream-tile-view video{display:block;width:100%;height:100%;object-fit:contain;background:#080a0e}
 @keyframes call-tile-in{from{opacity:0;transform:scale(.97)}}
 /* estados dos botões: microfone fechado em vermelho, ligado/ativo em destaque, sair em vermelho cheio */
 .call-dock .call-controls .muted-control{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
