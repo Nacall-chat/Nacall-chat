@@ -17,6 +17,7 @@ import './mobile-drawer.css';
 import './profile-settings.css';
 import './profile-sheet.css';
 import './landing-download.css';
+import './rail-popover.css';
 import './theme-fixes.css';
 import { PreferencesProvider } from '@/components/preferences';
 import { MicGateProvider } from '@/components/mic-gate';

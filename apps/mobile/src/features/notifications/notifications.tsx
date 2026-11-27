@@ -2,15 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { Bell, Sparkles } from 'lucide-react-native';
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { peerOf } from '@/features/social/logic';
 import { useSocial } from '@/features/social/social';
 import { useUnread } from '@/features/social/unread';
+import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/theme';
 import { radius, space } from '@/theme/tokens';
-import { avisos, avisosKey, parseAvisosRead, unreadAvisos, withRead } from '@nacall/core/avisos';
+import { avisoDate, avisosKey, fetchAvisos, liveAvisos, parseAvisosRead, unreadAvisos, withRead, type Aviso } from '@nacall/core/avisos';
 import { ago, badgeText, previewOf } from '@nacall/core/unread';
 
 type NotificationsValue = { open: () => void; badge: number };
@@ -21,12 +22,26 @@ export const useNotifications = () => {
   return value;
 };
 
-/** Sino: mensagens não lidas e novidades do NACALL (as mesmas do site, que marca como visto o que a pessoa abriu). */
+/** Sino: mensagens não lidas e novidades do NACALL (as mesmas do site, da tabela product_updates; o que expirou some sozinho). */
 export function NotificationsProvider({ children }: PropsWithChildren) {
   const { me } = useSocial();
   const { total } = useUnread();
   const [read, setRead] = useState<string[] | null>(null);
   const [visible, setVisible] = useState(false);
+  const [list, setList] = useState<Aviso[]>([]);
+
+  // Novidades no ar: ao entrar, a cada 10 minutos e quando o app volta ao primeiro plano.
+  useEffect(() => {
+    if (!supabase) return;
+    const db = supabase;
+    let live = true;
+    const load = async () => { const next = await fetchAvisos(db); if (live) setList((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next)); };
+    void load();
+    const timer = setInterval(() => { if (AppState.currentState === 'active') void load(); }, 600000);
+    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') void load(); });
+    return () => { live = false; clearInterval(timer); sub.remove(); };
+  }, [me]);
+  const avisos = useMemo(() => liveAvisos(list), [list]);
 
   useEffect(() => {
     let live = true;
@@ -34,7 +49,7 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
     return () => { live = false; };
   }, [me]);
 
-  const unseen = useMemo(() => (read ? unreadAvisos(read) : []), [read]);
+  const unseen = useMemo(() => (read ? unreadAvisos(read, avisos) : []), [read, avisos]);
 
   const markSeen = useCallback(() => {
     setRead((prev) => {
@@ -50,7 +65,7 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
   return (
     <NotificationsContext value={value}>
       {children}
-      <NotificationsSheet visible={visible} close={close} unseenIds={unseen.map((a) => a.id)} />
+      <NotificationsSheet visible={visible} close={close} avisos={avisos} unseenIds={unseen.map((a) => a.id)} />
     </NotificationsContext>
   );
 }
@@ -71,7 +86,7 @@ export function BellButton() {
   );
 }
 
-function NotificationsSheet({ visible, close, unseenIds }: { visible: boolean; close: () => void; unseenIds: string[] }) {
+function NotificationsSheet({ visible, close, avisos, unseenIds }: { visible: boolean; close: () => void; avisos: Aviso[]; unseenIds: string[] }) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -107,6 +122,7 @@ function NotificationsSheet({ visible, close, unseenIds }: { visible: boolean; c
             })}
 
             <Label>NOVIDADES DO NACALL</Label>
+            {avisos.length === 0 ? <Text style={{ color: tokens.muted, fontSize: 14 }}>Nenhuma novidade nos últimos dias.</Text> : null}
             {avisos.map((aviso) => (
               <View key={aviso.id} style={[styles.news, { borderColor: tokens.line, backgroundColor: tokens.bg }]}>
                 <Sparkles size={18} color={tokens.accent} />
@@ -115,7 +131,7 @@ function NotificationsSheet({ visible, close, unseenIds }: { visible: boolean; c
                     <Text style={{ color: tokens.text, fontWeight: '800', fontSize: 14, flexShrink: 1 }}>{aviso.title}</Text>
                     {unseenIds.includes(aviso.id) ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.badge }} /> : null}
                   </View>
-                  <Text style={{ color: tokens.muted, fontSize: 11 }}>{new Date(`${aviso.date}T12:00:00`).toLocaleDateString('pt-BR')}</Text>
+                  <Text style={{ color: tokens.muted, fontSize: 11 }}>{avisoDate(aviso.date)}</Text>
                   <Text style={{ color: tokens.text, fontSize: 13, lineHeight: 18 }}>{aviso.text}</Text>
                 </View>
               </View>

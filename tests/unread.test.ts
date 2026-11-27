@@ -1,8 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {ago,arrivedDms,badgeText,previewOf,sameUnread,unreadTotal,withoutOpen,type UnreadDm} from '../src/lib/unread';
-import {avisos,parseAvisosRead,parseSound,trackVersion,unreadAvisos,withRead} from '../src/lib/avisos';
-import {UPDATE_ID} from '../src/lib/novidades';
+import {avisoDate,fetchAvisos,liveAvisos,parseAvisosRead,parseSound,toAvisos,trackVersion,unreadAvisos,withRead,type ProductUpdateRow} from '../src/lib/avisos';
 
 const item=(dm_id:string,unread:number,last_kind='text',last_body='oi',last_at='2026-11-19T12:00:00Z'):UnreadDm=>({dm_id,unread,last_at,last_kind,last_body});
 
@@ -53,15 +52,36 @@ test('há quanto tempo: agora, minutos, horas e a data',()=>{
  assert.equal(ago('2026-11-19T12:05:00Z',now),'agora','relógio adiantado não vira número negativo');
 });
 
-test('avisos: ids únicos, o que já foi visto some e ver é por conta',()=>{
- const ids=avisos.map(a=>a.id);
- assert.equal(new Set(ids).size,ids.length,'ids únicos');
- assert.ok(avisos.every(a=>a.title&&a.text&&/^\d{4}-\d{2}-\d{2}$/.test(a.date)));
- assert.ok(ids.includes(UPDATE_ID)&&avisos.find(a=>a.id===UPDATE_ID)?.slides,'o carrossel de novidades tem aviso com o botão');
- assert.equal(unreadAvisos([]).length,avisos.length,'quem nunca abriu o sino vê todos como novos');
- assert.deepEqual(unreadAvisos(ids).map(a=>a.id),[]);
- assert.deepEqual(unreadAvisos([ids[0]]).map(a=>a.id),ids.slice(1));
+const row=(slug:string,published:string,expires:string):ProductUpdateRow=>({slug,title:`Título ${slug}`,body:'Texto simples da novidade.',published_at:published,expires_at:expires});
+const rows=[row('pr-1','2026-11-25T10:00:00Z','2026-11-28T10:00:00Z'),row('pr-3','2026-11-27T10:00:00Z','2026-11-30T10:00:00Z'),row('pr-0','2026-11-20T10:00:00Z','2026-11-23T10:00:00Z')];
+
+test('avisos: vêm do banco, mais novos primeiro, e o que expirou some sozinho',()=>{
+ const now=Date.parse('2026-11-27T12:00:00Z');
+ const list=toAvisos(rows,now);
+ assert.deepEqual(list.map(a=>a.id),['pr-3','pr-1'],'expirado (pr-0) fica de fora');
+ assert.equal(list[0].title,'Título pr-3');assert.equal(list[0].text,'Texto simples da novidade.');
+ assert.deepEqual(liveAvisos(list,Date.parse('2026-11-29T00:00:00Z')).map(a=>a.id),['pr-3'],'com a aba aberta, expira sem nova consulta');
+ assert.deepEqual(toAvisos([{...rows[1],title:''}],now),[],'linha incompleta é ignorada');
+});
+
+test('avisos: o que já foi visto some e ver é por conta',()=>{
+ const list=toAvisos(rows,Date.parse('2026-11-27T12:00:00Z'));
+ const ids=list.map(a=>a.id);
+ assert.equal(unreadAvisos([],list).length,list.length,'quem nunca abriu o sino vê todos como novos');
+ assert.deepEqual(unreadAvisos(ids,list).map(a=>a.id),[]);
+ assert.deepEqual(unreadAvisos([ids[0]],list).map(a=>a.id),ids.slice(1));
  assert.deepEqual(withRead(['x'],['y','x']),['x','y'],'sem repetir');
+});
+
+test('avisos: data em pt-BR e consulta que falha vira lista vazia',async()=>{
+ assert.match(avisoDate('2026-11-27T10:00:00Z'),/^\d{2}\/\d{2}\/2026$/);
+ assert.equal(avisoDate('2026-11-19'),'19/11/2026');
+ assert.equal(avisoDate('lixo'),'');
+ const chain=(result:unknown)=>({select:()=>({order:()=>({limit:async()=>result})})});
+ const failing={from:()=>chain({data:null,error:{message:'relation does not exist'}})};
+ assert.deepEqual(await fetchAvisos(failing as never),[]);
+ const ok={from:(table:string)=>{assert.equal(table,'product_updates');return chain({data:rows,error:null});}};
+ assert.ok((await fetchAvisos(ok as never)).length<=rows.length);
 });
 
 test('avisos: leitura salva é lida com segurança',()=>{
