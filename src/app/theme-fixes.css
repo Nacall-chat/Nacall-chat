@@ -193,6 +193,17 @@ input[aria-invalid=true]{border-color:var(--error)}
 
 
 
+
+/* Auditoria /ux-audit (lote 2): tela Comunidades com cabeçalho próprio e a lista das comunidades em que a pessoa está */
+.communities-head{padding:4px 0 18px}
+.communities-head h1{margin:10px 0 6px;font-size:clamp(26px,4vw,34px);line-height:1.15}
+.communities-head p{margin:0}
+.community-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
+.main .community-row{width:100%;justify-content:flex-start;gap:12px;min-height:56px;padding:6px 10px;background:transparent;border-color:transparent;border-radius:12px;text-align:left}
+.main .community-row:hover{background:var(--raised);border-color:var(--line)}
+.main .community-row strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main .community-row>svg{color:var(--muted);flex-shrink:0}
+
 /* Evolução visual 1 (site): tipografia legível, conversa com mais respiro, topo mais enxuto, menu com estados claros e campo de digitar com foco. */
 /* 1. Escala tipográfica: nada de 8 a 10px nas áreas de uso diário */
 .main .message strong{font-size:13px;font-weight:700}
@@ -234,6 +245,7 @@ input[aria-invalid=true]{border-color:var(--error)}
 }
 
 
+
 /* Evolução visual 2 (site): ritmo de leitura. Mensagens seguidas da mesma pessoa viram grupo, o dia muda com separador, e o carregamento mostra esqueleto em vez de texto. */
 .date-sep{display:flex;align-items:center;gap:12px;margin:16px 0 8px;color:var(--faint);font-size:11px;font-weight:700;letter-spacing:.04em}
 .date-sep::before,.date-sep::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -251,5 +263,7 @@ input[aria-invalid=true]{border-color:var(--error)}
 .msg-skeleton .ln{height:12px;margin:7px 0}
 @keyframes skeleton-shimmer{to{background-position:-200% 0}}
 @media(prefers-reduced-motion:reduce){.msg-skeleton i{animation:none}}
+
+
 
 
