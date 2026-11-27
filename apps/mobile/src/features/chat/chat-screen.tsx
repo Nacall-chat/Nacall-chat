@@ -70,9 +70,9 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
           </Pressable>
         ) : null}
         <View style={[styles.bubble, mine ? [styles.bubbleMine, { backgroundColor: mineBg, borderColor: mix(tokens.accent, tokens.surface, 0.3) }] : [styles.bubbleTheirs, { backgroundColor: tokens.surface, borderColor: tokens.line }]]}>
-          {target.type === 'channel' && !mine ? <Text style={{ color: tokens.accent, fontSize: 12, fontWeight: '800' }}>{nameOf(item.author_id)}</Text> : null}
+          {target.type === 'channel' && !mine ? <Text style={{ color: tokens.accent, fontSize: 13, fontWeight: '800', marginBottom: 1 }}>{nameOf(item.author_id)}</Text> : null}
           <Text style={{ color: content.placeholder ? tokens.muted : tokens.text, fontSize: 15, lineHeight: 21, fontStyle: content.placeholder ? 'italic' : 'normal' }}>{content.text}</Text>
-          <Text style={{ color: mix(tokens.text, mine ? mineBg : tokens.surface, 0.75), fontSize: 10, alignSelf: 'flex-end', marginTop: 2 }}>{timeLabel(item.created_at)}</Text>
+          <Text style={{ color: mix(tokens.text, mine ? mineBg : tokens.surface, 0.75), fontSize: 11, alignSelf: 'flex-end', marginTop: 3 }}>{timeLabel(item.created_at)}</Text>
         </View>
       </View>
     );
@@ -95,7 +95,7 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
         onEndReached={() => void loadOlder()}
         onEndReachedThreshold={0.4}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: space.md, gap: 6 }}
+        contentContainerStyle={{ padding: space.md, gap: 8 }}
         ListEmptyComponent={
           <View style={[styles.empty, { transform: [{ scaleY: -1 }] }]}>
             <Text style={{ color: tokens.muted, textAlign: 'center' }}>{loading ? 'Carregando mensagens…' : 'Aqui ainda tá quietinho. Mande a primeira mensagem.'}</Text>
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '82%', paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6, borderWidth: 1 },
+  bubble: { maxWidth: '82%', paddingHorizontal: 13, paddingTop: 9, paddingBottom: 7, borderWidth: 1 },
   bubbleMine: { borderRadius: 16, borderTopRightRadius: 4 },
   bubbleTheirs: { borderRadius: 16, borderTopLeftRadius: 4 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm, paddingHorizontal: space.md, paddingTop: space.sm, borderTopWidth: 1 },
