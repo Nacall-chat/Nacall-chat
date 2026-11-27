@@ -34,6 +34,8 @@ import { WhatsNew } from './whats-new';
 import {clockOffset as measureClockOffset,durationLabel,withLocalParticipant,type RoomSnapshot} from '@/lib/room-clock';
 import {profileTag} from '@/lib/identity';
 import {GroupIcon} from './group-icon';
+import {ServerMenu} from './server-menu';
+import type {ServerMenuAction} from '@/lib/server-menu';
 import {CallPopover} from './call-popover';
 import {placeRailPopover,serverCallPeople} from '@/lib/call-preview';
 import {LiveBadge,PersonStateIcons} from './live-badge';
@@ -290,6 +292,29 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const serverCallCount=(id:string)=>serverCallPeopleOf(id).length;
   const showRailPopover=(id:string,el:HTMLElement,pointer:boolean)=>{if(pointer&&!window.matchMedia('(hover: hover)').matches)return;const r=el.getBoundingClientRect();setRailHover({id,...placeRailPopover(r,window.innerHeight)});};
   useEffect(()=>{let active=true;let inFlight=false;let queued=false;if(!roomIds){setRoomStates({});return;}const read=async()=>{if(document.visibilityState==='hidden')return;if(inFlight){queued=true;return;}inFlight=true;const sentAt=Date.now();try{const{data:{session:current}}=await db.auth.getSession();const ids=roomIds.split(',');const batches=Array.from({length:Math.ceil(ids.length/30)},(_,i)=>ids.slice(i*30,i*30+30));const parts=await Promise.all(batches.map(async channelIds=>{const r=await fetch('/api/livekit/rooms',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+current?.access_token},body:JSON.stringify({channelIds})});if(!r.ok)throw new Error();return r.json();}));const data={rooms:parts.flatMap(p=>p.rooms)};const serverNow=parts.find(p=>typeof p.serverNow==='number')?.serverNow;if(active&&typeof serverNow==='number')setClockOffset(measureClockOffset(serverNow,sentAt,Date.now()));if(active)setRoomStates(previous=>{const next=Object.fromEntries(data.rooms.map((r:RoomSnapshot)=>[r.channelId,r]));return JSON.stringify(previous)===JSON.stringify(next)?previous:next;});}catch{}finally{inFlight=false;if(queued){queued=false;void read();}}};void read();const timer=setInterval(()=>void read(),12000);const tick=setInterval(()=>setClockNow(Date.now()),1000);const refresh=()=>void read();window.addEventListener('nacall-room-refresh',refresh);document.addEventListener('visibilitychange',refresh);return()=>{active=false;clearInterval(timer);clearInterval(tick);window.removeEventListener('nacall-room-refresh',refresh);document.removeEventListener('visibilitychange',refresh);};},[db,roomIds]);
+  // Menu do grupo (nome no topo da lateral): abre a aba certa das configurações, copia o ID ou sai do grupo.
+  function serverAction(action: ServerMenuAction) {
+    if (!server) return;
+    const tab = ({ invite: 'invites', settings: 'profile', 'create-channel': 'channels', roles: 'roles' } as Partial<Record<ServerMenuAction, string>>)[action];
+    if (tab) { setGroupTab(tab); setGroupSettings(true); return; }
+    if (action === 'copy-id') {
+      const shown = () => setNotice(`ID do grupo: ${server.id}`);
+      try { void navigator.clipboard.writeText(server.id).then(() => setNotice('ID do grupo copiado.'), shown); } catch { shown(); }
+      return;
+    }
+    if (action === 'leave') {
+      const left = server;
+      if (!window.confirm(`Sair de “${left.name}”? Para voltar, você vai precisar de um convite novo.`)) return;
+      void act(async () => {
+        const { error } = await db.rpc('leave_server', { s: left.id });
+        if (error) throw error;
+        if (voice && channels.some(c => c.id === voice.channelId && c.server_id === left.id)) setVoice(null);
+        setGroupSettings(false); setServerId(null); setTarget(null); setCallView(false);
+        await load();
+        setNotice(`Você saiu de ${left.name}.`);
+      });
+    }
+  }
   async function loadOlder() {
     if (!target || !messages.length) return;
     const selected = target;
@@ -315,11 +340,9 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
       <button className="rail-theme" title="Escolher tema" aria-label="Escolher tema" onClick={() => {setSettingsTab('appearance');setSettings(true);}}><SunMoon size={21}/></button><span className="rail-bottom">NACALL</span></nav>
     <div className="voice-dock-bar" ref={setDockBar} />
     <aside className="sidebar" id="workspace-sidebar"><header><Brand/></header>
-      <div className="side-content"><div className="section-label">{server ? 'COMUNIDADE' : 'CONEXÕES'}</div><h2>{server?.name || 'Seu ponto de encontro'}</h2>
+      <div className="side-content"><div className="section-label">{server ? 'COMUNIDADE' : 'CONEXÕES'}</div>{server?<ServerMenu server={server} me={me} can={can} onAction={serverAction}/>:<h2>Seu ponto de encontro</h2>}
         {server ? <><div className="group-sidebar-profile"><GroupIcon server={server}/><p className="muted small">{server.description||"O lobby dessa galera."}</p></div><div className="section-label">CANAIS DE TEXTO</div>{channels.filter(c => c.server_id === serverId && c.kind === 'text').map(c => <button className={`nav-item ${target?.id === c.id ? 'active' : ''}`} key={c.id} onClick={() => {setTarget({ id: c.id, type: 'channel', name: c.name });setMobileNavOpen(false);}}><Hash size={18} />{c.name}</button>)}
           <div className="section-label">SALAS DE VOZ</div>{channels.filter(c => c.server_id === serverId && c.kind === 'voice').map(c => { const room = roomOf(c.id); return <div key={c.id}><button disabled={busy} className={`nav-item ${voice?.channelId === c.id ? 'active' : ''}`} key={c.id} onClick={() => void connect(c)}><Headphones size={18} />{c.name}<span className="tiny">{room?.count?durationLabel(room.startedAt,nowServer):"Entrar na call"}</span></button>{Boolean(room?.count)&&<div className="voice-roster">{room.participants.map(p=>{const flags=shownFlags(p,voice?.channelId===c.id?livePeople[p.id]:undefined);return <button type="button" className={`voice-roster-person ${speakingIds.includes(p.id)?'speaking':''}`} key={p.id} onClick={()=>profiles[p.id]&&setInspectedProfile(profiles[p.id])}><Avatar profile={profiles[p.id]} name={p.name} url={p.avatar}/><span className="roster-name">{p.name}</span>{flags.sharing&&<LiveBadge/>}<PersonStateIcons muted={flags.muted} deaf={flags.deaf}/></button>;})}</div>}</div>; })}
-          {!server.is_official&&<button className="nav-item" onClick={()=>{setGroupTab("profile");setGroupSettings(true);}}><Settings size={17}/>Configurações do grupo</button>}
-          {can('manage_invites')&&<button className="nav-item" onClick={()=>{setGroupTab("invites");setGroupSettings(true);}}><Plus size={17}/>Convidar amigos</button>}
           <div className="side-members"><div className="section-label">MEMBROS · {members.length}</div>{members.map(memberRow)}</div>
         </> : <><button className={`nav-item ${!target&&!inCallView&&homeView==='friends'?'active':''}`} onClick={()=>{setTarget(null);setCallView(false);setHomeView('friends');setFriendTab('all');setMobileNavOpen(false);}}><Users size={18}/>Amigos{pendingIn>0&&<span className="unread-badge" aria-label={`${pendingIn} solicitações de amizade pendentes`}>{badgeText(pendingIn)}</span>}</button><button className={`nav-item ${!target&&!inCallView&&homeView==='store'?'active':''}`} onClick={()=>{setTarget(null);setCallView(false);setHomeView('store');setMobileNavOpen(false);}}><ShoppingBag size={18}/>Loja</button><button className={`nav-item ${!target&&!inCallView&&homeView==='communities'?'active':''}`} onClick={()=>{setTarget(null);setCallView(false);setHomeView('communities');setMobileNavOpen(false);}}><Compass size={18}/>Comunidades</button><div className="section-label">MENSAGENS DIRETAS</div>{dms.length === 0 && <p className="muted small">Suas conversas vão aparecer aqui.</p>}{dms.map(d => { const id = d.user_a === me ? d.user_b : d.user_a; return <ProfileHover key={d.id} className="block" profile={profiles[id]} info={infoOf(id)}><button className={`nav-item ${target?.id === d.id ? 'active' : ''} ${unreadByDm[d.id] ? 'has-unread' : ''}`} onClick={() => {setTarget({ id: d.id, type: 'dm', name: getName(id) });setMobileNavOpen(false);}}><PresenceAvatar profile={profiles[id]} state={infoOf(id)?.state}/><span className="nav-name">{getName(id)}</span>{unreadByDm[d.id] && <span className="unread-badge" aria-label={`${unreadByDm[d.id].unread} mensagens não lidas`}>{badgeText(unreadByDm[d.id].unread)}</span>}</button></ProfileHover>; })}</>}
       </div><div className="voice-bar-slot" ref={setSideBar} /><div className="account"><StatusMenu profile={profiles[me]} status={presence.mine} setStatus={presence.setStatus} onError={setNotice}/><div><strong>{getName(me)}</strong><small>@{profile?.username || '…'}</small></div><button title="Configurações" onClick={() => {setSettingsTab('profile');setSettings(true);}}><Settings size={17} /></button><button title="Sair da conta" onClick={() => void act(async () => { setVoice(null); const { error } = await db.auth.signOut(); if (error) throw error; })}><LogOut size={17} /></button></div></aside>
