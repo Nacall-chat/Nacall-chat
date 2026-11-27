@@ -232,3 +232,21 @@ input[aria-invalid=true]{border-color:var(--error)}
  .composer button,.main>.topbar .topbar-actions>button,.shell .sidebar .nav-item,.composer input{transition:none}
  .composer button:active,.main>.topbar .topbar-actions>button:active{transform:none}
 }
+
+/* Evolução visual 2 (site): ritmo de leitura. Mensagens seguidas da mesma pessoa viram grupo, o dia muda com separador, e o carregamento mostra esqueleto em vez de texto. */
+.date-sep{display:flex;align-items:center;gap:12px;margin:16px 0 8px;color:var(--faint);font-size:11px;font-weight:700;letter-spacing:.04em}
+.date-sep::before,.date-sep::after{content:"";flex:1;height:1px;background:var(--line)}
+.main .message.grouped{padding-top:0;margin-top:-4px}
+.main .message.grouped .profile-avatar-button{visibility:hidden;height:0;overflow:hidden}
+.main .message.grouped .bubble{border-radius:16px}
+.main .message.grouped .bubble>.row>strong,.main .message.grouped .bubble>.row>time{display:none}
+.main .message.grouped .bubble>.row:not(:has(.link)){display:none}
+.main .message.grouped .bubble>.row{float:right;margin:-2px -6px 0 8px;min-height:0}
+.main .message.grouped .link{min-height:28px;padding:0 6px}
+.msg-skeleton{display:flex;gap:12px;padding:14px 0}
+.msg-skeleton>div{flex:1;min-width:0}
+.msg-skeleton i{display:block;background:linear-gradient(90deg,var(--panel),var(--raised),var(--panel));background-size:200% 100%;animation:skeleton-shimmer 1.3s linear infinite;border-radius:8px}
+.msg-skeleton .av{width:36px;height:36px;border-radius:12px;flex-shrink:0}
+.msg-skeleton .ln{height:12px;margin:7px 0}
+@keyframes skeleton-shimmer{to{background-position:-200% 0}}
+@media(prefers-reduced-motion:reduce){.msg-skeleton i{animation:none}}
