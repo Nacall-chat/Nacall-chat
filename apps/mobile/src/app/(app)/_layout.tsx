@@ -26,9 +26,9 @@ export default function AppLayout() {
 }
 
 function Providers({ me }: { me: string }) {
-  const { dms, channels } = useSocial();
+  const { dms, channels, railId } = useSocial();
   return (
-    <PresenceProvider me={me}>
+    <PresenceProvider me={me} serverId={railId}>
       <UnreadProvider me={me} dmIds={dms.map((d) => d.id)}>
         <RoomsProvider voiceChannelIds={channels.filter((c) => c.kind === 'voice').map((c) => c.id)}>
           <ProfileSheetProvider>

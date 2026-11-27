@@ -6,6 +6,7 @@ import { Avatar, GroupIcon } from '@/components/avatar';
 import { Brand } from '@/components/ui';
 import { LiveBadge, PersonIcons } from '@/features/call/badges';
 import { useCall } from '@/features/call/call';
+import { useProfileSheet } from '@/features/profile/profile-sheet';
 import { peerOf, pendingIncoming, sortDms } from '@/features/social/logic';
 import { usePresence } from '@/features/social/presence';
 import { useRooms } from '@/features/social/rooms';
@@ -26,9 +27,10 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { me, profiles, friends, dms, servers, channels, railId, setRailId, nameOf } = useSocial();
+  const { me, profiles, friends, dms, servers, channels, members, railId, setRailId, nameOf } = useSocial();
   const { items, total, byDm } = useUnread();
-  const { infoOf, mine } = usePresence();
+  const { infoOf, mine, memberStateOf } = usePresence();
+  const sheet = useProfileSheet();
   const { rooms } = useRooms();
   const { session, live, joining, join } = useCall();
   const { signOut } = useSession();
@@ -91,6 +93,20 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
                         </View>
                       ))}
                     </View>
+                  );
+                })}
+                {/* Membros com a bolinha de presença (amigo ou não), como a coluna "MEMBROS" do site */}
+                <Label>{`MEMBROS · ${members.filter((m) => m.server_id === server.id).length}`}</Label>
+                {members.filter((m) => m.server_id === server.id).map(({ user_id: id }) => {
+                  const state = memberStateOf(id);
+                  return (
+                    <Item
+                      key={id}
+                      label={nameOf(id)}
+                      icon={<Avatar profile={profiles[id]} size={30} state={state === 'invisible' ? 'offline' : state} />}
+                      meta={id === server.owner_id ? 'Proprietário' : id === me ? 'Você' : undefined}
+                      onPress={() => { navigation.closeDrawer(); sheet.open(id); }}
+                    />
                   );
                 })}
               </>
