@@ -1,6 +1,7 @@
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { Compass, Hash, Headphones, LogOut, Plus, Settings, Users } from 'lucide-react-native';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ChevronDown, Compass, Hash, Headphones, LogOut, Plus, Settings, Users } from 'lucide-react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, GroupIcon } from '@/components/avatar';
 import { Brand } from '@/components/ui';
@@ -11,10 +12,16 @@ import { usePresence } from '@/features/social/presence';
 import { useRooms } from '@/features/social/rooms';
 import { useSocial } from '@/features/social/social';
 import { useUnread } from '@/features/social/unread';
+import { confirmAction } from '@/lib/confirm';
+import { friendlyError } from '@/lib/errors';
 import { useSession } from '@/lib/session';
+import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme/theme';
 import { radius, space } from '@/theme/tokens';
 import { badgeText } from '@nacall/core/unread';
+import { serverMenuItems } from '@nacall/core/server-menu';
+import type { Server } from '@nacall/core/types';
+import { errorText } from '@nacall/core/validation';
 import { shownFlags } from '@nacall/core/room-people';
 import { durationLabel } from '@nacall/core/room-clock';
 
@@ -26,11 +33,11 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { me, profiles, friends, dms, servers, channels, railId, setRailId, nameOf } = useSocial();
+  const { me, profiles, friends, dms, servers, channels, railId, setRailId, nameOf, reload } = useSocial();
   const { items, total, byDm } = useUnread();
   const { infoOf, mine } = usePresence();
   const { rooms } = useRooms();
-  const { session, live, joining, join } = useCall();
+  const { session, live, joining, join, leave } = useCall();
   const { signOut } = useSession();
 
   const server = servers.find((s) => s.id === railId);
@@ -39,6 +46,23 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
     navigation.closeDrawer();
   };
   const pending = pendingIncoming(friends, me);
+  // Menu do grupo (o mesmo do site, sem as telas de configuração, que ainda são só do site): copiar o ID e sair do grupo.
+  const openServerMenu = (target: Server) => {
+    const items = serverMenuItems(target, me, () => false, { manage: false });
+    const run = async (id: string) => {
+      if (id === 'copy-id') { await Clipboard.setStringAsync(target.id); Alert.alert('ID do grupo copiado.'); return; }
+      if (!(await confirmAction(`Sair de ${target.name}?`, 'Para voltar, você vai precisar de um convite novo.', 'Sair'))) return;
+      const { error } = await supabase!.rpc('leave_server', { s: target.id });
+      if (error) { Alert.alert('Não deu para sair', friendlyError(errorText(error))); return; }
+      if (session && channels.some((c) => c.id === session.channelId && c.server_id === target.id)) leave();
+      setRailId(null);
+      await reload().catch(() => undefined);
+    };
+    Alert.alert(target.name, undefined, [
+      ...items.map((item) => ({ text: item.label, style: item.danger ? ('destructive' as const) : ('default' as const), onPress: () => void run(item.id) })),
+      { text: 'Cancelar', style: 'cancel' as const },
+    ]);
+  };
   return (
     <View style={[styles.root, { backgroundColor: tokens.surface, paddingTop: insets.top }]}>
       <View style={styles.columns}>
@@ -67,7 +91,10 @@ export function DrawerPanel({ navigation }: { navigation: Nav }) {
             {server ? (
               <>
                 <Label>COMUNIDADE</Label>
-                <Text style={{ color: tokens.text, fontSize: 20, fontWeight: '800', marginBottom: space.sm }}>{server.name}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Menu do grupo ${server.name}`} onPress={() => openServerMenu(server)} style={({ pressed }) => [styles.serverHead, { backgroundColor: pressed ? tokens.panel : 'transparent' }]}>
+                  <Text numberOfLines={1} style={{ flex: 1, color: tokens.text, fontSize: 20, fontWeight: '800' }}>{server.name}</Text>
+                  <ChevronDown size={18} color={tokens.muted} />
+                </Pressable>
                 {server.description ? <Text style={{ color: tokens.muted, fontSize: 13, marginBottom: space.sm }}>{server.description}</Text> : null}
                 <Label>CANAIS DE TEXTO</Label>
                 {channels.filter((c) => c.server_id === server.id && c.kind === 'text').map((c) => (
@@ -176,6 +203,7 @@ const styles = StyleSheet.create({
   railButton: { width: 48, height: 48, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   side: { flex: 1, minWidth: 0 },
   sideHead: { paddingHorizontal: space.lg, paddingVertical: space.md },
+  serverHead: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: space.sm, marginHorizontal: -space.sm, paddingHorizontal: space.sm, borderRadius: radius.sm },
   item: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: space.sm, borderRadius: radius.sm },
   person: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 36, paddingVertical: 4 },
   account: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingTop: space.sm, borderTopWidth: 1 },

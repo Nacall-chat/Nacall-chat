@@ -12,6 +12,7 @@ import './notifications.css';
 import './call-stage.css';
 import './presence.css';
 import './social.css';
+import './server-menu.css';
 import './mobile-drawer.css';
 import './profile-settings.css';
 import './profile-sheet.css';
