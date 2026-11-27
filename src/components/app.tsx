@@ -34,6 +34,8 @@ import { WhatsNew } from './whats-new';
 import {clockOffset as measureClockOffset,durationLabel,withLocalParticipant,type RoomSnapshot} from '@/lib/room-clock';
 import {profileTag} from '@/lib/identity';
 import {GroupIcon} from './group-icon';
+import {CallPopover} from './call-popover';
+import {placeRailPopover,serverCallPeople} from '@/lib/call-preview';
 import {LiveBadge,PersonStateIcons} from './live-badge';
 import {isCurrentCall} from '@/lib/call-session';
 import {shownFlags,type PersonFlags} from '@/lib/room-people';
@@ -117,6 +119,8 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   const[inspectedProfile,setInspectedProfile]=useState<Profile|null>(null);const[roomStates,setRoomStates]=useState<Record<string,RoomSnapshot>>({});const[clockNow,setClockNow]=useState(Date.now());const[clockOffset,setClockOffset]=useState(0);const[speakingIds,setSpeakingIds]=useState<string[]>([]);const[livePeople,setLivePeople]=useState<Record<string,PersonFlags>>({});
   const [voice, setVoice] = useState<VoiceSession | null>(null);
   voiceRef.current = voice;
+  // Popover do rail com quem está em call no servidor sob o mouse (ou com foco do teclado).
+  const [railHover,setRailHover]=useState<{id:string;left:number;top:number}|null>(null);
   const [groupSettings,setGroupSettings]=useState(false);const[groupTab,setGroupTab]=useState("profile");
   const [roles,setRoles]=useState<ServerRole[]>([]);
   const [assignments,setAssignments]=useState<MemberRole[]>([]);
@@ -282,7 +286,9 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   // a chamada em que a pessoa está agora, entre as salas dos seus servidores (o cartão de perfil mostra e deixa entrar)
   const callOf=(id:string):ProfileCall|undefined=>{const c=channels.find(ch=>ch.kind==='voice'&&roomOf(ch.id)?.participants.some(p=>p.id===id));const room=c&&roomOf(c.id);if(!c||!room)return undefined;return{channelName:c.name,serverName:servers.find(sv=>sv.id===c.server_id)?.name??'',people:room.participants,join:voice?.channelId===c.id?undefined:()=>{setInspectedProfile(null);setMobileNavOpen(false);void connect(c);}};};
   const nowServer=clockNow+clockOffset;
-  const serverCallCount=(id:string)=>new Set(channels.filter(c=>c.server_id===id&&c.kind==='voice').flatMap(c=>(roomStates[c.id]?.participants??[]).map(p=>p.id))).size;
+  const serverCallPeopleOf=(id:string)=>serverCallPeople(channels.filter(c=>c.server_id===id&&c.kind==='voice').map(c=>c.id),roomOf);
+  const serverCallCount=(id:string)=>serverCallPeopleOf(id).length;
+  const showRailPopover=(id:string,el:HTMLElement,pointer:boolean)=>{if(pointer&&!window.matchMedia('(hover: hover)').matches)return;const r=el.getBoundingClientRect();setRailHover({id,...placeRailPopover(r,window.innerHeight)});};
   useEffect(()=>{let active=true;let inFlight=false;let queued=false;if(!roomIds){setRoomStates({});return;}const read=async()=>{if(document.visibilityState==='hidden')return;if(inFlight){queued=true;return;}inFlight=true;const sentAt=Date.now();try{const{data:{session:current}}=await db.auth.getSession();const ids=roomIds.split(',');const batches=Array.from({length:Math.ceil(ids.length/30)},(_,i)=>ids.slice(i*30,i*30+30));const parts=await Promise.all(batches.map(async channelIds=>{const r=await fetch('/api/livekit/rooms',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+current?.access_token},body:JSON.stringify({channelIds})});if(!r.ok)throw new Error();return r.json();}));const data={rooms:parts.flatMap(p=>p.rooms)};const serverNow=parts.find(p=>typeof p.serverNow==='number')?.serverNow;if(active&&typeof serverNow==='number')setClockOffset(measureClockOffset(serverNow,sentAt,Date.now()));if(active)setRoomStates(previous=>{const next=Object.fromEntries(data.rooms.map((r:RoomSnapshot)=>[r.channelId,r]));return JSON.stringify(previous)===JSON.stringify(next)?previous:next;});}catch{}finally{inFlight=false;if(queued){queued=false;void read();}}};void read();const timer=setInterval(()=>void read(),12000);const tick=setInterval(()=>setClockNow(Date.now()),1000);const refresh=()=>void read();window.addEventListener('nacall-room-refresh',refresh);document.addEventListener('visibilitychange',refresh);return()=>{active=false;clearInterval(timer);clearInterval(tick);window.removeEventListener('nacall-room-refresh',refresh);document.removeEventListener('visibilitychange',refresh);};},[db,roomIds]);
   async function loadOlder() {
     if (!target || !messages.length) return;
@@ -301,9 +307,10 @@ function Workspace({ db, session, recovery, recovered }: { db: SupabaseClient; s
   return <div className={`shell ${mobileNavOpen?'nav-open':''} ${shellCallClass({ voice: Boolean(voice), callView, target: Boolean(target) })}`}>
     <button className="mobile-nav-toggle" aria-label={mobileNavOpen?'Fechar canais':'Abrir canais e conversas'} aria-expanded={mobileNavOpen} aria-controls="workspace-sidebar" onClick={()=>setMobileNavOpen(v=>!v)}>{mobileNavOpen?<X size={21}/>:<Menu size={21}/>}{!mobileNavOpen&&unreadMessages+pendingIn>0&&<span className="nav-toggle-badge" aria-label={`${unreadMessages+pendingIn} novidades`}>{badgeText(unreadMessages+pendingIn)}</span>}</button>
     {mobileNavOpen&&<button className="mobile-nav-shade" aria-label="Fechar navegação" onClick={()=>setMobileNavOpen(false)}/>}
-    <nav className="rail" aria-label="Navegação principal"><button className="logo-button" title="Início" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(false); }}><Brand compact/></button><div className="rail-line" />
+    <nav className="rail" aria-label="Navegação principal" onScroll={()=>setRailHover(null)}><button className="logo-button" title="Início" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(false); }}><Brand compact/></button><div className="rail-line" />
       <button className={!serverId ? 'selected' : ''} title="Amigos" aria-label="Início, amigos e mensagens" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('friends');setMobileNavOpen(true); }}><Users size={22} />{unreadMessages > 0 && <span className="rail-badge" aria-label={`${unreadMessages} mensagens não lidas`}>{badgeText(unreadMessages)}</span>}</button>
-      {servers.map(s => <button key={s.id} className={serverId === s.id ? 'selected' : ''} title={s.name} onClick={() => { setServerId(s.id); setTarget(null); setCallView(false); setMobileNavOpen(true); }}><GroupIcon server={s}/>{serverCallCount(s.id)>0&&<span className="server-voice-badge" aria-label={`${serverCallCount(s.id)} pessoas em call`}><Headphones size={10}/>{serverCallCount(s.id)}</span>}</button>)}
+      {servers.map(s => <button key={s.id} className={serverId === s.id ? 'selected' : ''} title={serverCallCount(s.id)>0?undefined:s.name} aria-label={serverCallCount(s.id)>0?`${s.name}: ${serverCallCount(s.id)} ${serverCallCount(s.id)===1?'pessoa':'pessoas'} em call`:undefined} onMouseEnter={e=>showRailPopover(s.id,e.currentTarget,true)} onMouseLeave={()=>setRailHover(null)} onFocus={e=>{if(e.currentTarget.matches(':focus-visible'))showRailPopover(s.id,e.currentTarget,false);}} onBlur={()=>setRailHover(null)} onClick={() => { setServerId(s.id); setTarget(null); setCallView(false); setMobileNavOpen(true); }}><GroupIcon server={s}/>{serverCallCount(s.id)>0&&<span className="server-voice-badge" aria-label={`${serverCallCount(s.id)} pessoas em call`}><Headphones size={10}/>{serverCallCount(s.id)}</span>}</button>)}
+      {railHover&&servers.find(s=>s.id===railHover.id)&&<CallPopover server={servers.find(s=>s.id===railHover.id)!} people={serverCallPeopleOf(railHover.id)} profiles={profiles} position={railHover}/>}
       <button title="Criar ou entrar em servidor" onClick={() => { setServerId(null); setTarget(null); setCallView(false); setHomeView('communities');setMobileNavOpen(false); }}><Plus size={23} /></button>
       <button className="rail-theme" title="Escolher tema" aria-label="Escolher tema" onClick={() => {setSettingsTab('appearance');setSettings(true);}}><SunMoon size={21}/></button><span className="rail-bottom">NACALL</span></nav>
     <div className="voice-dock-bar" ref={setDockBar} />
