@@ -60,10 +60,10 @@ export function useMessages(target: ChatTarget) {
   }, [db, field, target.id, messages, hasOlder]);
 
   /** Devolve uma mensagem de erro em português, ou null se enviou. */
-  const send = useCallback(async (text: string): Promise<string | null> => {
+  const send = useCallback(async (text: string, replyTo?: string): Promise<string | null> => {
     try {
       const body = messageSchema.parse(text);
-      const { data, error: failure } = await db.from('messages').insert({ body, [field]: target.id }).select().single();
+      const { data, error: failure } = await db.from('messages').insert({ body, ...(replyTo ? { reply_to: replyTo } : {}), [field]: target.id }).select().single();
       if (failure) throw failure;
       setMessages((prev) => appendMessage(prev, data as Message));
       return null;
