@@ -15,6 +15,7 @@ import { useUnread } from '@/features/social/unread';
 import { mix } from '@/theme/mix';
 import { useTheme } from '@/theme/theme';
 import { radius, space } from '@/theme/tokens';
+import { dayLabel, messageLayout } from '@nacall/core/message-groups';
 import type { Message } from '@nacall/core/types';
 import { useMessages, type ChatTarget } from './use-messages';
 
@@ -59,21 +60,33 @@ export function ChatScreen({ target }: { target: ChatTarget }) {
     sendLock.current = false;
   }
 
-  const renderItem = ({ item }: { item: Message }) => {
+  const renderItem = ({ item, index }: { item: Message; index: number }) => {
     const mine = item.author_id === me;
+    // a lista é invertida: a mensagem anterior no tempo é a do índice seguinte
+    const lay = messageLayout(data[index + 1], item);
+    const showHead = !lay.grouped;
     const content = bubbleText(item);
     return (
+      <View>
+      {lay.newDay ? (
+        <View style={styles.daySep}>
+          <View style={[styles.dayLine, { backgroundColor: tokens.line }]} />
+          <Text style={{ color: tokens.faint, fontSize: 11, fontWeight: '700' }}>{dayLabel(item.created_at)}</Text>
+          <View style={[styles.dayLine, { backgroundColor: tokens.line }]} />
+        </View>
+      ) : null}
       <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
-        {!mine && target.type === 'channel' ? (
+        {!mine && target.type === 'channel' ? (showHead ? (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ver perfil de ${nameOf(item.author_id)}`} onPress={() => sheet.open(item.author_id)}>
             <Avatar profile={profiles[item.author_id]} size={32} />
           </Pressable>
-        ) : null}
+        ) : <View style={{ width: 32 }} />) : null}
         <View style={[styles.bubble, mine ? [styles.bubbleMine, { backgroundColor: mineBg, borderColor: mix(tokens.accent, tokens.surface, 0.3) }] : [styles.bubbleTheirs, { backgroundColor: tokens.surface, borderColor: tokens.line }]]}>
-          {target.type === 'channel' && !mine ? <Text style={{ color: tokens.accent, fontSize: 13, fontWeight: '800', marginBottom: 1 }}>{nameOf(item.author_id)}</Text> : null}
+          {target.type === 'channel' && !mine && showHead ? <Text style={{ color: tokens.accent, fontSize: 13, fontWeight: '800', marginBottom: 1 }}>{nameOf(item.author_id)}</Text> : null}
           <Text style={{ color: content.placeholder ? tokens.muted : tokens.text, fontSize: 15, lineHeight: 21, fontStyle: content.placeholder ? 'italic' : 'normal' }}>{content.text}</Text>
           <Text style={{ color: mix(tokens.text, mine ? mineBg : tokens.surface, 0.75), fontSize: 11, alignSelf: 'flex-end', marginTop: 3 }}>{timeLabel(item.created_at)}</Text>
         </View>
+      </View>
       </View>
     );
   };
@@ -140,4 +153,6 @@ const styles = StyleSheet.create({
   input: { flex: 1, maxHeight: 120, minHeight: 44, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.md, paddingTop: 12, paddingBottom: 12, fontSize: 16 },
   send: { width: 46, height: 46, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   empty: { padding: space.xl },
+  daySep: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: space.sm },
+  dayLine: { flex: 1, height: StyleSheet.hairlineWidth },
 });
