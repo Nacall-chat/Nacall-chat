@@ -16,5 +16,5 @@ Crie uma branch por alteração, envie e abra um pull request para main. Inclua 
 
 O upload para GitHub não copia contas, mensagens ou configurações dos serviços. A publicação atual na Vercel é independente deste clone; não altere as configurações de produção sem coordenar com o responsável.
 
-A identidade usada no app fica em public/brand. Os arquivos de marca para redes sociais ficam em brand/social.
+A identidade usada no app fica em public/brand (JACALL, o jacaré verde menta de headset: jacall-avatar.webp, jacall-sheet.webp, jacall-favicon.png e symbol.svg). A identidade antiga (mascote vermelho e o "N" vermelho) foi removida e não deve voltar.
 

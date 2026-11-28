@@ -8,7 +8,7 @@ A busca de amigos aceita @username, Nome #00001 ou #00001. A tag identifica pelo
 A comunidade NACALL - GLOBAL é criada uma única vez pela migration, sem proprietário humano. Todas as contas existentes e futuras recebem associação automática. Os membros comuns não podem editar seu perfil, cargos ou canais. Grupos particulares continuam com seus proprietários e permissões anteriores.
 
 Canais: chat-geral; dicas-e-instruções; BRASIL 01 - GERAL; BRASIL 02 - GERAL; BRASIL 03 - GERAL; RCM GROUP.
-A marca usa o símbolo N existente em public/brand/symbol.svg. O mascote continua nas ilustrações.
+A marca usa o JACALL em public/brand/symbol.svg e public/brand/jacall-avatar.webp, com o nome NACALL. ao lado. O mascote vermelho antigo foi removido.
 
 ## Publicação
 
