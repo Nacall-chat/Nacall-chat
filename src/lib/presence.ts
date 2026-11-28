@@ -3,6 +3,8 @@ export type PresenceState = 'online' | 'away' | 'offline';
 export type PresenceStatus = 'online' | 'away' | 'invisible';
 export type FriendPresence = { user_id: string; state: PresenceState; last_seen_at: string | null; server_now: string };
 export type PresenceInfo = { state: PresenceState; lastSeenAt: string | null; serverNow: string | null; fetchedAt: number };
+/** Linha de server_presence(): só quem está online ou ausente no servidor aberto (sem "visto por último", que é só entre amigos). */
+export type ServerPresence = { user_id: string; state: 'online' | 'away' };
 
 export const HEARTBEAT_MS = 45000;
 export const IDLE_AFTER_MS = 5 * 60 * 1000;
@@ -20,6 +22,20 @@ export const presenceOrder = (state: PresenceState) => order[state];
 
 /** O que mostrar de quem não está na lista (nunca entrou, não é amigo): offline sem hora. */
 export const offlineInfo: PresenceInfo = { state: 'offline', lastSeenAt: null, serverNow: null, fetchedAt: 0 };
+
+/** Linhas de server_presence() viram um mapa id → estado; valor inesperado é ignorado (conta como offline). */
+export function toServerStates(rows: ServerPresence[]): Record<string, PresenceState> {
+  return Object.fromEntries(rows.filter(row => row.state === 'online' || row.state === 'away').map(row => [row.user_id, row.state]));
+}
+
+/**
+ * Bolinha de um membro na lista do servidor: você mesmo mostra o status que escolheu; amigos usam a presença de amigos
+ * (que já vem completa); os demais membros usam a presença do servidor, e quem não veio nela está offline.
+ */
+export function memberState(id: string, me: string, mine: PresenceStatus, friends: Record<string, PresenceInfo>, server: Record<string, PresenceState>): PresenceState | 'invisible' {
+  if (id === me) return mine;
+  return friends[id]?.state ?? server[id] ?? 'offline';
+}
 
 export function toInfo(row: FriendPresence, fetchedAt: number): PresenceInfo {
   return { state: row.state, lastSeenAt: row.last_seen_at, serverNow: row.server_now, fetchedAt };

@@ -16,8 +16,8 @@ export function CallControls({ size = 46, gap = space.md }: { size?: number; gap
   const camera = live?.camera ?? false;
   return (
     <View style={[styles.row, { gap }]}>
-      <RoundButton size={size} label={muted ? 'Ligar microfone' : 'Desligar microfone'} off={muted} onPress={() => live?.toggleMic()} disabled={!live}>
-        {muted ? <MicOff size={iconSize} color={tokens.error} /> : <Mic size={iconSize} color={tokens.text} />}
+      <RoundButton size={size} label={muted ? 'Ligar microfone' : 'Desligar microfone'} off={muted} filled={!muted} onPress={() => live?.toggleMic()} disabled={!live}>
+        {muted ? <MicOff size={iconSize} color={tokens.error} /> : <Mic size={iconSize} color={tokens.onPrimary} />}
       </RoundButton>
       <RoundButton size={size} label={deaf ? 'Voltar a ouvir a call' : 'Silenciar o áudio da call'} off={deaf} onPress={() => live?.toggleDeaf()} disabled={!live}>
         {deaf ? <HeadphoneOff size={iconSize} color={tokens.error} /> : <Headphones size={iconSize} color={tokens.text} />}
@@ -28,14 +28,14 @@ export function CallControls({ size = 46, gap = space.md }: { size?: number; gap
       <RoundButton size={size} label={sharing ? 'Parar de transmitir a tela' : 'Transmitir a tela'} on={sharing} onPress={() => live?.toggleScreen()} disabled={!live}>
         {sharing ? <MonitorOff size={iconSize} color={tokens.accent} /> : <MonitorUp size={iconSize} color={tokens.text} />}
       </RoundButton>
-      <Pressable accessibilityRole="button" accessibilityLabel="Sair da call" onPress={leave} style={[styles.round, { width: size, height: size, backgroundColor: tokens.badge }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Sair da call" onPress={leave} style={({ pressed }) => [styles.round, { width: size, height: size, backgroundColor: tokens.badge, opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
         <PhoneOff size={iconSize} color="#fff" />
       </Pressable>
     </View>
   );
 }
 
-function RoundButton({ children, label, onPress, off, on, disabled, size }: { children: ReactNode; label: string; onPress: () => void; off?: boolean; on?: boolean; disabled?: boolean; size: number }) {
+function RoundButton({ children, label, onPress, off, on, filled, disabled, size }: { children: ReactNode; label: string; onPress: () => void; off?: boolean; on?: boolean; filled?: boolean; disabled?: boolean; size: number }) {
   const { tokens } = useTheme();
   return (
     <Pressable
@@ -44,7 +44,7 @@ function RoundButton({ children, label, onPress, off, on, disabled, size }: { ch
       accessibilityState={{ disabled, selected: on }}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.round, { width: size, height: size, backgroundColor: on ? tokens.soft : tokens.panel, borderColor: on ? tokens.accent : off ? tokens.error : tokens.line, opacity: disabled ? 0.5 : 1 }]}
+      style={({ pressed }) => [styles.round, { width: size, height: size, backgroundColor: filled ? tokens.primary : on ? tokens.soft : off ? `${tokens.error}22` : tokens.panel, borderColor: filled ? tokens.primary : on ? tokens.accent : off ? tokens.error : tokens.line, opacity: disabled ? 0.5 : pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
     >
       {children}
     </Pressable>

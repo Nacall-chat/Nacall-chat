@@ -298,3 +298,66 @@ input[aria-invalid=true]{border-color:var(--error)}
 .reply-bar strong{color:var(--text)}
 .reply-bar button{display:inline-flex;align-items:center;justify-content:center;width:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:var(--muted)}
 @media(prefers-reduced-motion:reduce){.reaction-chip{transition:none}.reaction-chip:active{transform:none}}
+
+/* Call: redesenho (site). Cabeçalho com o estado da conexão e o tempo, nomes em pílula sobre a imagem, barra de controles flutuante (também no computador), aviso de reconexão e entrada suave de quem chega. */
+.call-dock .voice-heading{padding-block:12px;background:var(--surface)}
+.call-dock .voice-heading .call-name strong{font-size:15px;font-weight:800}
+.call-dock .voice-heading .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:var(--panel);font-size:12px;font-weight:700;color:var(--muted)}
+.connection-state{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--panel);color:var(--muted)}
+.connection-state.ok{color:var(--success);background:color-mix(in srgb,var(--success),transparent 88%)}
+.connection-state.wait{color:#c98a12;background:color-mix(in srgb,#e0a82e,transparent 86%)}
+.connection-state.bad{color:var(--error);background:color-mix(in srgb,var(--error),transparent 88%)}
+.call-dock .voice-heading time{display:inline;font-family:inherit;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+/* cartões: nome e microfone numa pílula escura sobre a foto ou o vídeo; quem fala ganha o contorno de destaque */
+.call-dock .participant{display:flex;flex-direction:column;border-radius:16px;animation:call-tile-in 180ms ease-out both}
+.call-dock .participant.speaking{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.call-dock .participant:not(.stream-tile)>.participant-label{position:relative;z-index:2;align-self:flex-start;max-width:calc(100% - 16px);margin:-40px 8px 8px;padding:5px 10px;border-radius:999px;background:rgba(12,15,20,.68);backdrop-filter:blur(6px);gap:8px}
+.call-dock .participant:not(.stream-tile)>.participant-label strong{font-size:12px;color:#fff}
+.call-dock .participant:not(.stream-tile)>.participant-label small{font-size:10px;color:#d6dde6}
+.call-dock .participant:not(.stream-tile)>.participant-label .participant-state{color:#d6dde6}
+/* o vídeo ao vivo da própria tela, na prévia do seu cartão de transmissão */
+.stream-tile-view video{display:block;width:100%;height:100%;object-fit:contain;background:#080a0e}
+@keyframes call-tile-in{from{opacity:0;transform:scale(.97)}}
+/* estados dos botões: microfone fechado em vermelho, ligado/ativo em destaque, sair em vermelho cheio */
+.call-dock .call-controls .muted-control{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
+.call-dock .call-controls button.selected{background:var(--soft);color:var(--accent)}
+.call-dock .leave-call{background:#d23c4f;color:#fff;border-color:transparent}
+.call-dock .leave-call:hover{background:#b8293c}
+/* computador: os controles ficam no cartão "Voz conectada" da lateral; a barra do palco é só do celular (no computador ela aparecia em coluna no meio da call) */
+@media(min-width:721px){.call-dock .call-toolbar{display:none}}
+/* conectando ou reconectando: aviso no topo do palco */
+.call-conn-banner{display:flex;align-items:center;gap:8px;align-self:center;margin:4px auto 10px;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;color:#c98a12;background:color-mix(in srgb,#e0a82e,transparent 85%)}
+.call-conn-banner.bad{color:var(--error);background:color-mix(in srgb,var(--error),transparent 86%)}
+.call-conn-dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:call-conn-pulse 1s ease-in-out infinite}
+@keyframes call-conn-pulse{50%{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.call-dock .participant{animation:none}.call-conn-dot{animation:none}}
+
+/* Auditoria de UX (lote 3): correções visuais por tela. */
+/* rótulos pequenos demais (6 a 10px) sobem para 11px; o texto de apoio das configurações, para 12px */
+.section-label,.shell .side-content .section-label{font-size:11px}
+.eyebrow{font-size:11px}
+.account small{font-size:11px}
+.auth-smallprint{font-size:11px}
+.tiny{font-size:10px;max-width:60px}
+.message time,.main .message time{font-size:11px}
+.message .link{font-size:11px}
+@media(max-width:720px){.jacall-hero .eyebrow,.jacall-invite .eyebrow{font-size:10px;letter-spacing:1.2px}}
+/* aba de filtro ativa de Amigos mais clara */
+.social-tabs button.active{border-color:var(--accent);font-weight:800}
+/* estado vazio de Amigos com o mascote */
+.social-empty img{width:72px;height:72px;border-radius:22px;object-fit:cover}
+/* configurações ligam/desligam como chave (a caixa de seleção comum some) */
+.toggle-setting input[type=checkbox]{-webkit-appearance:none;appearance:none;position:relative;flex-shrink:0;width:42px;height:24px;margin:0;padding:0;border-radius:999px;border:1px solid var(--field-line);background:var(--panel);cursor:pointer;transition:background-color 140ms,border-color 140ms}
+.toggle-setting input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--faint);transition:transform 140ms,background-color 140ms}
+.toggle-setting input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.toggle-setting input[type=checkbox]:checked::before{transform:translateX(18px);background:var(--bg)}
+.toggle-setting input[type=checkbox]:disabled{opacity:.5;cursor:not-allowed}
+.toggle-setting strong{font-size:13px}
+.toggle-setting small,.settings-body .toggle-setting small{font-size:12px}
+/* botão de trocar foto no mesmo formato dos outros botões, e acessível por teclado (o input ficava com display:none) */
+.upload-button{position:relative;min-height:40px;padding:9px 14px;border-radius:10px;background:var(--panel);font-size:13px}
+.upload-button:hover{background:var(--raised);border-color:var(--faint)}
+.upload-button:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+.upload-button input{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);opacity:0;border:0}
+/* diálogo do grupo com a mesma largura dos Ajustes */
+.group-settings{width:min(940px,calc(100vw - 40px))}

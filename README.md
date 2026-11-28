@@ -89,9 +89,9 @@ O transmissor escolhe 720p ou 1080p antes de compartilhar, com 15/30 fps. A esco
 
 O DJ começa em modo leve: busca apenas informações da música, sem iframe do YouTube. “Não quero ouvir” afeta apenas o dispositivo local, descarrega o player e não pausa a música dos outros. Ativar escuta carrega o player oficial visível. Fechar o painel também descarrega o vídeo e interrompe a escuta local; ao reabrir, o player sincroniza novamente. Não há extração de áudio, reprodução invisível nem garantia de áudio sem tráfego de vídeo pelo YouTube.
 
-## Identidade gamer, barra de voz e capa de perfil
+## Identidade, barra de voz e capa de perfil
 
-A marca usa o jacaré gamer com duas chuquinhas e headset. Artes separadas para redes sociais acompanham a entrega; no site são usadas versões WebP mais leves, com favicon PNG.
+A marca usa o JACALL, o jacaré verde menta de headset (`public/brand/jacall-avatar.webp`, `jacall-sheet.webp`, `jacall-favicon.png` e `symbol.svg`), com o nome NACALL. ao lado. A identidade vermelha antiga (mascote de moletom vermelho e o "N" vermelho) foi removida do repositório.
 
 Ao entrar numa sala de voz, a área de chamada ocupa o centro. Os controles da call ficam numa **barra de voz** que acompanha a pessoa em qualquer tela, como no Discord: no desktop é um cartão acima do perfil, na barra lateral (estado da conexão, sala, tempo, microfone e fone com a seta para escolher o aparelho, câmera, tela, DJ, ajustes e sair); no celular é uma barra compacta fixa no rodapé (estado, microfone, fone e sair). Abrir um canal de texto, DM ou outra tela usa a área toda e mantém a mesma conexão; tocar na barra volta ao painel da call (participantes e telas). No desktop o painel não repete os botões (eles já estão na barra de voz) e os participantes aparecem em cartões do mesmo tamanho, centralizados; no celular, com a call em tela cheia, a barra de botões fica embaixo. O painel tem o botão de minimizar, que volta para a conversa de onde a pessoa veio.
 

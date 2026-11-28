@@ -1,0 +1,78 @@
+name: Novidades do sino (product_updates)
+# Publica no sino do site e do app a novidade escrita no PR (seção "Novidade para quem usa"; ver docs/NOVIDADES.md).
+# HML: sozinho, a cada PR mesclado na release. PRD: manual (Run workflow na branch main, informando o número do PR),
+# depois que a produção já estiver no ar; usa o ambiente "production", com os mesmos cuidados da Esteira.
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Número do PR (ou vários, separados por vírgula)'
+        required: true
+      ambiente:
+        description: 'Onde publicar'
+        type: choice
+        options: [hml, prd]
+        default: hml
+      dias:
+        description: 'Quantos dias a novidade fica no sino (1 a 30)'
+        default: '3'
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: novidades-${{ github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  homologacao:
+    name: HML
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/release') || (github.event_name == 'workflow_dispatch' && inputs.ambiente == 'hml')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SUPABASE_URL: ${{ secrets.HML_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.HML_SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Descobrir o PR
+        id: pr
+        env:
+          INPUT_PR: ${{ inputs.pr }}
+        run: |
+          if [ -n "$INPUT_PR" ]; then PR="$INPUT_PR"; else
+            PR=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" -q '[.[] | select(.merged_at != null and .base.ref == "release")][0].number // empty')
+          fi
+          if ! printf '%s' "$PR" | grep -Eq '^[0-9]+(,[0-9]+)*$'; then echo "Nenhum PR mesclado neste push: nada a publicar."; PR=""; fi
+          echo "numero=$PR" >> "$GITHUB_OUTPUT"
+      - name: Publicar a novidade (HML)
+        if: steps.pr.outputs.numero != ''
+        env:
+          PR: ${{ steps.pr.outputs.numero }}
+          DIAS: ${{ inputs.dias || '3' }}
+        run: node scripts/novidade.mjs --pr "$PR" --dias "$DIAS"
+  producao:
+    name: PRD
+    # Manual e só na main: a novidade de produção sai depois que a produção foi publicada pela Esteira.
+    if: github.event_name == 'workflow_dispatch' && inputs.ambiente == 'prd' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SUPABASE_URL: ${{ secrets.PRD_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PRD_SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Publicar a novidade (PRD)
+        env:
+          PR: ${{ inputs.pr }}
+          DIAS: ${{ inputs.dias }}
+        run: |
+          if ! printf '%s' "$PR" | grep -Eq '^[0-9]+(,[0-9]+)*$'; then echo "::error::Informe o número do PR (ex.: 142 ou 142,143)."; exit 1; fi
+          node scripts/novidade.mjs --pr "$PR" --dias "$DIAS"

@@ -12,7 +12,7 @@ Em canais e DMs, o que a pessoa envia fica à direita, num balão um pouco mais 
 ## Sino
 Fica no topo, ao lado de "Atualizar" (`src/components/notification-bell.tsx`):
 - **Mensagens:** uma linha por DM com não lidas (nome, prévia, quanto tempo e contagem); tocar abre a conversa.
-- **Novidades do NACALL:** a lista de `src/lib/avisos.ts`. Para avisar de uma atualização, acrescente um item no topo (`id` único e fixo). Quem ainda não viu ganha a bolinha; abrir o sino marca como visto (por conta, neste navegador). O item com `slides: true` tem o botão "Ver novidades", que reabre o carrossel.
+- **Novidades do NACALL:** vêm da tabela `product_updates` (site e app), com validade padrão de 3 dias: o que expirou some sozinho. Como publicar: `docs/NOVIDADES.md`. Quem ainda não viu ganha a bolinha; abrir o sino marca como visto (por conta, neste navegador).
 - **Nova versão:** `/api/version` devolve o hash do commit publicado (`VERCEL_GIT_COMMIT_SHA`, variável de sistema da Vercel em tempo de execução). A primeira resposta, ao abrir o app, vira a versão daquela aba; o app consulta de novo a cada 5 minutos e quando a aba volta ao foco. Se a resposta mudar, o sino mostra "Nova versão do NACALL" com o botão "Atualizar agora". Nunca recarrega sozinho (a pessoa pode estar numa call). Sem a variável de sistema da Vercel (em desenvolvimento, por exemplo), o aviso fica desligado.
 
 ## Som

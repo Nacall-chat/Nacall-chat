@@ -1,16 +1,18 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { HEARTBEAT_MS, isIdle, isPresenceStatus, toInfo, type FriendPresence, type PresenceInfo, type PresenceStatus } from '@/lib/presence';
+import { HEARTBEAT_MS, isIdle, isPresenceStatus, toInfo, toServerStates, type FriendPresence, type PresenceInfo, type PresenceState, type PresenceStatus, type ServerPresence } from '@/lib/presence';
 
 /**
  * Presença: avisa o servidor que a pessoa está com o NACALL aberto (a cada 45 s; ausente depois de 5 min sem mexer),
  * avisa na hora quando ela fecha a aba, e mantém o estado dos amigos (consulta a cada 30 s).
  * O status escolhido (online, ausente, invisível) fica no servidor, então vale em qualquer aparelho.
+ * Com um servidor aberto (`serverId`), também acompanha quem dos membros está online ou ausente, mesmo sem amizade.
  */
-export function usePresence({ db, me, friendKey }: { db: SupabaseClient; me: string; friendKey: string }) {
+export function usePresence({ db, me, friendKey, serverId = null }: { db: SupabaseClient; me: string; friendKey: string; serverId?: string | null }) {
   const [mine, setMine] = useState<PresenceStatus>('online');
   const [map, setMap] = useState<Record<string, PresenceInfo>>({});
+  const [serverMap, setServerMap] = useState<Record<string, PresenceState>>({});
   const activity = useRef(Date.now());
   const idle = useRef(false);
   const token = useRef('');
@@ -70,6 +72,22 @@ export function usePresence({ db, me, friendKey }: { db: SupabaseClient; me: str
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
   }, [loadFriends, friendKey]);
 
+  // Membros do servidor aberto: só a lista desse servidor, ao abrir, a cada 30 s e quando a aba volta ao foco.
+  useEffect(() => {
+    setServerMap({});
+    if (!serverId) return;
+    let live = true;
+    const load = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const { data, error } = await db.rpc('server_presence', { p_server: serverId });
+      if (live && !error) setServerMap(toServerStates((data ?? []) as ServerPresence[]));
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    document.addEventListener('visibilitychange', load);
+    return () => { live = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', load); };
+  }, [db, serverId]);
+
   const setStatus = useCallback(async (next: PresenceStatus) => {
     const previous = mine;
     setMine(next);
@@ -78,5 +96,5 @@ export function usePresence({ db, me, friendKey }: { db: SupabaseClient; me: str
     return !error;
   }, [db, mine]);
 
-  return { mine, setStatus, map };
+  return { mine, setStatus, map, serverMap };
 }
